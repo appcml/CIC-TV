@@ -1,16 +1,63 @@
 {
   "name": "CIC TV — Canales en Vivo",
   "short_name": "CIC TV",
-  "description": "TV en vivo gratis. Canales clasificados por categoría — una app de CIC",
+  "description": "Mira TV en vivo gratis. Miles de canales clasificados por categoría: noticias, deportes, entretenimiento, películas, infantil y más. Una app de CIC.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "theme_color": "#e63f6e",
   "orientation": "any",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["entertainment", "news"],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
-  "categories": ["entertainment"],
-  "lang": "es"
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CIC TV — Vista principal"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Noticias",
+      "short_name": "Noticias",
+      "description": "Ver canales de noticias",
+      "url": "/?cat=Noticias",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deportes",
+      "short_name": "Deportes",
+      "description": "Ver canales de deportes",
+      "url": "/?cat=Deportes",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Favoritos",
+      "short_name": "Favoritos",
+      "description": "Ver mis canales favoritos",
+      "url": "/?cat=favoritos",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
