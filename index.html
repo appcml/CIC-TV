@@ -510,7 +510,12 @@ main {
 <div class="toast" id="toast"></div>
 
 <script>
-const M3U_URL = 'https://iptv-org.github.io/iptv/index.m3u';
+const PROXY = 'https://corsproxy.io/?url=';
+const M3U_SOURCES = [
+  'https://iptv-org.github.io/iptv/index.m3u',
+  'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8',
+  'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/es.m3u',
+];
 
 let allChannels = [];
 let filteredChannels = [];
@@ -535,8 +540,15 @@ const CAT_MAP = {
 async function loadChannels() {
   showToast('Actualizando canales...');
   try {
-    const res = await fetch(M3U_URL);
-    const text = await res.text();
+    let text = '';
+    for (const src of M3U_SOURCES) {
+      try {
+        const res = await fetch(PROXY + encodeURIComponent(src));
+        if (res.ok) { text = await res.text(); break; }
+      } catch(e) { continue; }
+    }
+    if (!text) throw new Error('No sources');
+    
     allChannels = parseM3U(text);
     updateCounters();
     applyFilters();
