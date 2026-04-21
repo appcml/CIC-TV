@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#0a0a0f"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="#12121a"/>
+  <!-- Screen shape -->
+  <rect x="60" y="140" width="392" height="232" rx="18" fill="#1a1a26" stroke="#e63f6e" stroke-width="6"/>
+  <!-- Screen inner glow -->
+  <rect x="72" y="152" width="368" height="208" rx="12" fill="#0d0d18"/>
+  <!-- Play triangle -->
+  <polygon points="210,196 210,316 330,256" fill="#e63f6e" opacity="0.9"/>
+  <!-- Stand -->
+  <rect x="220" y="372" width="72" height="18" rx="6" fill="#22223a"/>
+  <rect x="176" y="386" width="160" height="14" rx="7" fill="#22223a"/>
+  <!-- CIC TV text -->
+  <text x="256" y="470" font-family="Arial Black, sans-serif" font-weight="900" font-size="52" fill="#f0f0f8" text-anchor="middle" letter-spacing="-1">CIC<tspan fill="#e63f6e"> TV</tspan></text>
+</svg>
