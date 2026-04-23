@@ -45,9 +45,9 @@ aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px 
 main{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
 
 /* PLAYER - PRIORITARIO */
-.player-wrap{flex-shrink:0;background:#000;position:relative;width:100%}
-.player-wrap.theater{aspect-ratio:16/9;max-height:45vh}
-#vp{width:100%;height:100%;display:block;background:#000;object-fit:contain}
+.player-wrap{flex-shrink:0;background:#000;position:relative;width:100%;min-height:210px}
+.player-wrap.theater{aspect-ratio:16/9;max-height:45vh;min-height:200px}
+#vp{width:100%;height:100%;min-height:200px;display:block;background:#000;object-fit:contain}
 
 /* PLACEHOLDER */
 .pp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:#000;color:var(--text2);cursor:default;pointer-events:none}
@@ -129,7 +129,7 @@ main{flex:1;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column
 @media(max-width:700px){
   :root{--sidebar:0px}
   aside{display:none}
-  .player-wrap.theater{max-height:38vw;min-height:200px}
+  .player-wrap.theater{height:220px !important;max-height:220px;min-height:220px;aspect-ratio:unset}
   .grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
 }
 </style>
