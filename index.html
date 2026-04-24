@@ -235,15 +235,74 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .ad{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:6px;text-align:center;color:var(--text2);font-size:10px;min-height:44px;display:flex;align-items:center;justify-content:center}
 
 /* MOBILE */
-@media(max-width:700px){
+/* ═══ TABLET ═══ */
+@media(max-width:900px){
   :root{--sidebar:0px}
   aside{display:none}
-  .ch-side{width:160px}
-  .grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:5px}
-  .player-zone{height:auto;flex-direction:column}
-  .ch-side{width:100%;height:160px;flex-direction:row}
-  .ch-side-list{flex-direction:row;display:flex;overflow-x:auto;overflow-y:hidden}
-  .side-item{flex-direction:column;min-width:80px;border-bottom:none;border-right:1px solid var(--border)}
+  .ch-side{width:180px}
+}
+
+/* ═══ MÓVIL ═══ */
+@media(max-width:600px){
+  /* Layout player-zone: player arriba, lista debajo en ROW compacto */
+  .player-zone{
+    flex-direction:column;
+    height:auto;
+  }
+  /* Player: proporciones 16/9 fijas */
+  .player-col{
+    width:100%;
+    flex-shrink:0;
+  }
+  .video-ratio{
+    position:relative;
+    width:100%;
+    padding-bottom:56.25%;  /* 16:9 */
+    height:0 !important;
+    flex:none;
+  }
+  .video-ratio video{
+    position:absolute;
+    top:0;left:0;width:100%;height:100%;
+  }
+  .audio-zone{
+    min-height:100px;
+    flex:none;
+  }
+  /* Lista lateral: debajo del player, scroll VERTICAL, altura fija */
+  .ch-side{
+    width:100%;
+    height:200px;         /* altura fija visible */
+    flex-direction:column; /* columna = scroll vertical */
+    border-left:none;
+    border-top:2px solid var(--border);
+    flex-shrink:0;
+  }
+  .ch-side-list{
+    flex:1;
+    overflow-y:auto !important;  /* SIEMPRE vertical */
+    overflow-x:hidden !important;
+    display:block !important;    /* nunca flex-row */
+    -webkit-overflow-scrolling:touch;
+  }
+  /* Items de la lista: horizontales (logo + info en fila) */
+  .side-item{
+    flex-direction:row !important;
+    min-width:unset;
+    border-bottom:1px solid var(--border) !important;
+    border-right:none !important;
+    padding:6px 8px;
+  }
+  .side-logo, .side-fb{
+    width:32px;height:32px;flex-shrink:0;
+  }
+  /* Grid inferior más compacto */
+  .grid{
+    grid-template-columns:repeat(auto-fill,minmax(85px,1fr));
+    gap:5px;
+  }
+  /* Ocultar flechas en móvil (scroll táctil es suficiente) */
+  .side-nav{display:none}
 }
 </style>
 </head>
