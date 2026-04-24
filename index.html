@@ -394,6 +394,8 @@ let curSearch  = '';
 let isPinned   = false;
 let filtered   = [];
 let favs       = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
+let gridActive = null; // canal activo en grid (independiente de lista lateral)
+let sideActive = null; // canal activo en lista lateral (independiente de grid)
 
 // ════════════════════════════════════
 // CANALES BASE TV
@@ -454,6 +456,7 @@ const CAT_MAP = {news:'Noticias',sports:'Deportes',entertainment:'Entretenimient
 // ════════════════════════════════════
 updateAll();
 applyFilter();
+renderSideList();
 showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 setTimeout(loadCountries, 800);
 
@@ -486,7 +489,7 @@ async function loadCountries() {
         if (newCh.length) {
           allTV = [...allTV, ...newCh];
           updateAll();
-          if (curMode === 'tv') { applyFilter(); }
+          if (curMode === 'tv') { applyFilter(); renderSideList(); }
           showToast(`${CFLAGS[code]||''} ${CNAMES[code]||code} +${newCh.length}`);
         }
         break;
@@ -594,6 +597,7 @@ function setMode(mode) {
 
   updateAll();
   applyFilter();
+  renderSideList(); // nueva lista del modo
 }
 
 function setCat(cat, btn) {
@@ -622,8 +626,7 @@ function showFavs() {
   filtered = [...allTV, ...allRadio].filter(c => favs.includes(c.id));
   g('stitle').textContent = '⭐ Favoritos';
   g('scnt').textContent   = filtered.length + ' guardados';
-  renderGrid();
-  renderSideList();
+  renderGrid(); // solo grid, lista lateral NO se toca
 }
 
 function refreshAll() {
@@ -631,6 +634,7 @@ function refreshAll() {
   allRadio = allRadio.slice(0, 8);
   updateAll();
   applyFilter();
+  renderSideList();
   loadCountries();
 }
 
@@ -646,8 +650,7 @@ function applyFilter() {
   filtered = list;
   g('stitle').textContent = curCat === 'all' ? (curMode === 'tv' ? 'Todos los canales' : 'Todas las radios') : curCat;
   g('scnt').textContent   = filtered.length + (curMode === 'tv' ? ' canales' : ' radios');
-  renderGrid();
-  renderSideList();
+  renderGrid(); // filtros solo afectan al grid
 }
 
 // ════════════════════════════════════
@@ -662,11 +665,11 @@ function renderGrid() {
   }
   grid.innerHTML = filtered.slice(0, 300).map(ch => {
     const isFav  = favs.includes(ch.id);
-    const isPlay = curCh && curCh.id === ch.id;
+    const isPlay = gridActive && gridActive.id === ch.id;
     const pc     = isPlay ? (isR ? ' rplaying' : ' playing') : '';
     const dc     = isR ? ' rd' : '';
     const fc     = isR ? ' rfb' : '';
-    return `<div class="card${pc}" onclick="play('${ch.id}')" id="cd-${ch.id}">
+    return `<div class="card${pc}" onclick="playFromGrid('${ch.id}')" id="cd-${ch.id}">
       ${ch.logo
         ? `<img class="clogo" src="${ch.logo}" alt="${ch.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cfb${fc}\\'>${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>'">`
         : `<div class="cfb${fc}">${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>`}
@@ -681,6 +684,20 @@ function renderGrid() {
   if (filtered.length > 300) grid.innerHTML += `<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando 300 de ${filtered.length} · Usa la búsqueda para filtrar</div>`;
 }
 
+// Clic en GRID → marca grid, NO toca lista lateral
+function playFromGrid(id) {
+  const src = curMode === 'tv' ? allTV : allRadio;
+  const ch  = src.find(c => c.id === id);
+  if (!ch) return;
+  gridActive = ch; curCh = ch;
+  curIdx = filtered.findIndex(c => c.id === id);
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('playing','rplaying'));
+  const cd = g('cd-' + id);
+  if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
+  g('pname').textContent = ch.name;
+  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
+}
+
 // ════════════════════════════════════
 // RENDER LISTA LATERAL + SCROLL
 // ════════════════════════════════════
@@ -689,12 +706,12 @@ function renderSideList() {
   const isR  = curMode === 'radio';
   g('sideCount').textContent = filtered.length + (isR ? ' radios' : ' canales');
 
-  list.innerHTML = filtered.slice(0, 200).map(ch => {
-    const isPlay  = curCh && curCh.id === ch.id;
+  const allSrc2 = isR ? allRadio : allTV; list.innerHTML = allSrc2.slice(0, 300).map(ch => {
+    const isPlay  = sideActive && sideActive.id === ch.id;
     const ac      = isPlay ? (isR ? ' ractive' : ' active') : '';
     const fc      = isR ? ' rfb' : '';
     const dc      = isR ? ' rd' : '';
-    return `<div class="side-item${ac}" onclick="play('${ch.id}')" id="si-${ch.id}">
+    return `<div class="side-item${ac}" onclick="playFromSide('${ch.id}')" id="si-${ch.id}">
       ${ch.logo
         ? `<img class="side-logo" src="${ch.logo}" alt="${ch.name}" onerror="this.outerHTML='<div class=\\'side-fb${fc}\\'>${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>'">`
         : `<div class="side-fb${fc}">${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>`}
@@ -707,6 +724,19 @@ function renderSideList() {
   }).join('');
 
   updateSidePos();
+}
+
+// Clic en LISTA LATERAL → marca lista, NO toca grid
+function playFromSide(id) {
+  const allSrc = curMode === 'tv' ? allTV : allRadio;
+  const ch     = allSrc.find(c => c.id === id);
+  if (!ch) return;
+  sideActive = ch; curCh = ch;
+  document.querySelectorAll('.side-item').forEach(c => c.classList.remove('active','ractive'));
+  const si = g('si-' + id);
+  if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  g('pname').textContent = ch.name;
+  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
 function sideScroll(delta) {
@@ -728,7 +758,8 @@ function updateSidePos() {
 document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
 
 // ════════════════════════════════════
-// PLAYER
+// PLAYER — función interna, no toca UI
+// Usar playFromGrid() o playFromSide() desde la UI
 // ════════════════════════════════════
 function play(id) {
   const src = [...allTV, ...allRadio];
@@ -736,20 +767,8 @@ function play(id) {
   if (!ch) return;
   curCh  = ch;
   curIdx = filtered.findIndex(c => c.id === id);
-
-  // Activar modo correcto si es necesario
   if (ch.type !== curMode) setMode(ch.type);
-
   g('pname').textContent = ch.name;
-
-  // Resaltar en grid y lista
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('playing','rplaying'));
-  document.querySelectorAll('.side-item').forEach(c => c.classList.remove('active','ractive'));
-  const cd = g('cd-' + id);
-  const si = g('si-' + id);
-  if (cd) { cd.classList.add(ch.type==='radio'?'rplaying':'playing'); cd.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-  if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
@@ -810,15 +829,25 @@ function showErr() {
   g('ld').classList.remove('show');
   g('er').classList.add('show');
 }
-function retry()  { if (curCh) play(curCh.id); }
+function retry() {
+  if (!curCh) return;
+  // Reintentar sin cambiar marcas de UI
+  curCh.type === 'radio' ? playRadio(curCh) : playVideo(curCh);
+}
 function nextCh() {
-  if (!filtered.length) return;
-  play(filtered[(curIdx + 1) % filtered.length].id);
+  // Navega en la lista lateral (todos los canales)
+  const allSrc = curMode === 'tv' ? allTV : allRadio;
+  if (!allSrc.length) return;
+  const idx = sideCurCh ? allSrc.findIndex(c => c.id === sideCurCh.id) : -1;
+  const next = allSrc[(idx + 1) % allSrc.length];
+  playFromSide(next.id);
 }
 function prevCh() {
-  if (!filtered.length) return;
-  const i = curIdx <= 0 ? filtered.length - 1 : curIdx - 1;
-  play(filtered[i].id);
+  const allSrc = curMode === 'tv' ? allTV : allRadio;
+  if (!allSrc.length) return;
+  const idx = sideCurCh ? allSrc.findIndex(c => c.id === sideCurCh.id) : 0;
+  const prev = allSrc[idx <= 0 ? allSrc.length - 1 : idx - 1];
+  playFromSide(prev.id);
 }
 function prevCh() {
   if (!filtered.length) return;
