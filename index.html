@@ -270,12 +270,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   :root{--sidebar:0px}
   aside{display:none}
 
-  /* Todo el body en columna, scroll solo en grid */
+  /* Layout columna, sin overflow */
   body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
   .body{flex:1;flex-direction:column;overflow:hidden;min-height:0}
   main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
 
-  /* AD TOP fijo */
+  /* AD FIJO TOP */
   .ad-top-mobile{
     flex-shrink:0;height:44px;
     background:var(--bg2);border-bottom:1px solid var(--border);
@@ -283,71 +283,47 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
     font-size:10px;color:var(--text2);
   }
 
-  /* PLAYER ZONE: player izq 75% + lista der 25%
-     Altura = aprox 38% de pantalla (usando vh) */
+  /* PLAYER ZONE: 100% ancho, sin lista lateral */
   .player-zone{
-    flex-direction:row !important;
+    flex-direction:column !important;
     flex-shrink:0;
-    height:38vh !important;
-    min-height:200px;max-height:280px;
+    height:auto !important;
+    min-height:0;
   }
-
-  /* Player 55% — mejor proporción en móvil */
   .player-col{
-    flex:0 0 55%;width:55%;
+    flex:none !important;
+    width:100% !important;
     display:flex;flex-direction:column;position:relative;background:#000;
   }
+  /* Video 16:9 real con padding trick */
   .video-ratio{
-    flex:1;position:relative;
-    padding-bottom:0 !important;height:auto !important;
+    position:relative !important;
+    width:100% !important;
+    padding-bottom:56.25% !important;
+    height:0 !important;
+    flex:none !important;
     overflow:hidden;
   }
   .video-ratio video{
-    position:absolute;inset:0;
-    width:100%;height:100%;object-fit:contain;
+    position:absolute !important;
+    inset:0;width:100% !important;height:100% !important;
+    object-fit:contain;
   }
-  .audio-zone{flex:1;min-height:unset;padding:10px}
+  .audio-zone{
+    flex:none !important;
+    min-height:90px;padding:12px;
+  }
 
-  /* Lista 45% — complemento del player 55% */
-  .ch-side{
-    flex:0 0 45%;width:45%;
-    height:100% !important;
-    flex-direction:column !important;
-    border-left:1px solid var(--border);border-top:none;overflow:hidden;
-  }
-  .ch-side-hd{padding:4px 5px;flex-shrink:0}
-  .ch-side-hd span{font-size:9px}
-  .ch-side-hd small{display:none}
-  .side-nav{padding:2px 4px;flex-shrink:0}
-  .side-arrow{width:18px;height:18px;font-size:9px}
-  .side-pos{font-size:8px}
-  .ch-side-list{
-    flex:1;min-height:0;
-    overflow-y:auto !important;
-    overflow-x:hidden !important;
-    display:block !important;
-    -webkit-overflow-scrolling:touch;
-  }
-  /* Items: icono arriba + nombre abajo */
-  .side-item{
-    flex-direction:column !important;
-    align-items:center;padding:6px 3px;gap:3px;
-    border-bottom:1px solid var(--border) !important;
-    border-right:none !important;min-width:unset !important;
-    text-align:center;
-  }
-  .side-logo,.side-fb{width:30px !important;height:30px !important;flex-shrink:0}
-  .side-name{font-size:8px;white-space:normal;line-height:1.2;
-    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .side-cat,.side-dot{display:none}
+  /* OCULTAR lista lateral en móvil */
+  .ch-side{display:none !important}
 
   /* Barra player compacta */
-  .pbar{padding:3px 7px;flex-shrink:0}
-  .pn{font-size:9px}
-  .pbt{width:20px;height:20px;font-size:9px}
-  .live-b,.radio-b{font-size:7px;padding:1px 4px}
+  .pbar{padding:4px 10px;flex-shrink:0}
+  .pn{font-size:10px}
+  .pbt{width:22px;height:22px;font-size:10px}
+  .live-b,.radio-b{font-size:8px;padding:2px 5px}
 
-  /* AD BOTTOM fijo */
+  /* AD FIJO BOTTOM */
   .ad-bottom-mobile{
     flex-shrink:0;height:44px;
     background:var(--bg2);border-top:1px solid var(--border);
@@ -355,34 +331,32 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
     font-size:10px;color:var(--text2);
   }
 
-  /* Ocultar ads del desktop */
+  /* Ocultar ads desktop */
   .ad{display:none !important}
 
-  /* ZONA INFERIOR: ocupa el resto — SCROLLABLE */
-  .bottom-zone{
-    flex:1;min-height:0;
-    display:flex;flex-direction:column;overflow:hidden;
-  }
-  .mode-tabs{flex-shrink:0;height:34px}
-  .mtab{font-size:11px;padding:6px}
-  .fbar-wrap{flex-shrink:0;padding:4px 8px}
-  .chip{padding:2px 8px;font-size:10px}
+  /* ZONA INFERIOR: resto de pantalla, scrolleable */
+  .bottom-zone{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  .mode-tabs{flex-shrink:0;height:36px}
+  .mtab{font-size:12px;padding:7px}
+  .fbar-wrap{flex-shrink:0;padding:5px 10px}
+  .chip{padding:3px 9px;font-size:11px}
   .grid-zone{flex:1;min-height:0;overflow-y:auto}
 
   /* Grid 3 columnas */
   .grid{
     grid-template-columns:repeat(3,1fr) !important;
-    gap:5px;padding:4px 6px 16px;
+    gap:6px;padding:5px 8px 16px;
   }
-  .clogo,.cfb{height:52px}
-  .cfb{font-size:10px}
-  .cname{font-size:10px}
-  .ccat{font-size:8px}
-  .ch-hd{padding:5px 8px 2px}
-  .ch-hd h2{font-size:12px}
-  .ch-hd span{font-size:10px}
+  .clogo,.cfb{height:58px}
+  .cfb{font-size:11px}
+  .cname{font-size:11px}
+  .ccat{font-size:9px}
+  .ch-hd{padding:6px 10px 3px}
+  .ch-hd h2{font-size:13px}
+  .ch-hd span{font-size:11px}
   .ch-load{padding:8px;font-size:11px}
 }
+
 </style>
 </head>
 <body>
