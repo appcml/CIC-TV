@@ -239,70 +239,142 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 @media(max-width:900px){
   :root{--sidebar:0px}
   aside{display:none}
-  .ch-side{width:180px}
+  .ch-side{width:190px}
 }
 
-/* ═══ MÓVIL ═══ */
+/* ═══ MÓVIL — layout vertical completo ═══ */
 @media(max-width:600px){
-  /* Layout player-zone: player arriba, lista debajo en ROW compacto */
+
+  /* Body ocupa toda la pantalla sin overflow */
+  body{overflow:hidden;height:100vh}
+
+  /* Layout principal: columna */
+  .layout{flex-direction:column;height:calc(100vh - 52px);overflow:hidden}
+
+  /* PLAYER ZONE: ocupa 45% de la pantalla en móvil */
   .player-zone{
-    flex-direction:column;
-    height:auto;
-  }
-  /* Player: proporciones 16/9 fijas */
-  .player-col{
-    width:100%;
+    flex-direction:row !important;   /* player izq, lista der — lado a lado */
+    height:45vh !important;          /* 45% de la pantalla */
+    min-height:200px;
     flex-shrink:0;
-  }
-  .video-ratio{
-    position:relative;
     width:100%;
-    padding-bottom:56.25%;  /* 16:9 */
+  }
+
+  /* Player: 60% del ancho en móvil */
+  .player-col{
+    flex:0 0 60% !important;
+    width:60% !important;
+    display:flex;
+    flex-direction:column;
+    background:#000;
+    position:relative;
+  }
+
+  /* Video con padding-bottom trick para 16:9 */
+  .video-ratio{
+    position:relative !important;
+    width:100% !important;
+    flex:1 !important;
     height:0 !important;
-    flex:none;
+    padding-bottom:0 !important; /* se calcula por flex */
+    overflow:hidden;
+  }
+  /* Anular el padding-bottom y usar flex */
+  .video-ratio{
+    padding-bottom:0 !important;
+    height:100% !important;
+    flex:1;
   }
   .video-ratio video{
-    position:absolute;
-    top:0;left:0;width:100%;height:100%;
+    position:absolute !important;
+    top:0;left:0;
+    width:100% !important;
+    height:100% !important;
+    object-fit:contain;
   }
+
+  /* Audio zone en móvil */
   .audio-zone{
-    min-height:100px;
-    flex:none;
+    flex:1;
+    min-height:unset;
   }
-  /* Lista lateral: debajo del player, scroll VERTICAL, altura fija */
+
+  /* LISTA LATERAL: 40% del ancho, scroll VERTICAL */
   .ch-side{
-    width:100%;
-    height:200px;         /* altura fija visible */
-    flex-direction:column; /* columna = scroll vertical */
-    border-left:none;
-    border-top:2px solid var(--border);
-    flex-shrink:0;
+    flex:0 0 40% !important;
+    width:40% !important;
+    height:100% !important;
+    flex-direction:column !important;  /* columna = vertical */
+    border-left:1px solid var(--border);
+    border-top:none;
+    overflow:hidden;
   }
+
+  /* Lista scroll SIEMPRE vertical */
   .ch-side-list{
     flex:1;
-    overflow-y:auto !important;  /* SIEMPRE vertical */
+    overflow-y:auto !important;
     overflow-x:hidden !important;
-    display:block !important;    /* nunca flex-row */
+    display:block !important;
     -webkit-overflow-scrolling:touch;
   }
-  /* Items de la lista: horizontales (logo + info en fila) */
+
+  /* Items en fila (logo + texto) — igual que desktop */
   .side-item{
     flex-direction:row !important;
-    min-width:unset;
+    padding:6px 7px;
     border-bottom:1px solid var(--border) !important;
     border-right:none !important;
-    padding:6px 8px;
+    min-width:unset !important;
   }
   .side-logo, .side-fb{
-    width:32px;height:32px;flex-shrink:0;
+    width:30px !important;
+    height:30px !important;
+    flex-shrink:0;
   }
-  /* Grid inferior más compacto */
+  .side-name{font-size:10px}
+  .side-cat{font-size:9px}
+
+  /* Flechas nav en móvil — más pequeñas pero visibles */
+  .side-nav{
+    display:flex;
+    padding:3px 6px;
+  }
+  .side-arrow{width:22px;height:22px;font-size:11px}
+  .side-pos{font-size:9px}
+
+  /* Barra player compacta */
+  .pbar{padding:4px 8px}
+  .pn{font-size:10px}
+  .pbt{width:22px;height:22px;font-size:10px}
+  .live-b{font-size:7px;padding:2px 4px}
+
+  /* ZONA INFERIOR: 55% restante */
+  .bottom-zone{
+    flex:1;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Grid más compacto en móvil */
   .grid{
-    grid-template-columns:repeat(auto-fill,minmax(85px,1fr));
+    grid-template-columns:repeat(3,1fr) !important;
     gap:5px;
+    padding:4px 6px 12px;
   }
-  /* Ocultar flechas en móvil (scroll táctil es suficiente) */
-  .side-nav{display:none}
+  .clogo{height:55px}
+  .cfb{height:55px;font-size:10px}
+  .cname{font-size:10px}
+  .ccat{font-size:8px}
+
+  /* Chips de país más pequeños */
+  .chip{padding:3px 8px;font-size:10px}
+  .mtab{font-size:11px;padding:6px}
+
+  /* Ocultar sidebar */
+  :root{--sidebar:0px}
+  aside{display:none}
 }
 </style>
 </head>
