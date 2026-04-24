@@ -236,6 +236,18 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
 /* MOBILE */
 
+
+/* Contador canales en header */
+#cnt-tv-hdr, #cnt-radio-hdr{
+  font-size:9px;opacity:0.85;
+  background:rgba(255,255,255,0.18);
+  padding:1px 5px;border-radius:8px;margin-left:3px;
+  vertical-align:middle;
+  transition:all .3s;
+}
+.hbt.on #cnt-tv-hdr{background:rgba(255,255,255,0.3)}
+.hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
+
 /* ── BOTÓN SALIR FULLSCREEN ── */
 .fs-exit{
   display:none;
@@ -370,8 +382,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   </div>
   <div class="hbts">
     <button class="hbt" onclick="showFavs()">⭐</button>
-    <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV</button>
-    <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio</button>
+    <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV <span id="cnt-tv-hdr" style="font-size:9px;opacity:0.8;background:rgba(255,255,255,0.2);padding:1px 5px;border-radius:8px;margin-left:2px">0</span></button>
+    <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio <span id="cnt-radio-hdr" style="font-size:9px;opacity:0.8;background:rgba(255,255,255,0.2);padding:1px 5px;border-radius:8px;margin-left:2px">0</span></button>
     <button class="hbt" onclick="refreshAll()">↻</button>
   </div>
 </header>
@@ -593,27 +605,58 @@ function g(id) { return document.getElementById(id); }
 // CARGA DE PAÍSES (paralela)
 // ════════════════════════════════════
 async function loadCountries() {
-  const proxies = ['https://api.allorigins.win/raw?url=', 'https://corsproxy.io/?url='];
-  await Promise.allSettled(Object.entries(COUNTRY_URLS).map(async ([code, slug]) => {
-    const src = `https://iptv-org.github.io/iptv/countries/${slug}.m3u`;
+  // Múltiples proxies CORS — si uno falla intenta el siguiente
+  const proxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://proxy.cors.sh/',
+    'https://thingproxy.freeboard.io/fetch/',
+  ];
+
+  // Función para intentar fetch con múltiples proxies
+  async function fetchM3U(url) {
+    // Primero intentar directo (por si el servidor lo permite)
+    try {
+      const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
+      if (r.ok) return await r.text();
+    } catch(e) {}
+    // Luego con proxies
     for (const px of proxies) {
       try {
-        const r = await fetch(px + encodeURIComponent(src), {signal: AbortSignal.timeout(8000)});
-        if (!r.ok) continue;
-        const parsed = parseM3U(await r.text(), code, 'tv');
-        const newCh  = parsed.filter(c => !allTV.find(x => x.url === c.url));
-        if (newCh.length) {
-          allTV = [...allTV, ...newCh];
-          updateAll();
-          if (curMode === 'tv') { applyFilter(); renderSideList(); }
-          showToast(`${CFLAGS[code]||''} ${CNAMES[code]||code} +${newCh.length}`);
-        }
-        break;
+        const r = await fetch(px + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
+        if (r.ok) return await r.text();
       } catch(e) { continue; }
     }
+    return null;
+  }
+
+  // Cargar todos los países en paralelo
+  await Promise.allSettled(Object.entries(COUNTRY_URLS).map(async ([code, slug]) => {
+    const txt = await fetchM3U(`https://iptv-org.github.io/iptv/countries/${slug}.m3u`);
+    if (!txt) return;
+    const parsed = parseM3U(txt, code, 'tv');
+    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
+    if (newCh.length) {
+      allTV = [...allTV, ...newCh];
+      updateAll();
+      if (curMode === 'tv') { applyFilter(); renderSideList(); }
+    }
   }));
+
+  // Cargar también lista general en español
+  const txtSpa = await fetchM3U('https://iptv-org.github.io/iptv/languages/spa.m3u');
+  if (txtSpa) {
+    const parsed = parseM3U(txtSpa, 'INT', 'tv');
+    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
+    if (newCh.length) {
+      allTV = [...allTV, ...newCh];
+      updateAll();
+      if (curMode === 'tv') { applyFilter(); renderSideList(); }
+    }
+  }
+
   g('chload').classList.remove('show');
-  showToast(`✓ Total: ${allTV.length} canales TV`);
+  showToast(`✓ ${allTV.length} canales · ${allRadio.length} radios`);
 }
 
 function parseM3U(txt, co, type) {
@@ -652,6 +695,8 @@ function updateAll() {
 
   set('cn-tv',    allTV.length);
   set('cn-radio', allRadio.length);
+  set('cnt-tv-hdr',    allTV.length);
+  set('cnt-radio-hdr', allRadio.length);
   set('cn-fav',   favs.length);
   set('cn-all',   src.length);
   cats.forEach(c => set('cn-' + c, src.filter(ch => ch.cat === c).length));
