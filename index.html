@@ -238,169 +238,150 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
 /* ── BOTÓN SALIR FULLSCREEN ── */
 .fs-exit{
-  display:none; /* oculto por defecto */
-  position:fixed;
-  top:14px;right:14px;
-  z-index:9999;
-  background:rgba(0,0,0,0.75);
-  border:1px solid rgba(255,255,255,0.25);
-  color:#fff;
-  padding:7px 16px;
-  border-radius:20px;
-  font-family:'DM Sans',sans-serif;
-  font-size:13px;
-  font-weight:500;
-  cursor:pointer;
-  transition:all .2s;
-  backdrop-filter:blur(8px);
+  display:none;
+  position:fixed;top:14px;right:14px;z-index:9999;
+  background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.25);
+  color:#fff;padding:7px 16px;border-radius:20px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);
 }
 .fs-exit:hover{background:var(--accent);border-color:var(--accent)}
+:fullscreen .fs-exit,:-webkit-full-screen .fs-exit,body.is-fullscreen .fs-exit{display:block !important}
 
-/* Mostrar solo cuando hay fullscreen activo */
-:fullscreen .fs-exit,
-:-webkit-full-screen .fs-exit{display:block !important}
-/* fallback: clase JS */
-body.is-fullscreen .fs-exit{display:block !important}
+/* ══════════════════════════════════════════════
+   RESPONSIVE INTELIGENTE
+   Desktop  > 1024px : player 420px, lista 230px
+   Tablet   600-1024 : sidebar oculto, player 320px
+   Móvil    < 600px  : layout vertical, ads fijos
+══════════════════════════════════════════════ */
 
-/* ═══ TABLET ═══ */
-@media(max-width:900px){
+/* ── TABLET ── */
+@media(max-width:1024px){
   :root{--sidebar:0px}
   aside{display:none}
-  .ch-side{width:190px}
+}
+@media(max-width:900px){
+  .ch-side{width:180px}
+  .player-zone{height:320px}
 }
 
-/* ═══ MÓVIL ═══ */
+/* ── MÓVIL ── */
 @media(max-width:600px){
   :root{--sidebar:0px}
   aside{display:none}
-  body{overflow:hidden;height:100vh}
-  .layout{flex-direction:column;height:calc(100vh - 52px);overflow:hidden}
 
-  /* ── AD FIJO SUPERIOR ── */
+  /* Todo el body en columna, scroll solo en grid */
+  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .body{flex:1;flex-direction:column;overflow:hidden;min-height:0}
+  main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+
+  /* AD TOP fijo */
   .ad-top-mobile{
-    flex-shrink:0;
-    height:50px;
-    background:var(--bg2);
-    border-bottom:1px solid var(--border);
+    flex-shrink:0;height:44px;
+    background:var(--bg2);border-bottom:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;
     font-size:10px;color:var(--text2);
-    width:100%;
   }
 
-  /* ── PLAYER ZONE: 80% del ancho, lista 20% ── */
+  /* PLAYER ZONE: player izq 75% + lista der 25%
+     Altura = aprox 38% de pantalla (usando vh) */
   .player-zone{
     flex-direction:row !important;
     flex-shrink:0;
-    width:100%;
-    /* altura = 100vh - header(52) - ad-top(50) - ad-bot(50) - tabs(32) - filtros(32) */
-    height:calc(100vh - 52px - 50px - 50px - 32px - 32px) !important;
-    min-height:180px;
+    height:38vh !important;
+    min-height:200px;max-height:280px;
   }
 
-  /* Player: 80% */
+  /* Player 75% */
   .player-col{
-    flex:0 0 80% !important;
-    width:80% !important;
-    display:flex;flex-direction:column;
-    position:relative;background:#000;
+    flex:0 0 75%;width:75%;
+    display:flex;flex-direction:column;position:relative;background:#000;
   }
   .video-ratio{
-    flex:1 !important;
-    position:relative !important;
-    height:100% !important;
-    padding-bottom:0 !important;
+    flex:1;position:relative;
+    padding-bottom:0 !important;height:auto !important;
     overflow:hidden;
   }
   .video-ratio video{
-    position:absolute !important;
-    inset:0;width:100% !important;height:100% !important;
-    object-fit:contain;
+    position:absolute;inset:0;
+    width:100%;height:100%;object-fit:contain;
   }
-  .audio-zone{flex:1;min-height:unset}
+  .audio-zone{flex:1;min-height:unset;padding:10px}
 
-  /* Lista: 20% — scroll VERTICAL */
+  /* Lista 25% — scroll VERTICAL siempre */
   .ch-side{
-    flex:0 0 20% !important;
-    width:20% !important;
+    flex:0 0 25%;width:25%;
     height:100% !important;
     flex-direction:column !important;
-    border-left:1px solid var(--border);
-    border-top:none;
-    overflow:hidden;
+    border-left:1px solid var(--border);border-top:none;overflow:hidden;
   }
-  .ch-side-hd{padding:4px 5px}
+  .ch-side-hd{padding:4px 5px;flex-shrink:0}
   .ch-side-hd span{font-size:9px}
   .ch-side-hd small{display:none}
-
-  .side-nav{padding:2px 4px}
+  .side-nav{padding:2px 4px;flex-shrink:0}
   .side-arrow{width:18px;height:18px;font-size:9px}
   .side-pos{font-size:8px}
-
   .ch-side-list{
-    flex:1;
+    flex:1;min-height:0;
     overflow-y:auto !important;
     overflow-x:hidden !important;
     display:block !important;
     -webkit-overflow-scrolling:touch;
   }
-  /* Items compactos en columna */
+  /* Items: icono arriba + nombre abajo */
   .side-item{
     flex-direction:column !important;
-    align-items:center;
-    padding:5px 3px;
-    gap:3px;
+    align-items:center;padding:6px 3px;gap:3px;
     border-bottom:1px solid var(--border) !important;
-    border-right:none !important;
-    min-width:unset !important;
+    border-right:none !important;min-width:unset !important;
     text-align:center;
   }
-  .side-logo,.side-fb{
-    width:28px !important;height:28px !important;flex-shrink:0;
-  }
-  .side-info{width:100%}
-  .side-name{font-size:8px;white-space:normal;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .side-cat{display:none}
-  .side-dot{display:none}
+  .side-logo,.side-fb{width:30px !important;height:30px !important;flex-shrink:0}
+  .side-name{font-size:8px;white-space:normal;line-height:1.2;
+    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .side-cat,.side-dot{display:none}
 
   /* Barra player compacta */
-  .pbar{padding:3px 7px}
+  .pbar{padding:3px 7px;flex-shrink:0}
   .pn{font-size:9px}
   .pbt{width:20px;height:20px;font-size:9px}
   .live-b,.radio-b{font-size:7px;padding:1px 4px}
 
-  /* AD FIJO INFERIOR */
+  /* AD BOTTOM fijo */
   .ad-bottom-mobile{
-    flex-shrink:0;
-    height:50px;
-    background:var(--bg2);
-    border-top:1px solid var(--border);
+    flex-shrink:0;height:44px;
+    background:var(--bg2);border-top:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;
     font-size:10px;color:var(--text2);
-    width:100%;
   }
 
-  /* Ocultar ads normales en móvil (se usan los fijos) */
-  .ad{display:none}
+  /* Ocultar ads del desktop */
+  .ad{display:none !important}
 
-  /* Tabs y filtros compactos */
-  .mode-tabs{flex-shrink:0;height:32px}
-  .mtab{font-size:11px;padding:5px}
-  .fbar-wrap{flex-shrink:0;height:32px;padding:4px 8px}
+  /* ZONA INFERIOR: ocupa el resto — SCROLLABLE */
+  .bottom-zone{
+    flex:1;min-height:0;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .mode-tabs{flex-shrink:0;height:34px}
+  .mtab{font-size:11px;padding:6px}
+  .fbar-wrap{flex-shrink:0;padding:4px 8px}
   .chip{padding:2px 8px;font-size:10px}
-
-  /* Zona inferior: resto de pantalla */
-  .bottom-zone{flex:1;overflow:hidden;display:flex;flex-direction:column}
-  .grid-zone{flex:1;overflow-y:auto}
+  .grid-zone{flex:1;min-height:0;overflow-y:auto}
 
   /* Grid 3 columnas */
-  .grid{grid-template-columns:repeat(3,1fr) !important;gap:5px;padding:4px 6px 12px}
-  .clogo{height:52px}
-  .cfb{height:52px;font-size:10px}
+  .grid{
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:5px;padding:4px 6px 16px;
+  }
+  .clogo,.cfb{height:52px}
+  .cfb{font-size:10px}
   .cname{font-size:10px}
   .ccat{font-size:8px}
   .ch-hd{padding:5px 8px 2px}
   .ch-hd h2{font-size:12px}
   .ch-hd span{font-size:10px}
+  .ch-load{padding:8px;font-size:11px}
 }
 </style>
 </head>
