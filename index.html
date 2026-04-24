@@ -59,7 +59,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 ═══════════════════════════════════ */
 .player-zone{
   display:flex;flex-shrink:0;
-  height:300px; /* altura fija — player + lista al mismo nivel */
+  height:420px; /* altura fija — player + lista al mismo nivel */
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -235,6 +235,33 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .ad{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:6px;text-align:center;color:var(--text2);font-size:10px;min-height:44px;display:flex;align-items:center;justify-content:center}
 
 /* MOBILE */
+
+/* ── BOTÓN SALIR FULLSCREEN ── */
+.fs-exit{
+  display:none; /* oculto por defecto */
+  position:fixed;
+  top:14px;right:14px;
+  z-index:9999;
+  background:rgba(0,0,0,0.75);
+  border:1px solid rgba(255,255,255,0.25);
+  color:#fff;
+  padding:7px 16px;
+  border-radius:20px;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .2s;
+  backdrop-filter:blur(8px);
+}
+.fs-exit:hover{background:var(--accent);border-color:var(--accent)}
+
+/* Mostrar solo cuando hay fullscreen activo */
+:fullscreen .fs-exit,
+:-webkit-full-screen .fs-exit{display:block !important}
+/* fallback: clase JS */
+body.is-fullscreen .fs-exit{display:block !important}
+
 /* ═══ TABLET ═══ */
 @media(max-width:900px){
   :root{--sidebar:0px}
@@ -451,9 +478,11 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
         <span class="pn" id="pname">—</span>
         <div class="pbts">
           <button class="pbt" id="pinBtn" onclick="togglePin()" title="Fijar">📌</button>
-          <button class="pbt" onclick="goFS()" title="Pantalla completa">⛶</button>
+          <button class="pbt" id="fsBtn" onclick="goFS()" title="Pantalla completa">⛶</button>
         </div>
       </div>
+      <!-- Botón salir fullscreen — solo visible en pantalla completa -->
+      <button class="fs-exit" id="fsExit" onclick="exitFS()" title="Salir de pantalla completa">✕ Salir</button>
     </div>
 
     <!-- ═══ LISTA LATERAL DESLIZABLE ═══ -->
@@ -1006,13 +1035,33 @@ function togglePin() {
 }
 
 function goFS() {
-  const el = g('vr');
+  const el = g('player-col') || g('vr');
   if (document.fullscreenElement || document.webkitFullscreenElement) {
-    (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    exitFS();
   } else {
-    (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    const target = document.querySelector('.player-col');
+    (target.requestFullscreen || target.webkitRequestFullscreen).call(target);
+    document.body.classList.add('is-fullscreen');
+    g('fsBtn') && (g('fsBtn').textContent = '⊡');
   }
 }
+function exitFS() {
+  (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  document.body.classList.remove('is-fullscreen');
+  g('fsBtn') && (g('fsBtn').textContent = '⛶');
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    document.body.classList.remove('is-fullscreen');
+    g('fsBtn') && (g('fsBtn').textContent = '⛶');
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) {
+    document.body.classList.remove('is-fullscreen');
+    g('fsBtn') && (g('fsBtn').textContent = '⛶');
+  }
+});
 
 // ════════════════════════════════════
 // FAVORITOS
