@@ -290,13 +290,21 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   padding:5px 6px;
   border-bottom:1px solid var(--border);
   background:var(--bg3);
+  overflow:hidden;
 }
 .side-countries-bar{
   display:flex;gap:4px;
-  overflow-x:auto;scrollbar-width:none;
-  padding-bottom:2px;
+  overflow-x:auto !important;
+  overflow-y:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:var(--accent) transparent;
+  padding-bottom:4px;
+  -webkit-overflow-scrolling:touch;
+  cursor:grab;
 }
-.side-countries-bar::-webkit-scrollbar{display:none}
+.side-countries-bar:active{cursor:grabbing}
+.side-countries-bar::-webkit-scrollbar{height:3px}
+.side-countries-bar::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
 .sc-chip{
   flex-shrink:0;
   padding:3px 8px;border-radius:12px;
@@ -951,6 +959,32 @@ function setCountry(co, btn) {
 function doSearch() {
   curSearch = g('search').value.toLowerCase();
   applyFilter();
+  // Búsqueda también filtra lista lateral
+  if (curSearch) {
+    var src = curMode === 'tv' ? allTV : allRadio;
+    var results = src.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
+    var list = g('chSideList');
+    var html = '';
+    for (var i = 0; i < Math.min(results.length, 300); i++) {
+      var ch = results[i];
+      var isPlay = sideActive && sideActive.id === ch.id;
+      var isFav  = favs.includes(ch.id);
+      var ac = isPlay ? ' active' : '';
+      var flag = ch.co ? ' · ' + (CFLAGS[ch.co]||'') + ch.co : '';
+      var logo = ch.logo
+        ? '<img class="side-logo" src="' + ch.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+        : '<div class="side-fb">' + ch.name.slice(0,2).toUpperCase() + '</div>';
+      html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
+            + logo
+            + '<div class="side-info"><div class="side-name">'+ch.name+'</div><div class="side-cat">'+ch.cat+flag+'</div></div>'
+            + '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>'
+            + '</div>';
+    }
+    g('sideCount').textContent = results.length + ' canales';
+    list.innerHTML = html || '<div style="padding:16px;text-align:center;color:var(--text2);font-size:12px">Sin resultados</div>';
+  } else {
+    renderSideList();
+  }
 }
 
 function showFavs() {
@@ -1329,6 +1363,22 @@ function toggleFav(e, id) {
   const btn = document.querySelector('#cd-' + id + ' .favbtn');
   if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id) ? '⭐' : '☆'; }
 }
+
+// Drag scroll en barra de países lateral
+(function(){
+  var bar = document.getElementById('sideCountriesBar');
+  if (!bar) return;
+  var isDown = false, startX, scrollLeft;
+  bar.addEventListener('mousedown', function(e){
+    isDown = true; startX = e.pageX - bar.offsetLeft; scrollLeft = bar.scrollLeft;
+  });
+  document.addEventListener('mouseup', function(){ isDown = false; });
+  bar.addEventListener('mousemove', function(e){
+    if (!isDown) return;
+    e.preventDefault();
+    bar.scrollLeft = scrollLeft - (e.pageX - bar.offsetLeft - startX);
+  });
+})();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(()=>{});
 </script>
