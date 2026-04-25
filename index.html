@@ -143,6 +143,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .pbt{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .pbt:hover{background:var(--bg4);color:var(--text)}
 .pbt.pin-on{background:rgba(230,63,110,0.2);color:var(--accent);border-color:var(--accent)}
+.pbt.fav-on{background:rgba(255,204,0,0.15);color:#ffcc00;border-color:#ffcc00}
+.pbt.fav-on{background:rgba(255,204,0,0.15);color:#ffcc00;border-color:#ffcc00;font-size:13px}
 
 /* ═══════════════════════════════════
    LISTA LATERAL DESLIZABLE
@@ -527,6 +529,7 @@ body.is-fullscreen .fs-exit{display:block !important}
         <span class="live-b" id="liveBadge">EN VIVO</span>
         <span class="pn" id="pname">—</span>
         <div class="pbts">
+          <button class="pbt" id="playerFavBtn" onclick="togglePlayerFav()" title="Agregar a favoritos">☆</button>
           <button class="pbt" id="pinBtn" onclick="togglePin()" title="Fijar">📌</button>
           <button class="pbt" id="fsBtn" onclick="goFS()" title="Pantalla completa">⛶</button>
         </div>
@@ -1062,8 +1065,14 @@ function playFromGrid(id) {
   const cd = g('cd-' + id);
   if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
   g('pname').textContent = ch.name;
+  updatePlayerFavBtn();
   // Guardar último canal visto
   localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
+  // Marcar en lista lateral
+  document.querySelectorAll('.side-item').forEach(function(el){ el.classList.remove('active','ractive'); });
+  var siEl = g('si-' + id);
+  if (siEl) { siEl.classList.add(ch.type==='radio'?'ractive':'active'); siEl.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  setTimeout(updateFavPlayerBtn, 100);
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
@@ -1132,6 +1141,7 @@ function playFromSide(id) {
   const si = g('si-' + id);
   if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
   g('pname').textContent = ch.name;
+  updatePlayerFavBtn();
   // Guardar último canal visto
   localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
@@ -1337,6 +1347,67 @@ document.addEventListener('webkitfullscreenchange', () => {
 // ════════════════════════════════════
 // FAVORITOS
 // ════════════════════════════════════
+// Favorito desde botón del PLAYER
+function togglePlayerFav() {
+  if (!curCh) return;
+  var id  = curCh.id;
+  var idx = favs.indexOf(id);
+  if (idx === -1) {
+    favs.push(id);
+    showToast('⭐ ' + curCh.name + ' guardado');
+  } else {
+    favs.splice(idx, 1);
+    showToast('Eliminado de favoritos');
+  }
+  localStorage.setItem('cicFavs3', JSON.stringify(favs));
+  updateAll();
+  updatePlayerFavBtn();
+  // Actualizar en lista lateral y grid
+  var sb = document.querySelector('#si-' + id + ' .side-fav');
+  if (sb) { sb.classList.toggle('on', favs.includes(id)); sb.textContent = favs.includes(id) ? '⭐' : '☆'; }
+  var gb = document.querySelector('#cd-' + id + ' .favbtn');
+  if (gb) { gb.classList.toggle('on', favs.includes(id)); gb.textContent = favs.includes(id) ? '⭐' : '☆'; }
+}
+
+// Actualizar icono favorito en player
+function updatePlayerFavBtn() {
+  var btn = g('playerFavBtn');
+  if (!btn || !curCh) return;
+  var isFav = favs.includes(curCh.id);
+  btn.textContent = isFav ? '⭐' : '☆';
+  btn.title = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
+  btn.classList.toggle('fav-on', isFav);
+}
+
+// Favorito desde el PLAYER (botón encima del reproductor)
+function toggleFavPlayer() {
+  if (!curCh) return;
+  var id  = curCh.id;
+  var idx = favs.indexOf(id);
+  if (idx === -1) { favs.push(id); showToast('⭐ Favorito guardado'); }
+  else            { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
+  localStorage.setItem('cicFavs3', JSON.stringify(favs));
+  updateAll();
+  // Actualizar botón del player
+  var btn = document.getElementById('favPlayerBtn');
+  if (btn) { btn.textContent = favs.includes(id) ? '⭐' : '☆'; btn.classList.toggle('fav-on', favs.includes(id)); }
+  // Actualizar en lista lateral y grid
+  var si = document.querySelector('#si-' + id + ' .side-fav');
+  if (si) { si.textContent = favs.includes(id)?'⭐':'☆'; si.classList.toggle('on', favs.includes(id)); }
+  var cd = document.querySelector('#cd-' + id + ' .favbtn');
+  if (cd) { cd.textContent = favs.includes(id)?'⭐':'☆'; cd.classList.toggle('on', favs.includes(id)); }
+}
+
+// Actualizar botón favorito del player según canal actual
+function updateFavPlayerBtn() {
+  if (!curCh) return;
+  var btn = document.getElementById('favPlayerBtn');
+  if (!btn) return;
+  var isFav = favs.includes(curCh.id);
+  btn.textContent = isFav ? '⭐' : '☆';
+  btn.classList.toggle('fav-on', isFav);
+}
+
 // Favorito desde lista lateral
 function toggleSideFav(e, id) {
   e.stopPropagation();
