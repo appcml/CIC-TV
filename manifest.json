@@ -1,17 +1,19 @@
 {
   "name": "CIC TV — Canales en Vivo",
   "short_name": "CIC TV",
-  "description": "Mira TV en vivo gratis. Miles de canales clasificados por categoría: noticias, deportes, entretenimiento, películas, infantil y más. Una app de CIC.",
+  "description": "TV en vivo gratis. Miles de canales clasificados por categoría. Una app de CIC.",
+  "id": "com.cic.tv",
   "start_url": "/CIC-TV/",
   "scope": "/CIC-TV/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0a0a0f",
   "theme_color": "#0a0a0f",
   "orientation": "any",
   "lang": "es",
   "dir": "ltr",
-  "id": "com.cic.tv",
   "categories": ["entertainment", "news"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "web-app-manifest-192x192.png",
@@ -29,19 +31,16 @@
   "shortcuts": [
     {
       "name": "Noticias",
-      "short_name": "Noticias",
       "url": "/CIC-TV/?cat=Noticias",
       "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Deportes",
-      "short_name": "Deportes",
       "url": "/CIC-TV/?cat=Deportes",
       "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Favoritos",
-      "short_name": "Favoritos",
       "url": "/CIC-TV/?cat=favoritos",
       "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
     }
