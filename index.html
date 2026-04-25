@@ -80,7 +80,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .player-zone{
   display:flex;flex-shrink:0;
   /* En pantallas altas: 420px. En pantallas bajas: máx 45vh */
-  height:min(420px, 45vh);
+  height:calc(100vh - 52px); /* PC: ocupa toda la pantalla disponible */
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -145,10 +145,11 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
    Misma altura que el player
 ═══════════════════════════════════ */
 .ch-side{
-  width:230px;flex-shrink:0;
+  width:260px;flex-shrink:0;
   background:var(--bg2);border-left:1px solid var(--border);
   display:flex;flex-direction:column;
   position:relative;
+  height:100%;
 }
 .ch-side-hd{
   flex-shrink:0;padding:7px 10px;
@@ -206,7 +207,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ═══ ZONA INFERIOR: TABS + FILTROS + GRID ═══ */
-.bottom-zone{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:200px}
+.bottom-zone{display:none} /* oculto en PC — solo visible en móvil */
 
 /* TABS */
 .mode-tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
@@ -269,6 +270,31 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .hbt.on #cnt-tv-hdr{background:rgba(255,255,255,0.3)}
 .hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
 
+
+/* ── BARRA PAÍSES LISTA LATERAL ── */
+.side-countries{
+  flex-shrink:0;
+  padding:5px 6px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg3);
+}
+.side-countries-bar{
+  display:flex;gap:4px;
+  overflow-x:auto;scrollbar-width:none;
+  padding-bottom:2px;
+}
+.side-countries-bar::-webkit-scrollbar{display:none}
+.sc-chip{
+  flex-shrink:0;
+  padding:3px 8px;border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--bg4);color:var(--text2);
+  font-size:10px;cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.sc-chip:hover{border-color:var(--accent);color:var(--text)}
+.sc-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
 /* ── BOTÓN SALIR FULLSCREEN ── */
 .fs-exit{
   display:none;
@@ -289,7 +315,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 ══════════════════════════════════════════════ */
 
 /* ── TABLET ── */
-@media(max-width:1024px){
+@media(max-width:900px) and (min-width:601px){
   :root{--sidebar:0px}
   aside{display:none}
 }
@@ -368,7 +394,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   .ad{display:none !important}
 
   /* ZONA INFERIOR: resto de pantalla, scrolleable */
-  .bottom-zone{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+  .bottom-zone{flex:1;min-height:0;display:flex !important;flex-direction:column;overflow:hidden}
   .mode-tabs{flex-shrink:0;height:36px}
   .mtab{font-size:12px;padding:7px}
   .fbar-wrap{flex-shrink:0;padding:5px 10px}
@@ -788,9 +814,12 @@ function setMode(mode) {
   g('sb-' + mode).classList.add('active');
   g('cat-all').classList.add('active');
 
+  // Reset filtros laterales al cambiar modo
+  sideCatFilter = 'all';
+  sideCountryFilter = 'all';
   updateAll();
   applyFilter();
-  renderSideList(); // nueva lista del modo
+  renderSideList();
 }
 
 function setCat(cat, btn) {
@@ -800,7 +829,11 @@ function setCat(cat, btn) {
   document.querySelectorAll('aside .cb').forEach(b => b.classList.remove('active'));
   g('sb-' + curMode).classList.add('active');
   if (btn) btn.classList.add('active');
+  // En desktop: sidebar filtra la lista lateral, no el grid oculto
+  sideCatFilter = cat;
+  sideCountryFilter = 'all'; // reset país al cambiar categoría
   applyFilter();
+  renderSideList();
 }
 
 function setCountry(co, btn) {
@@ -934,10 +967,44 @@ function playFromSide(id) {
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
+// Filtro de país SOLO para lista lateral
+function setSideCountry(co, btn) {
+  sideCountryFilter = co;
+  document.querySelectorAll('.sc-chip').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderSideList();
+}
+
+// Filtro de categoría SOLO para lista lateral (llamado desde sidebar)
+function setSideCat(cat) {
+  sideCatFilter = cat;
+  renderSideList();
+}
+
 function sideScroll(delta) {
   const list = g('chSideList');
   list.scrollTop += delta;
   updateSidePos();
+}
+
+// Actualizar chips de países en la barra lateral
+function updateSideCountriesBar(src) {
+  const bar = g('sideCountriesBar');
+  if (!bar) return;
+  const countries = [...new Set(src.map(c => c.co).filter(Boolean))].sort();
+  bar.innerHTML = '';
+  const ab = document.createElement('button');
+  ab.className = 'sc-chip' + (sideCountryFilter === 'all' ? ' active' : '');
+  ab.textContent = '🌐 Todos';
+  ab.onclick = () => setSideCountry('all', ab);
+  bar.appendChild(ab);
+  countries.slice(0, 30).forEach(co => {
+    const b = document.createElement('button');
+    b.className = 'sc-chip' + (sideCountryFilter === co ? ' active' : '');
+    b.textContent = (CFLAGS[co] || '🏳️') + ' ' + (CNAMES[co] || co);
+    b.onclick = () => setSideCountry(co, b);
+    bar.appendChild(b);
+  });
 }
 
 function updateSidePos() {
