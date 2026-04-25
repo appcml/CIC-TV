@@ -208,6 +208,15 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .side-cat{font-size:9px;color:var(--text2);margin-top:1px}
 .side-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2s infinite}
 .side-dot.rd{background:var(--accent2)}
+/* Botón favorito en lista lateral */
+.side-fav{
+  background:none;border:none;color:var(--text2);
+  cursor:pointer;font-size:12px;padding:2px 4px;
+  flex-shrink:0;opacity:0;transition:all .15s;
+  line-height:1;
+}
+.side-item:hover .side-fav{opacity:1}
+.side-fav.on{opacity:1;color:#ffcc00}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ═══ ZONA INFERIOR: TABS + FILTROS + GRID ═══ */
@@ -524,13 +533,18 @@ body.is-fullscreen .fs-exit{display:block !important}
         <span>Lista</span>
         <small id="sideCount">0</small>
       </div>
-      <!-- Flechas de navegación -->
-      <div class="side-nav">
-        <button class="side-arrow" onclick="sideScroll(-150)" title="Arriba">▲</button>
-        <span class="side-pos" id="sidePos">Desliza</span>
-        <button class="side-arrow" onclick="sideScroll(150)" title="Abajo">▼</button>
+      <!-- BARRA PAÍSES DESLIZANTE -->
+      <div class="side-countries">
+        <div class="side-countries-bar" id="sideCountriesBar">
+          <button class="sc-chip active" onclick="setSideCountry('all',this)">🌐 Todos</button>
+        </div>
       </div>
-      <!-- Lista deslizable -->
+      <!-- Flechas -->
+      <div class="side-nav">
+        <button class="side-arrow" onclick="sideScroll(-150)">▲</button>
+        <span class="side-pos" id="sidePos">1/0</span>
+        <button class="side-arrow" onclick="sideScroll(150)">▼</button>
+      </div>
       <div class="ch-side-list" id="chSideList"></div>
     </div>
 
@@ -680,27 +694,51 @@ function autoplayLast() {
   try {
     const last = JSON.parse(localStorage.getItem('cicLastChannel'));
     if (!last || !last.url) return;
-    // Buscar en canales cargados
-    const allSrc = [...allTV, ...allRadio];
-    const found = allSrc.find(c => c.id === last.id || c.url === last.url);
-    if (found) {
-      showToast('▶ Retomando: ' + found.name);
-      if (found.type === 'radio') {
-        setMode('radio');
-        setTimeout(() => playFromSide(found.id), 300);
-      } else {
-        playFromSide(found.id);
-      }
+
+    g('pname').textContent = last.name;
+    g('pp').classList.add('hide');
+    g('ld').classList.add('show');
+    curCh = last; sideActive = last;
+
+    if (last.type === 'radio') {
+      setMode('radio');
+      setTimeout(() => {
+        g('aname').textContent = last.name;
+        const a = g('ap');
+        a.src = last.url;
+        a.play().catch(() => {});
+        g('ld').classList.remove('show');
+        showToast('📻 Retomando: ' + last.name);
+      }, 500);
     } else {
-      // Canal no en lista base aún — reproducir directamente con los datos guardados
-      curCh = last;
-      g('pname').textContent = last.name;
-      g('pp').classList.add('hide');
-      g('ld').classList.add('show');
-      showToast('▶ Retomando: ' + last.name);
-      playVideo(last);
+      const v = g('vp');
+      if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
+      v.src = ''; v.load();
+      if (Hls.isSupported()) {
+        hlsObj = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
+        hlsObj.loadSource(last.url);
+        hlsObj.attachMedia(v);
+        hlsObj.on(Hls.Events.MANIFEST_PARSED, () => {
+          g('ld').classList.remove('show');
+          v.play().catch(() => g('ld').classList.remove('show'));
+          showToast('▶ Retomando: ' + last.name);
+        });
+        hlsObj.on(Hls.Events.ERROR, (_, d) => {
+          if (d.fatal) g('ld').classList.remove('show');
+        });
+      } else {
+        v.src = last.url; v.load();
+        v.play().catch(() => {});
+        g('ld').classList.remove('show');
+        showToast('▶ Retomando: ' + last.name);
+      }
     }
-  } catch(e) { /* sin último canal */ }
+    // Marcar en lista lateral
+    setTimeout(() => {
+      const si = g('si-' + last.id);
+      if (si) { si.classList.add('active'); si.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+    }, 800);
+  } catch(e) {}
 }
 
 // Detectar dispositivo lento (TV Box, Android antiguo)
@@ -999,23 +1037,43 @@ function playFromGrid(id) {
 function renderSideList() {
   const list = g('chSideList');
   const isR  = curMode === 'radio';
-  g('sideCount').textContent = filtered.length + (isR ? ' radios' : ' canales');
 
-  const allSrc2 = isR ? allRadio : allTV; list.innerHTML = allSrc2.slice(0, 300).map(ch => {
-    const isPlay  = sideActive && sideActive.id === ch.id;
-    const ac      = isPlay ? (isR ? ' ractive' : ' active') : '';
-    const fc      = isR ? ' rfb' : '';
-    const dc      = isR ? ' rd' : '';
-    return `<div class="side-item${ac}" onclick="playFromSide('${ch.id}')" id="si-${ch.id}">
-      ${ch.logo
-        ? `<img class="side-logo" src="${ch.logo}" alt="${ch.name}" onerror="this.outerHTML='<div class=\\'side-fb${fc}\\'>${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>'">`
-        : `<div class="side-fb${fc}">${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>`}
+  // Fuente completa del modo actual
+  let src = isR ? allRadio : allTV;
+
+  // Aplicar filtro de CATEGORÍA
+  if (sideCatFilter !== 'all') src = src.filter(ch => ch.cat === sideCatFilter);
+
+  // Actualizar barra de países con los disponibles en esta categoría
+  const srcPaises = isR ? allRadio : allTV;
+  const filtPaises = sideCatFilter !== 'all' ? srcPaises.filter(ch => ch.cat === sideCatFilter) : srcPaises;
+  updateSideCountriesBar(filtPaises);
+
+  // Aplicar filtro de PAÍS
+  if (sideCountryFilter !== 'all') src = src.filter(ch => ch.co === sideCountryFilter);
+
+  g('sideCount').textContent = src.length + (isR ? ' radios' : ' canales');
+
+  if (!src.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">Sin canales</div>';
+    return;
+  }
+
+  list.innerHTML = src.slice(0, 300).map(ch => {
+    const isPlay = sideActive && sideActive.id === ch.id;
+    const isFav  = favs.includes(ch.id);
+    const ac = isPlay ? (isR ? ' ractive' : ' active') : '';
+    const fc = isR ? ' rfb' : '';
+    return \`<div class="side-item\${ac}" onclick="playFromSide('\${ch.id}')" id="si-\${ch.id}">
+      \${ch.logo
+        ? \`<img class="side-logo" src="\${ch.logo}" alt="\${ch.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'side-fb\${fc}\\'>\${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>'">\`
+        : \`<div class="side-fb\${fc}">\${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>\`}
       <div class="side-info">
-        <div class="side-name">${ch.name}</div>
-        <div class="side-cat">${ch.cat}</div>
+        <div class="side-name">\${ch.name}</div>
+        <div class="side-cat">\${ch.cat}\${ch.co?' · '+(CFLAGS[ch.co]||'')+ch.co:''}</div>
       </div>
-      <div class="side-dot${dc}"></div>
-    </div>`;
+      <button class="side-fav\${isFav?' on':''}" onclick="toggleSideFav(event,'\${ch.id}')">\${isFav?'⭐':'☆'}</button>
+    </div>\`;
   }).join('');
 
   updateSidePos();
@@ -1236,6 +1294,22 @@ document.addEventListener('webkitfullscreenchange', () => {
 // ════════════════════════════════════
 // FAVORITOS
 // ════════════════════════════════════
+// Favorito desde lista lateral
+function toggleSideFav(e, id) {
+  e.stopPropagation();
+  const i = favs.indexOf(id);
+  if (i === -1) { favs.push(id); showToast('⭐ Favorito agregado'); }
+  else          { favs.splice(i, 1); showToast('Eliminado de favoritos'); }
+  localStorage.setItem('cicFavs3', JSON.stringify(favs));
+  updateAll();
+  // Actualizar botón en lista lateral
+  const btn = document.querySelector('#si-' + id + ' .side-fav');
+  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id) ? '⭐' : '☆'; }
+  // Actualizar botón en grid si está visible
+  const gbtn = document.querySelector('#cd-' + id + ' .favbtn');
+  if (gbtn) { gbtn.classList.toggle('on', favs.includes(id)); gbtn.textContent = favs.includes(id) ? '⭐' : '☆'; }
+}
+
 function toggleFav(e, id) {
   e.stopPropagation();
   const i = favs.indexOf(id);
