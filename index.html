@@ -4,10 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="renderer" content="webkit">
+<!-- Precarga fuentes críticas -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CIC TV — Canales en Vivo</title>
 <link rel="manifest" href="manifest.json">
+<!-- TWA / PWABuilder: ocultar barra de URL -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-touch-fullscreen" content="yes">
+<style>
+  /* Ocultar cualquier barra del navegador embebido */
+  :root { --app-height: 100%; }
+  html { height: var(--app-height); }
+</style>
+<script>
+  // Ajuste dinámico para WebView en TV Box y móviles
+  function setAppHeight() {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+  }
+  window.addEventListener('resize', setAppHeight);
+  setAppHeight();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -55,11 +75,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
 /* ═══════════════════════════════════
    ZONA PLAYER + LISTA LATERAL
-   player fijo izq | lista deslizable der
+   Altura adaptativa según viewport
 ═══════════════════════════════════ */
 .player-zone{
   display:flex;flex-shrink:0;
-  height:420px; /* altura fija — player + lista al mismo nivel */
+  /* En pantallas altas: 420px. En pantallas bajas: máx 45vh */
+  height:min(420px, 45vh);
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -185,7 +206,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* ═══ ZONA INFERIOR: TABS + FILTROS + GRID ═══ */
-.bottom-zone{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.bottom-zone{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:200px}
 
 /* TABS */
 .mode-tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
@@ -202,7 +223,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
 /* GRID */
-.grid-zone{flex:1;overflow-y:auto}
+.grid-zone{flex:1;overflow-y:auto;min-height:0}
 .ch-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 12px 3px;flex-shrink:0}
 .ch-hd h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
 .ch-hd span{font-size:10px;color:var(--text2)}
@@ -591,6 +612,17 @@ setTimeout(loadCountries, 800);
 // ════════════════════════════════════
 // FUNCIONES DE UTILIDAD
 // ════════════════════════════════════
+// Detectar dispositivo lento (TV Box, Android antiguo)
+function isSlowDevice() {
+  const nav = navigator;
+  // CPU cores <= 2 o memoria RAM <= 2GB = dispositivo lento
+  const slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
+  const slowRAM = nav.deviceMemory && nav.deviceMemory <= 2;
+  // User agent TV Box
+  const isTVBox = /TV|Android.*Box|AFTM|AFTT|FireTV|Chromecast/i.test(nav.userAgent);
+  return slowCPU || slowRAM || isTVBox;
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -824,7 +856,9 @@ function renderGrid() {
     grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
     return;
   }
-  grid.innerHTML = filtered.slice(0, 300).map(ch => {
+  // Limitar canales según rendimiento del dispositivo
+  const MAX_CARDS = isSlowDevice() ? 50 : 300;
+  grid.innerHTML = filtered.slice(0, MAX_CARDS).map(ch => {
     const isFav  = favs.includes(ch.id);
     const isPlay = gridActive && gridActive.id === ch.id;
     const pc     = isPlay ? (isR ? ' rplaying' : ' playing') : '';
@@ -832,7 +866,7 @@ function renderGrid() {
     const fc     = isR ? ' rfb' : '';
     return `<div class="card${pc}" onclick="playFromGrid('${ch.id}')" id="cd-${ch.id}">
       ${ch.logo
-        ? `<img class="clogo" src="${ch.logo}" alt="${ch.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'cfb${fc}\\'>${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>'">`
+        ? `<img class="clogo" src="${ch.logo}" alt="${ch.name}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'cfb${fc}\\'>${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>'">`
         : `<div class="cfb${fc}">${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>`}
       <div class="ldot${dc}"></div>
       <div class="cinfo">
