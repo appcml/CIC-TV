@@ -618,8 +618,10 @@ let curSearch  = '';
 let isPinned   = false;
 let filtered   = [];
 let favs       = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
-let gridActive = null; // canal activo en grid (independiente de lista lateral)
-let sideActive = null; // canal activo en lista lateral (independiente de grid)
+let gridActive = null;       // canal activo en grid
+let sideActive = null;       // canal activo en lista lateral
+let sideCatFilter = 'all';    // filtro categoría lista lateral
+let sideCountryFilter = 'all'; // filtro país lista lateral
 
 // ════════════════════════════════════
 // CANALES BASE TV
@@ -1035,22 +1037,26 @@ function playFromGrid(id) {
 // RENDER LISTA LATERAL + SCROLL
 // ════════════════════════════════════
 function renderSideList() {
-  const list = g('chSideList');
-  const isR  = curMode === 'radio';
+  var list = g('chSideList');
+  var isR  = curMode === 'radio';
+  var src  = isR ? allRadio.slice() : allTV.slice();
 
-  // Fuente completa del modo actual
-  let src = isR ? allRadio : allTV;
+  // Filtro categoría propia de la lista
+  if (sideCatFilter !== 'all') {
+    src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
+  }
 
-  // Aplicar filtro de CATEGORÍA
-  if (sideCatFilter !== 'all') src = src.filter(ch => ch.cat === sideCatFilter);
+  // Actualizar barra de países
+  var base = isR ? allRadio : allTV;
+  var forPaises = sideCatFilter !== 'all'
+    ? base.filter(function(ch){ return ch.cat === sideCatFilter; })
+    : base;
+  updateSideCountriesBar(forPaises);
 
-  // Actualizar barra de países con los disponibles en esta categoría
-  const srcPaises = isR ? allRadio : allTV;
-  const filtPaises = sideCatFilter !== 'all' ? srcPaises.filter(ch => ch.cat === sideCatFilter) : srcPaises;
-  updateSideCountriesBar(filtPaises);
-
-  // Aplicar filtro de PAÍS
-  if (sideCountryFilter !== 'all') src = src.filter(ch => ch.co === sideCountryFilter);
+  // Filtro país propio de la lista
+  if (sideCountryFilter !== 'all') {
+    src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
+  }
 
   g('sideCount').textContent = src.length + (isR ? ' radios' : ' canales');
 
@@ -1059,23 +1065,26 @@ function renderSideList() {
     return;
   }
 
-  list.innerHTML = src.slice(0, 300).map(ch => {
-    const isPlay = sideActive && sideActive.id === ch.id;
-    const isFav  = favs.includes(ch.id);
-    const ac = isPlay ? (isR ? ' ractive' : ' active') : '';
-    const fc = isR ? ' rfb' : '';
-    return \`<div class="side-item\${ac}" onclick="playFromSide('\${ch.id}')" id="si-\${ch.id}">
-      \${ch.logo
-        ? \`<img class="side-logo" src="\${ch.logo}" alt="\${ch.name}" loading="lazy" onerror="this.outerHTML='<div class=\\'side-fb\${fc}\\'>\${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>'">\`
-        : \`<div class="side-fb\${fc}">\${isR?'📻':ch.name.slice(0,2).toUpperCase()}</div>\`}
-      <div class="side-info">
-        <div class="side-name">\${ch.name}</div>
-        <div class="side-cat">\${ch.cat}\${ch.co?' · '+(CFLAGS[ch.co]||'')+ch.co:''}</div>
-      </div>
-      <button class="side-fav\${isFav?' on':''}" onclick="toggleSideFav(event,'\${ch.id}')">\${isFav?'⭐':'☆'}</button>
-    </div>\`;
-  }).join('');
-
+  var html = '';
+  for (var i = 0; i < Math.min(src.length, 300); i++) {
+    var ch     = src[i];
+    var isPlay = sideActive && sideActive.id === ch.id;
+    var isFav  = favs.includes(ch.id);
+    var ac     = isPlay ? (isR ? ' ractive' : ' active') : '';
+    var fc     = isR ? ' rfb' : '';
+    var flag   = ch.co ? ' &middot; ' + (CFLAGS[ch.co] || '') + ch.co : '';
+    var logo   = ch.logo
+      ? '<img class="side-logo" src="' + ch.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      : '<div class="side-fb ' + fc + '">' + (isR ? '📻' : ch.name.slice(0,2).toUpperCase()) + '</div>';
+    var fav    = '<button class="side-fav' + (isFav ? ' on' : '') + '" onclick="toggleSideFav(event,\''+ch.id+'\')">'+( isFav ? '⭐' : '☆')+'</button>';
+    html += '<div class="side-item' + ac + '" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
+          + logo
+          + '<div class="side-info"><div class="side-name">'+ch.name+'</div>'
+          + '<div class="side-cat">'+ch.cat+flag+'</div></div>'
+          + fav
+          + '</div>';
+  }
+  list.innerHTML = html;
   updateSidePos();
 }
 
