@@ -80,7 +80,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .player-zone{
   display:flex;flex-shrink:0;
   /* En pantallas altas: 420px. En pantallas bajas: máx 45vh */
-  height:calc(100vh - 52px); /* PC: ocupa toda la pantalla disponible */
+  height:calc(100vh - 52px - 80px); /* PC: deja espacio para barra info abajo */
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -298,14 +298,21 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 /* ── BOTÓN SALIR FULLSCREEN ── */
 .fs-exit{
   display:none;
-  position:fixed;top:14px;right:14px;z-index:9999;
-  background:rgba(0,0,0,0.75);border:1px solid rgba(255,255,255,0.25);
-  color:#fff;padding:7px 16px;border-radius:20px;
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  position:fixed;top:14px;right:14px;z-index:99999;
+  background:rgba(230,63,110,0.9);border:none;
+  color:#fff;padding:8px 18px;border-radius:20px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
   cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.5);
+  letter-spacing:0.3px;
 }
-.fs-exit:hover{background:var(--accent);border-color:var(--accent)}
-:fullscreen .fs-exit,:-webkit-full-screen .fs-exit,body.is-fullscreen .fs-exit{display:block !important}
+.fs-exit:hover{background:rgba(200,30,70,0.95);transform:scale(1.05)}
+/* Mostrar en fullscreen — múltiples selectores para compatibilidad */
+:fullscreen .fs-exit{display:block !important}
+:-webkit-full-screen .fs-exit{display:block !important}
+:-moz-full-screen .fs-exit{display:block !important}
+:-ms-fullscreen .fs-exit{display:block !important}
+body.is-fullscreen .fs-exit{display:block !important}
 
 /* ══════════════════════════════════════════════
    RESPONSIVE INTELIGENTE
@@ -634,10 +641,40 @@ applyFilter();
 renderSideList();
 showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 setTimeout(loadCountries, 800);
+// Autoplay último canal visto
+setTimeout(autoplayLast, 1200);
 
 // ════════════════════════════════════
 // FUNCIONES DE UTILIDAD
 // ════════════════════════════════════
+// Autoplay último canal al abrir la app
+function autoplayLast() {
+  try {
+    const last = JSON.parse(localStorage.getItem('cicLastChannel'));
+    if (!last || !last.url) return;
+    // Buscar en canales cargados
+    const allSrc = [...allTV, ...allRadio];
+    const found = allSrc.find(c => c.id === last.id || c.url === last.url);
+    if (found) {
+      showToast('▶ Retomando: ' + found.name);
+      if (found.type === 'radio') {
+        setMode('radio');
+        setTimeout(() => playFromSide(found.id), 300);
+      } else {
+        playFromSide(found.id);
+      }
+    } else {
+      // Canal no en lista base aún — reproducir directamente con los datos guardados
+      curCh = last;
+      g('pname').textContent = last.name;
+      g('pp').classList.add('hide');
+      g('ld').classList.add('show');
+      showToast('▶ Retomando: ' + last.name);
+      playVideo(last);
+    }
+  } catch(e) { /* sin último canal */ }
+}
+
 // Detectar dispositivo lento (TV Box, Android antiguo)
 function isSlowDevice() {
   const nav = navigator;
@@ -923,6 +960,8 @@ function playFromGrid(id) {
   const cd = g('cd-' + id);
   if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
   g('pname').textContent = ch.name;
+  // Guardar último canal visto
+  localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
@@ -964,6 +1003,8 @@ function playFromSide(id) {
   const si = g('si-' + id);
   if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
   g('pname').textContent = ch.name;
+  // Guardar último canal visto
+  localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
