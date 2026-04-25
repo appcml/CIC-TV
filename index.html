@@ -6,26 +6,19 @@
 <meta name="theme-color" content="#0a0a0f">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="renderer" content="webkit">
-<!-- Precarga fuentes críticas -->
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>CIC TV — Canales en Vivo</title>
 <link rel="manifest" href="manifest.json">
-<!-- Google AdSense verificación -->
 <meta name="google-adsense-account" content="ca-pub-6387207876125603">
-<!-- Google AdSense -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603" crossorigin="anonymous"></script>
-<!-- TWA / PWABuilder: ocultar barra de URL -->
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-touch-fullscreen" content="yes">
 <style>
-  /* Ocultar cualquier barra del navegador embebido */
   :root { --app-height: 100%; }
   html { height: var(--app-height); }
 </style>
 <script>
-  // Ajuste dinámico para WebView en TV Box y móviles
   function setAppHeight() {
     document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
   }
@@ -77,14 +70,10 @@ aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px 
 /* MAIN */
 main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
-/* ═══════════════════════════════════
-   ZONA PLAYER + LISTA LATERAL
-   Altura adaptativa según viewport
-═══════════════════════════════════ */
+/* ZONA PLAYER */
 .player-zone{
   display:flex;flex-shrink:0;
-  /* En pantallas altas: 420px. En pantallas bajas: máx 45vh */
-  height:calc(100vh - 52px - 80px); /* PC: deja espacio para barra info abajo */
+  height:calc(100vh - 52px - 80px);
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -117,11 +106,13 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .pp .bi{font-size:36px;opacity:.15}
 .pp p{font-size:11px;opacity:.35}
 .pp.hide{display:none}
+
 /* loading */
 .ld{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:4}
 .ld.show{display:flex}
 .sp{width:26px;height:26px;border-radius:50%;border:3px solid var(--bg4);border-top-color:var(--accent);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
 /* error */
 .er{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,0.9);color:var(--text2);font-size:12px;text-align:center;padding:12px;z-index:4}
 .er.show{display:flex}
@@ -130,6 +121,43 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .ebtns button{padding:5px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:500}
 .retry{background:var(--accent);color:#fff}
 .skip{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+
+/* ══════════════════════════════
+   BOTÓN FAVORITO SOBRE EL PLAYER
+   ══════════════════════════════ */
+.player-fav-btn{
+  position:absolute;
+  top:10px;right:10px;
+  z-index:10;
+  background:rgba(0,0,0,0.65);
+  border:1.5px solid rgba(255,255,255,0.15);
+  color:#ccc;
+  width:36px;height:36px;
+  border-radius:50%;
+  font-size:17px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+  backdrop-filter:blur(6px);
+  opacity:0.7;
+  line-height:1;
+}
+.player-fav-btn:hover{
+  opacity:1;
+  background:rgba(255,204,0,0.25);
+  border-color:#ffcc00;
+  color:#ffcc00;
+  transform:scale(1.1);
+}
+.player-fav-btn.fav-on{
+  opacity:1;
+  background:rgba(255,204,0,0.2);
+  border-color:#ffcc00;
+  color:#ffcc00;
+  box-shadow:0 0 10px rgba(255,204,0,0.35);
+}
+/* ocultar en placeholder y solo mostrar cuando hay canal */
+.player-fav-btn.hidden{display:none}
 
 /* BARRA PLAYER */
 .pbar{
@@ -143,13 +171,9 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .pbt{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .pbt:hover{background:var(--bg4);color:var(--text)}
 .pbt.pin-on{background:rgba(230,63,110,0.2);color:var(--accent);border-color:var(--accent)}
-.pbt.fav-on{background:rgba(255,204,0,0.15);color:#ffcc00;border-color:#ffcc00}
 .pbt.fav-on{background:rgba(255,204,0,0.15);color:#ffcc00;border-color:#ffcc00;font-size:13px}
 
-/* ═══════════════════════════════════
-   LISTA LATERAL DESLIZABLE
-   Misma altura que el player
-═══════════════════════════════════ */
+/* LISTA LATERAL */
 .ch-side{
   width:260px;flex-shrink:0;
   background:var(--bg2);border-left:1px solid var(--border);
@@ -165,7 +189,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .ch-side-hd span{font-family:'Syne',sans-serif;font-weight:700;font-size:12px}
 .ch-side-hd small{color:var(--text2);font-size:10px}
 
-/* Flechas de navegación */
+/* Flechas navegación */
 .side-nav{
   flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
   padding:4px 8px;border-bottom:1px solid var(--border);background:var(--bg3);
@@ -179,11 +203,10 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .side-arrow:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .side-pos{font-size:10px;color:var(--text2)}
 
-/* Lista deslizable */
+/* Lista */
 .ch-side-list{
   flex:1;overflow-y:auto;overflow-x:hidden;
   scroll-behavior:smooth;
-  /* soporte touch */
   -webkit-overflow-scrolling:touch;
 }
 .side-item{
@@ -193,8 +216,19 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   position:relative;
 }
 .side-item:hover{background:var(--bg3)}
-.side-item.active{background:rgba(230,63,110,0.12);border-left:2px solid var(--accent)}
-.side-item.ractive{background:rgba(255,153,0,0.1);border-left:2px solid var(--accent2)}
+
+/* ══ CANAL ACTIVO EN LISTA LATERAL ══ */
+.side-item.active{
+  background:rgba(230,63,110,0.14);
+  border-left:3px solid var(--accent);
+  padding-left:8px;
+}
+.side-item.ractive{
+  background:rgba(255,153,0,0.12);
+  border-left:3px solid var(--accent2);
+  padding-left:8px;
+}
+
 .side-logo{
   width:38px;height:38px;border-radius:6px;
   background:var(--bg3);object-fit:contain;padding:3px;flex-shrink:0;
@@ -210,7 +244,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .side-cat{font-size:9px;color:var(--text2);margin-top:1px}
 .side-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2s infinite}
 .side-dot.rd{background:var(--accent2)}
-/* Botón favorito en lista lateral */
+
+/* Botón fav lista lateral */
 .side-fav{
   background:none;border:none;color:var(--text2);
   cursor:pointer;font-size:12px;padding:2px 4px;
@@ -221,8 +256,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .side-fav.on{opacity:1;color:#ffcc00}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ═══ ZONA INFERIOR: TABS + FILTROS + GRID ═══ */
-.bottom-zone{display:none} /* oculto en PC — solo visible en móvil */
+/* ZONA INFERIOR */
+.bottom-zone{display:none}
 
 /* TABS */
 .mode-tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
@@ -271,22 +306,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 /* AD */
 .ad{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:6px;text-align:center;color:var(--text2);font-size:10px;min-height:44px;display:flex;align-items:center;justify-content:center}
 
-/* MOBILE */
-
-
 /* Contador canales en header */
-#cnt-tv-hdr, #cnt-radio-hdr{
+#cnt-tv-hdr,#cnt-radio-hdr{
   font-size:9px;opacity:0.85;
   background:rgba(255,255,255,0.18);
   padding:1px 5px;border-radius:8px;margin-left:3px;
-  vertical-align:middle;
-  transition:all .3s;
+  vertical-align:middle;transition:all .3s;
 }
 .hbt.on #cnt-tv-hdr{background:rgba(255,255,255,0.3)}
 .hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
 
-
-/* ── BARRA PAÍSES LISTA LATERAL ── */
+/* BARRA PAÍSES LISTA LATERAL */
 .side-countries{
   flex-shrink:0;
   padding:5px 6px;
@@ -318,7 +348,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .sc-chip:hover{border-color:var(--accent);color:var(--text)}
 .sc-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* ── BOTÓN SALIR FULLSCREEN ── */
+/* BOTÓN SALIR FULLSCREEN */
 .fs-exit{
   display:none;
   position:fixed;top:14px;right:14px;z-index:99999;
@@ -330,21 +360,13 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   letter-spacing:0.3px;
 }
 .fs-exit:hover{background:rgba(200,30,70,0.95);transform:scale(1.05)}
-/* Mostrar en fullscreen — múltiples selectores para compatibilidad */
 :fullscreen .fs-exit{display:block !important}
 :-webkit-full-screen .fs-exit{display:block !important}
 :-moz-full-screen .fs-exit{display:block !important}
 :-ms-fullscreen .fs-exit{display:block !important}
 body.is-fullscreen .fs-exit{display:block !important}
 
-/* ══════════════════════════════════════════════
-   RESPONSIVE INTELIGENTE
-   Desktop  > 1024px : player 420px, lista 230px
-   Tablet   600-1024 : sidebar oculto, player 320px
-   Móvil    < 600px  : layout vertical, ads fijos
-══════════════════════════════════════════════ */
-
-/* ── TABLET ── */
+/* TABLET */
 @media(max-width:900px) and (min-width:601px){
   :root{--sidebar:0px}
   aside{display:none}
@@ -354,25 +376,19 @@ body.is-fullscreen .fs-exit{display:block !important}
   .player-zone{height:320px}
 }
 
-/* ── MÓVIL ── */
+/* MÓVIL */
 @media(max-width:600px){
   :root{--sidebar:0px}
   aside{display:none}
-
-  /* Layout columna, sin overflow */
   body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
   .body{flex:1;flex-direction:column;overflow:hidden;min-height:0}
   main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-
-  /* AD FIJO TOP */
   .ad-top-mobile{
     flex-shrink:0;height:44px;
     background:var(--bg2);border-bottom:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;
     font-size:10px;color:var(--text2);
   }
-
-  /* PLAYER ZONE: 100% ancho, sin lista lateral */
   .player-zone{
     flex-direction:column !important;
     flex-shrink:0;
@@ -384,7 +400,6 @@ body.is-fullscreen .fs-exit{display:block !important}
     width:100% !important;
     display:flex;flex-direction:column;position:relative;background:#000;
   }
-  /* Video 16:9 real con padding trick */
   .video-ratio{
     position:relative !important;
     width:100% !important;
@@ -402,36 +417,24 @@ body.is-fullscreen .fs-exit{display:block !important}
     flex:none !important;
     min-height:90px;padding:12px;
   }
-
-  /* OCULTAR lista lateral en móvil */
   .ch-side{display:none !important}
-
-  /* Barra player compacta */
   .pbar{padding:4px 10px;flex-shrink:0}
   .pn{font-size:10px}
   .pbt{width:22px;height:22px;font-size:10px}
   .live-b,.radio-b{font-size:8px;padding:2px 5px}
-
-  /* AD FIJO BOTTOM */
   .ad-bottom-mobile{
     flex-shrink:0;height:44px;
     background:var(--bg2);border-top:1px solid var(--border);
     display:flex;align-items:center;justify-content:center;
     font-size:10px;color:var(--text2);
   }
-
-  /* Ocultar ads desktop */
   .ad{display:none !important}
-
-  /* ZONA INFERIOR: resto de pantalla, scrolleable */
   .bottom-zone{flex:1;min-height:0;display:flex !important;flex-direction:column;overflow:hidden}
   .mode-tabs{flex-shrink:0;height:36px}
   .mtab{font-size:12px;padding:7px}
   .fbar-wrap{flex-shrink:0;padding:5px 10px}
   .chip{padding:3px 9px;font-size:11px}
   .grid-zone{flex:1;min-height:0;overflow-y:auto}
-
-  /* Grid 3 columnas */
   .grid{
     grid-template-columns:repeat(3,1fr) !important;
     gap:6px;padding:5px 8px 16px;
@@ -444,8 +447,9 @@ body.is-fullscreen .fs-exit{display:block !important}
   .ch-hd h2{font-size:13px}
   .ch-hd span{font-size:11px}
   .ch-load{padding:8px;font-size:11px}
+  /* botón fav flotante más pequeño en móvil */
+  .player-fav-btn{width:30px;height:30px;font-size:14px;top:7px;right:7px}
 }
-
 </style>
 </head>
 <body>
@@ -458,9 +462,10 @@ body.is-fullscreen .fs-exit{display:block !important}
     <input type="text" id="search" placeholder="Buscar canal o radio..." oninput="doSearch()">
   </div>
   <div class="hbts">
-    <button class="hbt" onclick="showFavs()">⭐</button>
-    <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV <span id="cnt-tv-hdr" style="font-size:9px;opacity:0.8;background:rgba(255,255,255,0.2);padding:1px 5px;border-radius:8px;margin-left:2px">0</span></button>
-    <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio <span id="cnt-radio-hdr" style="font-size:9px;opacity:0.8;background:rgba(255,255,255,0.2);padding:1px 5px;border-radius:8px;margin-left:2px">0</span></button>
+    <!-- ⭐ botón header: muestra TODOS los favoritos en el grid/lista -->
+    <button class="hbt" onclick="showFavs()" title="Ver mis favoritos">⭐</button>
+    <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV <span id="cnt-tv-hdr">0</span></button>
+    <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio <span id="cnt-radio-hdr">0</span></button>
     <button class="hbt" onclick="refreshAll()">↻</button>
   </div>
 </header>
@@ -492,15 +497,13 @@ body.is-fullscreen .fs-exit{display:block !important}
 <main>
 
   <div class="ad-top-mobile">
-  <ins class="adsbygoogle"
-    style="display:block;width:100%;height:44px"
-    data-ad-client="ca-pub-6387207876125603"
-    data-ad-slot="auto"
-    data-ad-format="horizontal"
-    data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
-  <!-- ═══ PLAYER ZONE ═══ -->
+    <ins class="adsbygoogle" style="display:block;width:100%;height:44px"
+      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
+      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- PLAYER ZONE -->
   <div class="player-zone">
 
     <!-- PLAYER -->
@@ -518,39 +521,44 @@ body.is-fullscreen .fs-exit{display:block !important}
             <button class="skip" onclick="nextCh()">▶ Siguiente</button>
           </div>
         </div>
+
+        <!-- ★ BOTÓN FAVORITO SOBRE EL VIDEO — MEJORA 1 -->
+        <button class="player-fav-btn hidden" id="playerFavOverlay"
+                onclick="togglePlayerFav()" title="Agregar / quitar favorito">☆</button>
+
       </div>
+
       <div class="audio-zone" id="audioZone">
         <div class="aicon">📻</div>
         <div class="aname" id="aname">Selecciona una radio</div>
         <div class="acat" id="acat">—</div>
         <audio id="ap" controls></audio>
       </div>
+
       <div class="pbar">
         <span class="live-b" id="liveBadge">EN VIVO</span>
         <span class="pn" id="pname">—</span>
         <div class="pbts">
-          <button class="pbt" id="playerFavBtn" onclick="togglePlayerFav()" title="Agregar a favoritos">☆</button>
+          <!-- botón fav en barra inferior también (redundante pero útil) -->
+          <button class="pbt" id="playerFavBtn" onclick="togglePlayerFav()" title="Favorito">☆</button>
           <button class="pbt" id="pinBtn" onclick="togglePin()" title="Fijar">📌</button>
           <button class="pbt" id="fsBtn" onclick="goFS()" title="Pantalla completa">⛶</button>
         </div>
       </div>
-      <!-- Botón salir fullscreen — solo visible en pantalla completa -->
-      <button class="fs-exit" id="fsExit" onclick="exitFS()" title="Salir de pantalla completa">✕ Salir</button>
+      <button class="fs-exit" id="fsExit" onclick="exitFS()">✕ Salir</button>
     </div>
 
-    <!-- ═══ LISTA LATERAL DESLIZABLE ═══ -->
+    <!-- LISTA LATERAL -->
     <div class="ch-side">
       <div class="ch-side-hd">
         <span>Lista</span>
         <small id="sideCount">0</small>
       </div>
-      <!-- BARRA PAÍSES DESLIZANTE -->
       <div class="side-countries">
         <div class="side-countries-bar" id="sideCountriesBar">
           <button class="sc-chip active" onclick="setSideCountry('all',this)">🌐 Todos</button>
         </div>
       </div>
-      <!-- Flechas -->
       <div class="side-nav">
         <button class="side-arrow" onclick="sideScroll(-150)">▲</button>
         <span class="side-pos" id="sidePos">1/0</span>
@@ -560,33 +568,25 @@ body.is-fullscreen .fs-exit{display:block !important}
     </div>
 
   </div><!-- /player-zone -->
+
   <div class="ad-bottom-mobile">
-  <ins class="adsbygoogle"
-    style="display:block;width:100%;height:44px"
-    data-ad-client="ca-pub-6387207876125603"
-    data-ad-slot="auto"
-    data-ad-format="horizontal"
-    data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
+    <ins class="adsbygoogle" style="display:block;width:100%;height:44px"
+      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
+      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
 
-  <!-- ZONA INFERIOR -->
+  <!-- ZONA INFERIOR (solo móvil) -->
   <div class="bottom-zone">
-
-    <!-- TABS -->
     <div class="mode-tabs">
       <button class="mtab active" id="tab-tv" onclick="setMode('tv')">📺 TV en Vivo</button>
       <button class="mtab rtab" id="tab-radio" onclick="setMode('radio')">📻 Radio</button>
     </div>
-
-    <!-- FILTROS PAÍS -->
     <div class="fbar-wrap">
       <div class="fbar" id="fbar">
         <button class="chip active" onclick="setCountry('all',this)">🌐 Todos</button>
       </div>
     </div>
-
-    <!-- GRID -->
     <div class="grid-zone">
       <div class="ch-hd">
         <h2 id="stitle">Cargando...</h2>
@@ -595,17 +595,13 @@ body.is-fullscreen .fs-exit{display:block !important}
       <div class="ch-load show" id="chload">⏳ Cargando canales...</div>
       <div class="grid" id="grid"></div>
       <div class="ad">
-  <ins class="adsbygoogle"
-    style="display:block;width:100%;height:90px"
-    data-ad-client="ca-pub-6387207876125603"
-    data-ad-slot="auto"
-    data-ad-format="horizontal"
-    data-full-width-responsive="true"></ins>
-  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-</div>
+        <ins class="adsbygoogle" style="display:block;width:100%;height:90px"
+          data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
+          data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      </div>
     </div>
-
-  </div><!-- /bottom-zone -->
+  </div>
 
 </main>
 </div><!-- /body -->
@@ -615,24 +611,24 @@ body.is-fullscreen .fs-exit{display:block !important}
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 <script>
 // ════════════════════════════════════
-// VARIABLES GLOBALES — todas al inicio
+// VARIABLES GLOBALES
 // ════════════════════════════════════
-let toastTimer = null;
-let errTimer   = null;
-let hlsObj     = null;
-let curCh      = null;
-let curIdx     = -1;
-let curMode    = 'tv';
-let curCat     = 'all';
-let curCountry = 'all';
-let curSearch  = '';
-let isPinned   = false;
-let filtered   = [];
-let favs       = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
-let gridActive = null;       // canal activo en grid
-let sideActive = null;       // canal activo en lista lateral
-let sideCatFilter = 'all';    // filtro categoría lista lateral
-let sideCountryFilter = 'all'; // filtro país lista lateral
+let toastTimer       = null;
+let errTimer         = null;
+let hlsObj           = null;
+let curCh            = null;
+let curIdx           = -1;
+let curMode          = 'tv';
+let curCat           = 'all';
+let curCountry       = 'all';
+let curSearch        = '';
+let isPinned         = false;
+let filtered         = [];
+let favs             = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
+let gridActive       = null;
+let sideActive       = null;
+let sideCatFilter    = 'all';
+let sideCountryFilter= 'all';
 
 // ════════════════════════════════════
 // CANALES BASE TV
@@ -684,7 +680,7 @@ let allRadio = [
 // DATOS PAÍSES
 // ════════════════════════════════════
 const COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
-const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria','NL':'P. Bajos'};
+const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
 const CAT_MAP = {news:'Noticias',sports:'Deportes',entertainment:'Entretenimiento',movies:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',business:'Negocios',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',religion:'Religiosos'};
 
@@ -696,90 +692,138 @@ applyFilter();
 renderSideList();
 showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 setTimeout(loadCountries, 800);
-// Autoplay último canal visto
-setTimeout(autoplayLast, 1200);
 
-// ════════════════════════════════════
-// FUNCIONES DE UTILIDAD
-// ════════════════════════════════════
-// Autoplay último canal al abrir la app
-function autoplayLast() {
+// ════════════════ MEJORA 2 ════════════════
+// AUTOPLAY INMEDIATO — reproducir último canal al cargar la app
+// Se ejecuta en cuanto la página carga, sin espera innecesaria
+// ═════════════════════════════════════════
+(function autoplayLast() {
   try {
     const last = JSON.parse(localStorage.getItem('cicLastChannel'));
     if (!last || !last.url) return;
 
+    // Poner nombre en el player de inmediato
     g('pname').textContent = last.name;
     g('pp').classList.add('hide');
     g('ld').classList.add('show');
-    curCh = last; sideActive = last;
+    curCh      = last;
+    sideActive = last;
+
+    // Mostrar el botón fav flotante con el estado correcto
+    updatePlayerFavBtn();
 
     if (last.type === 'radio') {
+      // Si era radio, cambiar modo y reproducir
       setMode('radio');
-      setTimeout(() => {
+      setTimeout(function() {
         g('aname').textContent = last.name;
-        const a = g('ap');
+        var a = g('ap');
         a.src = last.url;
-        a.play().catch(() => {});
+        a.play().catch(function(){});
         g('ld').classList.remove('show');
         showToast('📻 Retomando: ' + last.name);
-      }, 500);
+      }, 600);
     } else {
-      const v = g('vp');
+      // Si era TV, iniciar HLS directamente
+      var v = g('vp');
       if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
       v.src = ''; v.load();
-      if (Hls.isSupported()) {
+
+      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
         hlsObj = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
         hlsObj.loadSource(last.url);
         hlsObj.attachMedia(v);
-        hlsObj.on(Hls.Events.MANIFEST_PARSED, () => {
+        hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
           g('ld').classList.remove('show');
-          v.play().catch(() => g('ld').classList.remove('show'));
+          v.play().catch(function(){ g('ld').classList.remove('show'); });
           showToast('▶ Retomando: ' + last.name);
         });
-        hlsObj.on(Hls.Events.ERROR, (_, d) => {
-          if (d.fatal) g('ld').classList.remove('show');
+        hlsObj.on(Hls.Events.ERROR, function(_, d) {
+          if (d.fatal) { g('ld').classList.remove('show'); g('er').classList.add('show'); }
         });
-      } else {
+      } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
         v.src = last.url; v.load();
-        v.play().catch(() => {});
+        v.play().catch(function(){});
         g('ld').classList.remove('show');
         showToast('▶ Retomando: ' + last.name);
+      } else {
+        v.src = last.url; v.load();
+        v.play().catch(function(){});
+        g('ld').classList.remove('show');
       }
     }
-    // Marcar en lista lateral
-    setTimeout(() => {
-      const si = g('si-' + last.id);
-      if (si) { si.classList.add('active'); si.scrollIntoView({behavior:'smooth', block:'nearest'}); }
-    }, 800);
-  } catch(e) {}
+
+    // ════ MEJORA 3: marcar canal activo en lista lateral + scroll ════
+    // Se ejecuta tras un pequeño delay para que el DOM esté listo
+    setTimeout(function() {
+      markSideActive(last);
+    }, 300);
+
+  } catch(e) { console.warn('autoplayLast error:', e); }
+})();
+
+// ════════════════════════════════════
+// FUNCIÓN CENTRAL: marcar canal activo en lista lateral
+// Elimina clases previas, aplica active, y hace scroll al elemento
+// ════════════════════════════════════
+function markSideActive(ch) {
+  if (!ch) return;
+  // Quitar cualquier marca previa
+  document.querySelectorAll('.side-item').forEach(function(el) {
+    el.classList.remove('active', 'ractive');
+  });
+  // Buscar el elemento en la lista lateral
+  var el = g('si-' + ch.id);
+  if (el) {
+    el.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
+    // Scroll suave hacia el canal activo
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    // El canal puede no estar visible porque hay filtros activos —
+    // resetear filtros de la lista lateral para que aparezca
+    sideCatFilter     = 'all';
+    sideCountryFilter = 'all';
+    // Actualizar chips de países a "Todos"
+    document.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
+    var allChip = document.querySelector('.sc-chip');
+    if (allChip) allChip.classList.add('active');
+    renderSideList();
+    // Intentar scroll de nuevo tras renderizar
+    setTimeout(function() {
+      var el2 = g('si-' + ch.id);
+      if (el2) {
+        el2.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
+        el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 200);
+  }
 }
 
-// Detectar dispositivo lento (TV Box, Android antiguo)
+// ════════════════════════════════════
+// UTILIDADES
+// ════════════════════════════════════
 function isSlowDevice() {
-  const nav = navigator;
-  // CPU cores <= 2 o memoria RAM <= 2GB = dispositivo lento
-  const slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
-  const slowRAM = nav.deviceMemory && nav.deviceMemory <= 2;
-  // User agent TV Box
-  const isTVBox = /TV|Android.*Box|AFTM|AFTT|FireTV|Chromecast/i.test(nav.userAgent);
+  var nav = navigator;
+  var slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
+  var slowRAM = nav.deviceMemory && nav.deviceMemory <= 2;
+  var isTVBox = /TV|Android.*Box|AFTM|AFTT|FireTV|Chromecast/i.test(nav.userAgent);
   return slowCPU || slowRAM || isTVBox;
 }
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  var t = g('toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2500);
 }
 
 function g(id) { return document.getElementById(id); }
 
 // ════════════════════════════════════
-// CARGA DE PAÍSES (paralela)
+// CARGA DE PAÍSES
 // ════════════════════════════════════
 async function loadCountries() {
-  // Múltiples proxies CORS — si uno falla intenta el siguiente
   const proxies = [
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?url=',
@@ -787,14 +831,11 @@ async function loadCountries() {
     'https://thingproxy.freeboard.io/fetch/',
   ];
 
-  // Función para intentar fetch con múltiples proxies
   async function fetchM3U(url) {
-    // Primero intentar directo (por si el servidor lo permite)
     try {
       const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
       if (r.ok) return await r.text();
     } catch(e) {}
-    // Luego con proxies
     for (const px of proxies) {
       try {
         const r = await fetch(px + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
@@ -804,7 +845,6 @@ async function loadCountries() {
     return null;
   }
 
-  // Cargar todos los países en paralelo
   await Promise.allSettled(Object.entries(COUNTRY_URLS).map(async ([code, slug]) => {
     const txt = await fetchM3U(`https://iptv-org.github.io/iptv/countries/${slug}.m3u`);
     if (!txt) return;
@@ -814,10 +854,11 @@ async function loadCountries() {
       allTV = [...allTV, ...newCh];
       updateAll();
       if (curMode === 'tv') { applyFilter(); renderSideList(); }
+      // Si hay canal activo, re-marcarlo tras re-renderizar la lista
+      if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
     }
   }));
 
-  // Cargar también lista general en español
   const txtSpa = await fetchM3U('https://iptv-org.github.io/iptv/languages/spa.m3u');
   if (txtSpa) {
     const parsed = parseM3U(txtSpa, 'INT', 'tv');
@@ -826,11 +867,12 @@ async function loadCountries() {
       allTV = [...allTV, ...newCh];
       updateAll();
       if (curMode === 'tv') { applyFilter(); renderSideList(); }
+      if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
     }
   }
 
   g('chload').classList.remove('show');
-  showToast(`✓ ${allTV.length} canales · ${allRadio.length} radios`);
+  showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 }
 
 function parseM3U(txt, co, type) {
@@ -860,32 +902,39 @@ function parseM3U(txt, co, type) {
 }
 
 // ════════════════════════════════════
-// ACTUALIZAR CONTADORES + FILTROS PAÍS
+// CONTADORES + FILTROS PAÍS
 // ════════════════════════════════════
-function updateAll() {
-  const src = curMode === 'tv' ? allTV : allRadio;
-  const cats = ['Noticias','Deportes','Entretenimiento','Películas','Series','Infantil','Música','Documentales','Religiosos','Negocios','General'];
-  const set = (id, v) => { const e = g(id); if (e) e.textContent = v; };
+// Fallback de imágenes rotas en el grid (llamado desde onerror en HTML)
+function imgFallback(el, fc, fb) {
+  var div = document.createElement('div');
+  div.className = 'cfb' + fc;
+  div.textContent = fb;
+  if (el.parentNode) el.parentNode.replaceChild(div, el);
+}
 
-  set('cn-tv',    allTV.length);
-  set('cn-radio', allRadio.length);
+function updateAll() {
+  const src  = curMode === 'tv' ? allTV : allRadio;
+  const cats = ['Noticias','Deportes','Entretenimiento','Películas','Series','Infantil','Música','Documentales','Religiosos','Negocios','General'];
+  const set  = function(id, v){ var e = g(id); if(e) e.textContent = v; };
+
+  set('cn-tv',         allTV.length);
+  set('cn-radio',      allRadio.length);
   set('cnt-tv-hdr',    allTV.length);
   set('cnt-radio-hdr', allRadio.length);
-  set('cn-fav',   favs.length);
-  set('cn-all',   src.length);
-  cats.forEach(c => set('cn-' + c, src.filter(ch => ch.cat === c).length));
+  set('cn-fav',        favs.length);
+  set('cn-all',        src.length);
+  cats.forEach(function(c){ set('cn-'+c, src.filter(function(ch){ return ch.cat===c; }).length); });
 
-  // Chips de países
-  const countries = [...new Set(src.map(c => c.co).filter(Boolean))].sort();
+  const countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
   const bar = g('fbar');
   if (!bar) return;
   bar.innerHTML = '';
   const ab = mkChip('🌐 Todos', curCountry === 'all');
-  ab.onclick = () => setCountry('all', ab);
+  ab.onclick = function(){ setCountry('all', ab); };
   bar.appendChild(ab);
-  countries.forEach(co => {
-    const b = mkChip((CFLAGS[co]||'🏳️') + ' ' + (CNAMES[co]||co), curCountry === co);
-    b.onclick = () => setCountry(co, b);
+  countries.forEach(function(co) {
+    const b = mkChip((CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co), curCountry === co);
+    b.onclick = function(){ setCountry(co, b); };
     bar.appendChild(b);
   });
 }
@@ -918,20 +967,17 @@ function setMode(mode) {
   g('tab-radio').classList.toggle('active', isR);
   g('cat-label').textContent = isR ? 'Categorías Radio' : 'Categorías TV';
 
-  // Player: video vs audio
   g('vr').style.display = isR ? 'none' : 'block';
   g('audioZone').classList.toggle('show', isR);
-  g('liveBadge').textContent = isR ? '📻 RADIO' : 'EN VIVO';
+  g('liveBadge').textContent  = isR ? '📻 RADIO' : 'EN VIVO';
   g('liveBadge').style.background = isR ? 'var(--accent2)' : 'var(--accent)';
   g('liveBadge').style.color = isR ? '#000' : '#fff';
 
-  // Reset cat sidebar
-  document.querySelectorAll('aside .cb').forEach(b => b.classList.remove('active'));
-  g('sb-' + mode).classList.add('active');
+  document.querySelectorAll('aside .cb').forEach(function(b){ b.classList.remove('active'); });
+  g('sb-'+mode).classList.add('active');
   g('cat-all').classList.add('active');
 
-  // Reset filtros laterales al cambiar modo
-  sideCatFilter = 'all';
+  sideCatFilter     = 'all';
   sideCountryFilter = 'all';
   updateAll();
   applyFilter();
@@ -939,22 +985,21 @@ function setMode(mode) {
 }
 
 function setCat(cat, btn) {
-  curCat = cat;
+  curCat    = cat;
   curSearch = '';
   g('search').value = '';
-  document.querySelectorAll('aside .cb').forEach(b => b.classList.remove('active'));
-  g('sb-' + curMode).classList.add('active');
+  document.querySelectorAll('aside .cb').forEach(function(b){ b.classList.remove('active'); });
+  g('sb-'+curMode).classList.add('active');
   if (btn) btn.classList.add('active');
-  // En desktop: sidebar filtra la lista lateral, no el grid oculto
-  sideCatFilter = cat;
-  sideCountryFilter = 'all'; // reset país al cambiar categoría
+  sideCatFilter     = cat;
+  sideCountryFilter = 'all';
   applyFilter();
   renderSideList();
 }
 
 function setCountry(co, btn) {
   curCountry = co;
-  document.querySelectorAll('.chip').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
   applyFilter();
 }
@@ -962,39 +1007,23 @@ function setCountry(co, btn) {
 function doSearch() {
   curSearch = g('search').value.toLowerCase();
   applyFilter();
-  // Búsqueda también filtra lista lateral
   if (curSearch) {
     var src = curMode === 'tv' ? allTV : allRadio;
     var results = src.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
-    var list = g('chSideList');
-    var html = '';
-    for (var i = 0; i < Math.min(results.length, 300); i++) {
-      var ch = results[i];
-      var isPlay = sideActive && sideActive.id === ch.id;
-      var isFav  = favs.includes(ch.id);
-      var ac = isPlay ? ' active' : '';
-      var flag = ch.co ? ' · ' + (CFLAGS[ch.co]||'') + ch.co : '';
-      var logo = ch.logo
-        ? '<img class="side-logo" src="' + ch.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-        : '<div class="side-fb">' + ch.name.slice(0,2).toUpperCase() + '</div>';
-      html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
-            + logo
-            + '<div class="side-info"><div class="side-name">'+ch.name+'</div><div class="side-cat">'+ch.cat+flag+'</div></div>'
-            + '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>'
-            + '</div>';
-    }
-    g('sideCount').textContent = results.length + ' canales';
-    list.innerHTML = html || '<div style="padding:16px;text-align:center;color:var(--text2);font-size:12px">Sin resultados</div>';
+    renderSideFromList(results);
   } else {
     renderSideList();
   }
 }
 
 function showFavs() {
-  filtered = [...allTV, ...allRadio].filter(c => favs.includes(c.id));
+  // Mostrar todos los favoritos en el grid
+  filtered = [...allTV, ...allRadio].filter(function(c){ return favs.includes(c.id); });
   g('stitle').textContent = '⭐ Favoritos';
   g('scnt').textContent   = filtered.length + ' guardados';
-  renderGrid(); // solo grid, lista lateral NO se toca
+  renderGrid();
+  // También mostrar solo favoritos en la lista lateral
+  renderSideFromList(filtered);
 }
 
 function refreshAll() {
@@ -1009,98 +1038,74 @@ function refreshAll() {
 function applyFilter() {
   const src = curMode === 'tv' ? allTV : allRadio;
   let list = src;
-  if (curCat !== 'all') list = list.filter(c => c.cat === curCat);
-  if (curCountry !== 'all') list = list.filter(c => c.co === curCountry);
-  if (curSearch) list = list.filter(c =>
-    c.name.toLowerCase().includes(curSearch) ||
-    (CNAMES[c.co]||'').toLowerCase().includes(curSearch)
-  );
+  if (curCat !== 'all')     list = list.filter(function(c){ return c.cat === curCat; });
+  if (curCountry !== 'all') list = list.filter(function(c){ return c.co === curCountry; });
+  if (curSearch)            list = list.filter(function(c){
+    return c.name.toLowerCase().includes(curSearch) ||
+           (CNAMES[c.co]||'').toLowerCase().includes(curSearch);
+  });
   filtered = list;
-  g('stitle').textContent = curCat === 'all' ? (curMode === 'tv' ? 'Todos los canales' : 'Todas las radios') : curCat;
-  g('scnt').textContent   = filtered.length + (curMode === 'tv' ? ' canales' : ' radios');
-  renderGrid(); // filtros solo afectan al grid
+  g('stitle').textContent = curCat === 'all'
+    ? (curMode === 'tv' ? 'Todos los canales' : 'Todas las radios')
+    : curCat;
+  g('scnt').textContent = filtered.length + (curMode === 'tv' ? ' canales' : ' radios');
+  renderGrid();
 }
 
 // ════════════════════════════════════
 // RENDER GRID
 // ════════════════════════════════════
 function renderGrid() {
-  const grid  = g('grid');
-  const isR   = curMode === 'radio';
+  const grid = g('grid');
+  const isR  = curMode === 'radio';
   if (!filtered.length) {
     grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
     return;
   }
-  // Limitar canales según rendimiento del dispositivo
-  const MAX_CARDS = isSlowDevice() ? 50 : 300;
-  grid.innerHTML = filtered.slice(0, MAX_CARDS).map(ch => {
+  const MAX = isSlowDevice() ? 50 : 300;
+  grid.innerHTML = filtered.slice(0, MAX).map(function(ch) {
     const isFav  = favs.includes(ch.id);
     const isPlay = gridActive && gridActive.id === ch.id;
     const pc     = isPlay ? (isR ? ' rplaying' : ' playing') : '';
     const dc     = isR ? ' rd' : '';
     const fc     = isR ? ' rfb' : '';
-    return `<div class="card${pc}" onclick="playFromGrid('${ch.id}')" id="cd-${ch.id}">
-      ${ch.logo
-        ? `<img class="clogo" src="${ch.logo}" alt="${ch.name}" loading="lazy" decoding="async" onerror="this.outerHTML='<div class=\\'cfb${fc}\\'>${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>'">`
-        : `<div class="cfb${fc}">${isR?'📻':ch.name.slice(0,3).toUpperCase()}</div>`}
-      <div class="ldot${dc}"></div>
-      <div class="cinfo">
-        <div class="cname" title="${ch.name}">${ch.name}</div>
-        <div class="ccat">${ch.cat}${ch.co?' · '+(CFLAGS[ch.co]||'')+ch.co:''}</div>
-      </div>
-      <button class="favbtn${isFav?' on':''}" onclick="toggleFav(event,'${ch.id}')">${isFav?'⭐':'☆'}</button>
-    </div>`;
+    const fb     = isR ? '📻' : ch.name.slice(0,3).toUpperCase();
+    // Logo: si falla la imagen, reemplazar con fallback via función global
+    const logoHtml = ch.logo
+      ? '<img class="clogo" src="'+ch.logo+'" alt="'+ch.name+'" loading="lazy" decoding="async" onerror="imgFallback(this,\''+fc+'\',\''+fb+'\')">'
+      : '<div class="cfb'+fc+'">'+fb+'</div>';
+    return '<div class="card'+pc+'" onclick="playFromGrid(\''+ch.id+'\')" id="cd-'+ch.id+'">'
+      + logoHtml
+      + '<div class="ldot'+dc+'"></div>'
+      + '<div class="cinfo"><div class="cname" title="'+ch.name+'">'+ch.name+'</div>'
+      + '<div class="ccat">'+ch.cat+(ch.co?' &middot; '+(CFLAGS[ch.co]||'')+ch.co:'')+'</div></div>'
+      + '<button class="favbtn'+(isFav?' on':'')+'" onclick="toggleFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>'
+      + '</div>';
   }).join('');
-  if (filtered.length > 300) grid.innerHTML += `<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando 300 de ${filtered.length} · Usa la búsqueda para filtrar</div>`;
-}
-
-// Clic en GRID → marca grid, NO toca lista lateral
-function playFromGrid(id) {
-  const src = curMode === 'tv' ? allTV : allRadio;
-  const ch  = src.find(c => c.id === id);
-  if (!ch) return;
-  gridActive = ch; curCh = ch;
-  curIdx = filtered.findIndex(c => c.id === id);
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('playing','rplaying'));
-  const cd = g('cd-' + id);
-  if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
-  g('pname').textContent = ch.name;
-  updatePlayerFavBtn();
-  // Guardar último canal visto
-  localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
-  // Marcar en lista lateral
-  document.querySelectorAll('.side-item').forEach(function(el){ el.classList.remove('active','ractive'); });
-  var siEl = g('si-' + id);
-  if (siEl) { siEl.classList.add(ch.type==='radio'?'ractive':'active'); siEl.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-  setTimeout(updateFavPlayerBtn, 100);
-  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
+  if (filtered.length > MAX)
+    grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda para filtrar</div>';
 }
 
 // ════════════════════════════════════
-// RENDER LISTA LATERAL + SCROLL
+// RENDER LISTA LATERAL
 // ════════════════════════════════════
 function renderSideList() {
-  var list = g('chSideList');
-  var isR  = curMode === 'radio';
-  var src  = isR ? allRadio.slice() : allTV.slice();
-
-  // Filtro categoría propia de la lista
-  if (sideCatFilter !== 'all') {
-    src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
-  }
-
-  // Actualizar barra de países
+  var isR = curMode === 'radio';
+  var src = (isR ? allRadio : allTV).slice();
+  if (sideCatFilter !== 'all')     src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
   var base = isR ? allRadio : allTV;
   var forPaises = sideCatFilter !== 'all'
     ? base.filter(function(ch){ return ch.cat === sideCatFilter; })
     : base;
   updateSideCountriesBar(forPaises);
+  if (sideCountryFilter !== 'all') src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
+  renderSideFromList(src);
+}
 
-  // Filtro país propio de la lista
-  if (sideCountryFilter !== 'all') {
-    src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
-  }
-
+// Renderiza la lista lateral desde un array dado
+function renderSideFromList(src) {
+  var list = g('chSideList');
+  var isR  = curMode === 'radio';
   g('sideCount').textContent = src.length + (isR ? ' radios' : ' canales');
 
   if (!src.length) {
@@ -1109,132 +1114,148 @@ function renderSideList() {
   }
 
   var html = '';
-  for (var i = 0; i < Math.min(src.length, 300); i++) {
+  var max  = Math.min(src.length, 300);
+  for (var i = 0; i < max; i++) {
     var ch     = src[i];
     var isPlay = sideActive && sideActive.id === ch.id;
     var isFav  = favs.includes(ch.id);
-    var ac     = isPlay ? (isR ? ' ractive' : ' active') : '';
-    var fc     = isR ? ' rfb' : '';
-    var flag   = ch.co ? ' &middot; ' + (CFLAGS[ch.co] || '') + ch.co : '';
+    var ac     = isPlay ? (ch.type === 'radio' ? ' ractive' : ' active') : '';
+    var fc     = ch.type === 'radio' ? ' rfb' : '';
+    var flag   = ch.co ? ' &middot; '+(CFLAGS[ch.co]||'')+ch.co : '';
     var logo   = ch.logo
-      ? '<img class="side-logo" src="' + ch.logo + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-      : '<div class="side-fb ' + fc + '">' + (isR ? '📻' : ch.name.slice(0,2).toUpperCase()) + '</div>';
-    var fav    = '<button class="side-fav' + (isFav ? ' on' : '') + '" onclick="toggleSideFav(event,\''+ch.id+'\')">'+( isFav ? '⭐' : '☆')+'</button>';
-    html += '<div class="side-item' + ac + '" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
+      ? '<img class="side-logo" src="'+ch.logo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
+      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';
+    var fav = '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
+    html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
           + logo
           + '<div class="side-info"><div class="side-name">'+ch.name+'</div>'
           + '<div class="side-cat">'+ch.cat+flag+'</div></div>'
-          + fav
-          + '</div>';
+          + fav + '</div>';
   }
   list.innerHTML = html;
   updateSidePos();
+
+  // ══ Scroll automático al canal activo después de renderizar ══
+  if (sideActive) {
+    setTimeout(function() {
+      var el = g('si-' + sideActive.id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 80);
+  }
 }
 
-// Clic en LISTA LATERAL → marca lista, NO toca grid
-function playFromSide(id) {
-  const allSrc = curMode === 'tv' ? allTV : allRadio;
-  const ch     = allSrc.find(c => c.id === id);
+// Clic en GRID
+function playFromGrid(id) {
+  const src = curMode === 'tv' ? allTV : allRadio;
+  const ch  = src.find(function(c){ return c.id === id; });
   if (!ch) return;
-  sideActive = ch; curCh = ch;
-  document.querySelectorAll('.side-item').forEach(c => c.classList.remove('active','ractive'));
-  const si = g('si-' + id);
-  if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  gridActive = ch; curCh = ch; sideActive = ch;
+  curIdx = filtered.findIndex(function(c){ return c.id === id; });
+
+  document.querySelectorAll('.card').forEach(function(c){ c.classList.remove('playing','rplaying'); });
+  var cd = g('cd-'+id);
+  if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
+
   g('pname').textContent = ch.name;
   updatePlayerFavBtn();
-  // Guardar último canal visto
-  localStorage.setItem('cicLastChannel', JSON.stringify({id: ch.id, type: ch.type, name: ch.name, url: ch.url, cat: ch.cat, co: ch.co, logo: ch.logo}));
+  localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
+
+  // Marcar en lista lateral y hacer scroll
+  markSideActive(ch);
+
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
-// Filtro de país SOLO para lista lateral
-function setSideCountry(co, btn) {
-  sideCountryFilter = co;
-  document.querySelectorAll('.sc-chip').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderSideList();
+// Clic en LISTA LATERAL
+function playFromSide(id) {
+  const allSrc = curMode === 'tv' ? allTV : allRadio;
+  const ch     = allSrc.find(function(c){ return c.id === id; });
+  if (!ch) return;
+  sideActive = ch; curCh = ch; gridActive = ch;
+
+  // Marcar en lista lateral
+  document.querySelectorAll('.side-item').forEach(function(c){ c.classList.remove('active','ractive'); });
+  var si = g('si-'+id);
+  if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+
+  g('pname').textContent = ch.name;
+  updatePlayerFavBtn();
+  localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
+
+  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
 
-// Filtro de categoría SOLO para lista lateral (llamado desde sidebar)
-function setSideCat(cat) {
-  sideCatFilter = cat;
+// Filtro país lista lateral
+function setSideCountry(co, btn) {
+  sideCountryFilter = co;
+  document.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
   renderSideList();
+  // Re-marcar canal activo después de filtrar
+  if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 150);
 }
 
 function sideScroll(delta) {
-  const list = g('chSideList');
+  var list = g('chSideList');
   list.scrollTop += delta;
   updateSidePos();
 }
 
-// Actualizar chips de países en la barra lateral
 function updateSideCountriesBar(src) {
-  const bar = g('sideCountriesBar');
+  var bar = g('sideCountriesBar');
   if (!bar) return;
-  const countries = [...new Set(src.map(c => c.co).filter(Boolean))].sort();
+  var countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
   bar.innerHTML = '';
-  const ab = document.createElement('button');
+  var ab = document.createElement('button');
   ab.className = 'sc-chip' + (sideCountryFilter === 'all' ? ' active' : '');
   ab.textContent = '🌐 Todos';
-  ab.onclick = () => setSideCountry('all', ab);
+  ab.onclick = function(){ setSideCountry('all', ab); };
   bar.appendChild(ab);
-  countries.slice(0, 30).forEach(co => {
-    const b = document.createElement('button');
+  countries.slice(0, 30).forEach(function(co) {
+    var b = document.createElement('button');
     b.className = 'sc-chip' + (sideCountryFilter === co ? ' active' : '');
-    b.textContent = (CFLAGS[co] || '🏳️') + ' ' + (CNAMES[co] || co);
-    b.onclick = () => setSideCountry(co, b);
+    b.textContent = (CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co);
+    b.onclick = function(){ setSideCountry(co, b); };
     bar.appendChild(b);
   });
 }
 
 function updateSidePos() {
-  const list = g('chSideList');
-  const total = filtered.length;
+  var list  = g('chSideList');
+  var items = list.querySelectorAll('.side-item');
+  var total = items.length;
   if (!total) return;
-  const itemH  = 56;
-  const idx    = Math.round(list.scrollTop / itemH) + 1;
-  g('sidePos').textContent = `${Math.min(idx, total)}/${total}`;
+  var itemH = 56;
+  var idx   = Math.round(list.scrollTop / itemH) + 1;
+  g('sidePos').textContent = Math.min(idx, total) + '/' + total;
 }
 
-// Actualizar posición al hacer scroll
 document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
 
 // ════════════════════════════════════
-// PLAYER — función interna, no toca UI
-// Usar playFromGrid() o playFromSide() desde la UI
+// PLAYER
 // ════════════════════════════════════
-function play(id) {
-  const src = [...allTV, ...allRadio];
-  const ch  = src.find(c => c.id === id);
-  if (!ch) return;
-  curCh  = ch;
-  curIdx = filtered.findIndex(c => c.id === id);
-  if (ch.type !== curMode) setMode(ch.type);
-  g('pname').textContent = ch.name;
-  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
-}
-
 function playVideo(ch) {
   g('pp').classList.add('hide');
   g('er').classList.remove('show');
   g('ld').classList.add('show');
   clearTimeout(errTimer);
-  errTimer = setTimeout(() => { if (g('ld').classList.contains('show')) showErr(); }, 15000);
+  errTimer = setTimeout(function(){ if (g('ld').classList.contains('show')) showErr(); }, 15000);
 
-  const v = g('vp');
+  var v = g('vp');
   if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
   v.src = ''; v.load();
 
-  if (Hls.isSupported()) {
+  if (typeof Hls !== 'undefined' && Hls.isSupported()) {
     hlsObj = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
     hlsObj.loadSource(ch.url);
     hlsObj.attachMedia(v);
-    hlsObj.on(Hls.Events.MANIFEST_PARSED, () => {
+    hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
       clearTimeout(errTimer);
       g('ld').classList.remove('show');
-      v.play().catch(() => {});
+      v.play().catch(function(){});
     });
-    hlsObj.on(Hls.Events.ERROR, (_, d) => { if (d.fatal) tryNative(v, ch.url); });
+    hlsObj.on(Hls.Events.ERROR, function(_, d){ if (d.fatal) tryNative(v, ch.url); });
   } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
     tryNative(v, ch.url);
   } else {
@@ -1247,80 +1268,72 @@ function tryNative(v, url) {
   g('ld').classList.add('show');
   v.src = url; v.load();
   v.play()
-    .then(() => g('ld').classList.remove('show'))
-    .catch(() => g('ld').classList.remove('show'));
-  errTimer = setTimeout(() => { if (v.readyState < 2) showErr(); }, 10000);
+    .then(function(){ g('ld').classList.remove('show'); })
+    .catch(function(){ g('ld').classList.remove('show'); });
+  errTimer = setTimeout(function(){ if (v.readyState < 2) showErr(); }, 10000);
 }
 
 function playRadio(ch) {
   g('aname').textContent = ch.name;
-  g('acat').textContent  = ch.cat + (ch.co ? ' · ' + (CNAMES[ch.co]||ch.co) : '');
-  const a = g('ap');
+  g('acat').textContent  = ch.cat + (ch.co ? ' · '+(CNAMES[ch.co]||ch.co) : '');
+  var a = g('ap');
   a.src = ch.url;
-  a.play().catch(() => {});
+  a.play().catch(function(){});
   showToast('📻 ' + ch.name);
 }
 
-const vp = g('vp');
-vp.addEventListener('canplay',  () => { clearTimeout(errTimer); g('ld').classList.remove('show'); });
-vp.addEventListener('playing',  () => { clearTimeout(errTimer); g('ld').classList.remove('show'); });
-vp.addEventListener('error',    () => showErr());
+var vp = g('vp');
+vp.addEventListener('canplay',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
+vp.addEventListener('playing',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
+vp.addEventListener('error',    function(){ showErr(); });
 
 function showErr() {
   clearTimeout(errTimer);
   g('ld').classList.remove('show');
   g('er').classList.add('show');
 }
+
 function retry() {
   if (!curCh) return;
-  // Reintentar sin cambiar marcas de UI
+  g('er').classList.remove('show');
   curCh.type === 'radio' ? playRadio(curCh) : playVideo(curCh);
 }
+
 function nextCh() {
-  // Navega en la lista lateral (todos los canales)
   const allSrc = curMode === 'tv' ? allTV : allRadio;
   if (!allSrc.length) return;
-  const idx = sideCurCh ? allSrc.findIndex(c => c.id === sideCurCh.id) : -1;
+  const idx  = curCh ? allSrc.findIndex(function(c){ return c.id === curCh.id; }) : -1;
   const next = allSrc[(idx + 1) % allSrc.length];
   playFromSide(next.id);
 }
+
 function prevCh() {
   const allSrc = curMode === 'tv' ? allTV : allRadio;
   if (!allSrc.length) return;
-  const idx = sideCurCh ? allSrc.findIndex(c => c.id === sideCurCh.id) : 0;
+  const idx  = curCh ? allSrc.findIndex(function(c){ return c.id === curCh.id; }) : 0;
   const prev = allSrc[idx <= 0 ? allSrc.length - 1 : idx - 1];
   playFromSide(prev.id);
-}
-function prevCh() {
-  if (!filtered.length) return;
-  const i = curIdx <= 0 ? filtered.length - 1 : curIdx - 1;
-  play(filtered[i].id);
 }
 
 function togglePin() {
   isPinned = !isPinned;
-  const pz = document.querySelector('.player-zone');
-  const btn = g('pinBtn');
+  var pz  = document.querySelector('.player-zone');
+  var btn = g('pinBtn');
   btn.classList.toggle('pin-on', isPinned);
   if (isPinned) {
-    pz.style.position = 'sticky';
-    pz.style.top = '0';
-    pz.style.zIndex = '50';
+    pz.style.position = 'sticky'; pz.style.top = '0'; pz.style.zIndex = '50';
     showToast('📌 Reproductor fijado');
   } else {
-    pz.style.position = '';
-    pz.style.top = '';
-    pz.style.zIndex = '';
+    pz.style.position = ''; pz.style.top = ''; pz.style.zIndex = '';
     showToast('Reproductor libre');
   }
 }
 
 function goFS() {
-  const el = g('player-col') || g('vr');
   if (document.fullscreenElement || document.webkitFullscreenElement) {
     exitFS();
   } else {
-    const target = document.querySelector('.player-col');
+    var target = document.querySelector('.player-col');
     (target.requestFullscreen || target.webkitRequestFullscreen).call(target);
     document.body.classList.add('is-fullscreen');
     g('fsBtn') && (g('fsBtn').textContent = '⊡');
@@ -1331,127 +1344,97 @@ function exitFS() {
   document.body.classList.remove('is-fullscreen');
   g('fsBtn') && (g('fsBtn').textContent = '⛶');
 }
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) {
-    document.body.classList.remove('is-fullscreen');
-    g('fsBtn') && (g('fsBtn').textContent = '⛶');
-  }
+document.addEventListener('fullscreenchange', function(){
+  if (!document.fullscreenElement) { document.body.classList.remove('is-fullscreen'); g('fsBtn') && (g('fsBtn').textContent='⛶'); }
 });
-document.addEventListener('webkitfullscreenchange', () => {
-  if (!document.webkitFullscreenElement) {
-    document.body.classList.remove('is-fullscreen');
-    g('fsBtn') && (g('fsBtn').textContent = '⛶');
-  }
+document.addEventListener('webkitfullscreenchange', function(){
+  if (!document.webkitFullscreenElement) { document.body.classList.remove('is-fullscreen'); g('fsBtn') && (g('fsBtn').textContent='⛶'); }
 });
 
 // ════════════════════════════════════
 // FAVORITOS
 // ════════════════════════════════════
-// Favorito desde botón del PLAYER
+
+// ── MEJORA 1: Actualizar AMBOS botones favoritos (barra + flotante) ──
+function updatePlayerFavBtn() {
+  if (!curCh) return;
+  var isFav = favs.includes(curCh.id);
+
+  // Botón flotante SOBRE el video
+  var overlay = g('playerFavOverlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');          // mostrar cuando hay canal
+    overlay.textContent = isFav ? '⭐' : '☆';
+    overlay.title       = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
+    overlay.classList.toggle('fav-on', isFav);
+  }
+
+  // Botón en barra inferior
+  var btn = g('playerFavBtn');
+  if (btn) {
+    btn.textContent = isFav ? '⭐' : '☆';
+    btn.title       = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
+    btn.classList.toggle('fav-on', isFav);
+  }
+}
+
+// Toggle favorito (llamado por ambos botones)
 function togglePlayerFav() {
   if (!curCh) return;
   var id  = curCh.id;
   var idx = favs.indexOf(id);
-  if (idx === -1) {
-    favs.push(id);
-    showToast('⭐ ' + curCh.name + ' guardado');
-  } else {
-    favs.splice(idx, 1);
-    showToast('Eliminado de favoritos');
-  }
-  localStorage.setItem('cicFavs3', JSON.stringify(favs));
-  updateAll();
-  updatePlayerFavBtn();
-  // Actualizar en lista lateral y grid
-  var sb = document.querySelector('#si-' + id + ' .side-fav');
-  if (sb) { sb.classList.toggle('on', favs.includes(id)); sb.textContent = favs.includes(id) ? '⭐' : '☆'; }
-  var gb = document.querySelector('#cd-' + id + ' .favbtn');
-  if (gb) { gb.classList.toggle('on', favs.includes(id)); gb.textContent = favs.includes(id) ? '⭐' : '☆'; }
-}
-
-// Actualizar icono favorito en player
-function updatePlayerFavBtn() {
-  var btn = g('playerFavBtn');
-  if (!btn || !curCh) return;
-  var isFav = favs.includes(curCh.id);
-  btn.textContent = isFav ? '⭐' : '☆';
-  btn.title = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
-  btn.classList.toggle('fav-on', isFav);
-}
-
-// Favorito desde el PLAYER (botón encima del reproductor)
-function toggleFavPlayer() {
-  if (!curCh) return;
-  var id  = curCh.id;
-  var idx = favs.indexOf(id);
-  if (idx === -1) { favs.push(id); showToast('⭐ Favorito guardado'); }
+  if (idx === -1) { favs.push(id); showToast('⭐ ' + curCh.name + ' guardado'); }
   else            { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
   updateAll();
-  // Actualizar botón del player
-  var btn = document.getElementById('favPlayerBtn');
-  if (btn) { btn.textContent = favs.includes(id) ? '⭐' : '☆'; btn.classList.toggle('fav-on', favs.includes(id)); }
-  // Actualizar en lista lateral y grid
-  var si = document.querySelector('#si-' + id + ' .side-fav');
-  if (si) { si.textContent = favs.includes(id)?'⭐':'☆'; si.classList.toggle('on', favs.includes(id)); }
-  var cd = document.querySelector('#cd-' + id + ' .favbtn');
-  if (cd) { cd.textContent = favs.includes(id)?'⭐':'☆'; cd.classList.toggle('on', favs.includes(id)); }
-}
-
-// Actualizar botón favorito del player según canal actual
-function updateFavPlayerBtn() {
-  if (!curCh) return;
-  var btn = document.getElementById('favPlayerBtn');
-  if (!btn) return;
-  var isFav = favs.includes(curCh.id);
-  btn.textContent = isFav ? '⭐' : '☆';
-  btn.classList.toggle('fav-on', isFav);
+  updatePlayerFavBtn();
+  // Sync botones en lista lateral y grid
+  var sb = document.querySelector('#si-'+id+' .side-fav');
+  if (sb) { sb.classList.toggle('on', favs.includes(id)); sb.textContent = favs.includes(id)?'⭐':'☆'; }
+  var gb = document.querySelector('#cd-'+id+' .favbtn');
+  if (gb) { gb.classList.toggle('on', favs.includes(id)); gb.textContent = favs.includes(id)?'⭐':'☆'; }
 }
 
 // Favorito desde lista lateral
 function toggleSideFav(e, id) {
   e.stopPropagation();
-  const i = favs.indexOf(id);
+  var i = favs.indexOf(id);
   if (i === -1) { favs.push(id); showToast('⭐ Favorito agregado'); }
   else          { favs.splice(i, 1); showToast('Eliminado de favoritos'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
   updateAll();
-  // Actualizar botón en lista lateral
-  const btn = document.querySelector('#si-' + id + ' .side-fav');
-  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id) ? '⭐' : '☆'; }
-  // Actualizar botón en grid si está visible
-  const gbtn = document.querySelector('#cd-' + id + ' .favbtn');
-  if (gbtn) { gbtn.classList.toggle('on', favs.includes(id)); gbtn.textContent = favs.includes(id) ? '⭐' : '☆'; }
+  var btn = document.querySelector('#si-'+id+' .side-fav');
+  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
+  var gbtn = document.querySelector('#cd-'+id+' .favbtn');
+  if (gbtn) { gbtn.classList.toggle('on', favs.includes(id)); gbtn.textContent = favs.includes(id)?'⭐':'☆'; }
+  // Si el canal es el actual, sync botón player
+  if (curCh && curCh.id === id) updatePlayerFavBtn();
 }
 
+// Favorito desde grid
 function toggleFav(e, id) {
   e.stopPropagation();
-  const i = favs.indexOf(id);
+  var i = favs.indexOf(id);
   if (i === -1) { favs.push(id); showToast('⭐ Guardado'); }
   else          { favs.splice(i, 1); showToast('Eliminado'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
   updateAll();
-  const btn = document.querySelector('#cd-' + id + ' .favbtn');
-  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id) ? '⭐' : '☆'; }
+  var btn = document.querySelector('#cd-'+id+' .favbtn');
+  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
+  if (curCh && curCh.id === id) updatePlayerFavBtn();
 }
 
-// Drag scroll en barra de países lateral
+// Drag scroll barra países lateral
 (function(){
   var bar = document.getElementById('sideCountriesBar');
   if (!bar) return;
   var isDown = false, startX, scrollLeft;
-  bar.addEventListener('mousedown', function(e){
-    isDown = true; startX = e.pageX - bar.offsetLeft; scrollLeft = bar.scrollLeft;
-  });
-  document.addEventListener('mouseup', function(){ isDown = false; });
-  bar.addEventListener('mousemove', function(e){
-    if (!isDown) return;
-    e.preventDefault();
-    bar.scrollLeft = scrollLeft - (e.pageX - bar.offsetLeft - startX);
-  });
+  bar.addEventListener('mousedown', function(e){ isDown=true; startX=e.pageX-bar.offsetLeft; scrollLeft=bar.scrollLeft; });
+  document.addEventListener('mouseup', function(){ isDown=false; });
+  bar.addEventListener('mousemove', function(e){ if(!isDown)return; e.preventDefault(); bar.scrollLeft=scrollLeft-(e.pageX-bar.offsetLeft-startX); });
 })();
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(()=>{});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(function(){});
 </script>
 </body>
 </html>
