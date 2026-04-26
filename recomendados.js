@@ -824,18 +824,25 @@ function buscarCanalCIC(nombrePartido) {
   if (typeof allTV === 'undefined') return null;
   var n = nombrePartido.toLowerCase();
   var mapa = {
-    'champions':      ['espn','tnt','dazn','bein'],
-    'real madrid':    ['espn','tnt','dazn','bein'],
-    'barcelona':      ['espn','tnt','dazn','bein'],
-    'liga mx':        ['fox sports','tudn','azteca','canal 5','universo'],
-    'premier':        ['espn','star','dazn'],
-    'serie a':        ['espn','dazn'],
-    'bundesliga':     ['espn','dazn'],
-    'ligue 1':        ['espn','dazn'],
-    'libertadores':   ['espn','fox sports'],
-    'sudamericana':   ['espn','fox sports'],
-    'liga profesional':['tntsports','espn','fox sports'],
-    'primera division':['tntsports','espn','directv'],
+    'champions':        ['espn','tnt','bein','s sport'],
+    'real madrid':      ['espn','tnt','bein','laliga tv'],
+    'barcelona':        ['espn','tnt','bein','laliga tv'],
+    'laliga':           ['laliga tv','espn','directv','sky sports laliga'],
+    'la liga':          ['laliga tv','espn','directv','sky sports laliga'],
+    'liga mx':          ['tudn','fox sports','espn'],
+    'premier':          ['espn','tnt','bein'],
+    'fa cup':           ['espn','tnt'],
+    'serie a':          ['espn','fox sports','directv'],
+    'bundesliga':       ['espn 2','directv','disney'],
+    'ligue 1':          ['espn','directv'],
+    'libertadores':     ['espn','fox sports','deportv','tyc'],
+    'sudamericana':     ['espn','fox sports','tyc'],
+    'liga profesional': ['tyc sports','espn','fox sports','deportv'],
+    'primera division': ['directv','espn','deportv'],
+    'liga pro':         ['espn','directv'],
+    'brasileirao':      ['espn','fox sports'],
+    'eredivisie':       ['espn','directv'],
+    'primeira liga':    ['sport tv','directv'],
   };
   for (var clave in mapa) {
     if (n.includes(clave)) {
