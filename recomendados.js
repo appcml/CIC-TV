@@ -44,47 +44,23 @@ async function arrancar() {
 // El navegador ya tiene cookies/sesión → no hay 403
 // ════════════════════════════════════
 async function fetchCalendario() {
-  log('Cargando partidos.json...');
+  log('Buscando canales deportivos en vivo...');
 
-  // ── Estrategia 1: leer partidos.json generado por GitHub Actions ──
-  // El JSON vive en el mismo dominio → sin CORS, siempre funciona
-  try {
-    var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-    var jsonUrl = baseUrl + 'partidos.json?t=' + Date.now(); // evitar caché
-    var res = await fetch(jsonUrl, { cache: 'no-store' });
-    if (res.ok) {
-      var data = await res.json();
-      log('partidos.json cargado: ' + (data.total || 0) + ' partidos, generado: ' + (data.generado || '?'));
+  // Los partidos en vivo se detectan desde los canales de Deportes
+  // que ya están en allTV (cargados por monitor.js desde canales.json)
+  // La barra muestra: canales deportivos favoritos + frecuentes + próximos
 
-      // Verificar que es de hoy
-      var hoy = new Date().toISOString().slice(0, 10);
-      if (data.fecha === hoy && data.partidos && data.partidos.length) {
-        partidosHoy = data.partidos.map(function(p) {
-          return Object.assign({}, p, { enVivo: esEnVivo(p.hora) });
-        });
-        guardarCache(partidosHoy);
-        buildItems();
-        renderBar();
-        return;
-      } else if (data.partidos && data.partidos.length) {
-        // Aunque no sea de hoy, mejor que nada
-        log('JSON no es de hoy (' + data.fecha + ') pero lo usamos igual');
-        partidosHoy = data.partidos.map(function(p) {
-          return Object.assign({}, p, { enVivo: esEnVivo(p.hora) });
-        });
-        guardarCache(partidosHoy);
-        buildItems();
-        renderBar();
-        return;
-      }
-    }
-  } catch(e) {
-    log('Error leyendo partidos.json: ' + e.message);
-  }
+  // Esperar un poco para que monitor.js cargue los canales
+  await new Promise(function(r){ setTimeout(r, 1500); });
 
-  // ── Estrategia 2: caché local del día anterior ──
-  log('Sin partidos.json — usando caché local');
-  usarCache();
+  buildItems();
+  renderBar();
+
+  // Re-construir cada 5 minutos por si llegaron nuevos canales
+  setInterval(function() {
+    buildItems();
+    renderBar();
+  }, 5 * 60 * 1000);
 }
 
 // ── Buscar partidos usando API de Anthropic con web_search ──
