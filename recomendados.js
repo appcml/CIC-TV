@@ -1,548 +1,546 @@
 // ═══════════════════════════════════════════════════════════════
-// recomendados.js — Sistema de recomendaciones CIC TV
-// Fuente: futbollibretv.su + preferencias del usuario
+// recomendados.js — Sistema de recomendaciones CIC TV v2
+// Fuente: futbollibretv.su
+// Lógica: scraping → decodificar Base64 → stream directo en player
 // ═══════════════════════════════════════════════════════════════
 
-// ════════════════════════════════════
-// CONFIGURACIÓN
-// ════════════════════════════════════
-const REC_CONFIG = {
-  urlFutbol:       'https://futbollibretv.su/',
+const REC = {
+  url:        'https://futbollibretv.su/',
   proxies: [
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?url=',
     'https://thingproxy.freeboard.io/fetch/',
+    'https://api.codetabs.com/v1/proxy?quest=',
   ],
-  // Cuántos ms entre cada paso del ticker automático
-  tickerInterval:  4000,
-  // Cuánto tiempo entre verificaciones de partidos en vivo (5 min)
-  liveCheckMs:     5 * 60 * 1000,
-  // Cuánto tiempo entre descargas del calendario (12 horas)
-  calendarCheckMs: 12 * 60 * 60 * 1000,
-  // Clave localStorage
-  storageKey:      'cicRecomendados',
-  prefsKey:        'cicPreferencias',
-  historyKey:      'cicHistorial',
+  tickerMs:   5000,
+  liveCheckMs: 5 * 60 * 1000,
+  calMs:       12 * 60 * 60 * 1000,
+  storeKey:   'cicPartidosHoy',
+  prefsKey:   'cicPrefs',
 };
 
-// ════════════════════════════════════
-// ESTADO INTERNO
-// ════════════════════════════════════
-let recItems      = [];   // items actuales en el ticker
-let recIndex      = 0;    // posición actual
-let recTimer      = null; // timer del ticker automático
-let recAutoTimer  = null; // timer de auto-avance
-let partidosHoy   = [];   // calendario del día
-let preferencias  = cargarPreferencias();
-let historial     = cargarHistorial();
+// Estado
+var recItems   = [];
+var recIdx     = 0;
+var recAutoTmr = null;
+var partidosHoy = [];
+var prefs      = loadPrefs();
 
 // ════════════════════════════════════
-// INICIO
+// ARRANQUE
 // ════════════════════════════════════
 window.addEventListener('load', function() {
-  // Pequeño delay para no competir con el autoplay del player
-  setTimeout(iniciarRecomendados, 2000);
+  setTimeout(arrancar, 2500);
 });
 
-async function iniciarRecomendados() {
-  console.log('[Recomendados] Iniciando...');
-  await cargarCalendario();
-  construirItems();
-  renderTicker();
-  iniciarAutoAvance();
-  // Programar actualizaciones periódicas
-  setInterval(verificarEnVivo, REC_CONFIG.liveCheckMs);
-  setInterval(cargarCalendario, REC_CONFIG.calendarCheckMs);
+async function arrancar() {
+  log('Arrancando...');
+  await fetchCalendario();
+  buildItems();
+  renderBar();
+  startAuto();
+  setInterval(checkEnVivo, REC.liveCheckMs);
+  setInterval(fetchCalendario, REC.calMs);
 }
 
 // ════════════════════════════════════
-// SCRAPING FUTBOLLIBRETV
+// FETCH CALENDARIO
 // ════════════════════════════════════
-async function cargarCalendario() {
-  console.log('[Recomendados] Descargando calendario...');
-  const html = await fetchConProxy(REC_CONFIG.urlFutbol);
-  if (!html) {
-    console.warn('[Recomendados] No se pudo obtener el calendario');
-    usarDatosGuardados();
-    return;
-  }
-  const partidos = parsearPartidos(html);
+async function fetchCalendario() {
+  log('Descargando calendario...');
+  var html = await proxyFetch(REC.url);
+  if (!html) { usarCache(); return; }
+  var partidos = parsearHTML(html);
+  log('Partidos: ' + partidos.length);
   if (partidos.length) {
     partidosHoy = partidos;
-    guardarCalendario(partidos);
-    console.log('[Recomendados] ' + partidos.length + ' partidos cargados');
-    construirItems();
-    renderTicker();
+    guardarCache(partidos);
+    buildItems();
+    renderBar();
+  } else {
+    usarCache();
   }
 }
 
-function parsearPartidos(html) {
-  try {
-    const parser = new DOMParser();
-    const doc    = parser.parseFromString(html, 'text/html');
-    const partidos = [];
+// ════════════════════════════════════
+// PARSEAR HTML
+// ════════════════════════════════════
+function parsearHTML(html) {
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  var partidos = [];
+  var vistos = {};
 
-    // Filas de partidos: buscar elementos con hora y nombre de partido
-    // FutbolLibreTV usa una tabla/lista con hora | bandera | nombre partido
-    const filas = doc.querySelectorAll('tr, .evento, .match, .partido, [class*="event"], [class*="match"]');
+  // Buscar todos los links de eventos con ?r=BASE64
+  var links = doc.querySelectorAll('a[href*="/eventos/"]');
+  links.forEach(function(a) {
+    var href   = a.getAttribute('href') || '';
+    var base64 = extraerBase64(href);
+    if (!base64) return;
 
-    filas.forEach(function(fila) {
-      const texto = fila.textContent.trim();
-      // Buscar patrón de hora HH:MM
-      const horaMatch = texto.match(/(\d{1,2}:\d{2})/);
-      if (!horaMatch) return;
-      const hora = horaMatch[1];
+    // Subir en el DOM para encontrar el contexto del partido
+    var fila   = a.closest('tr') || a.closest('li') || a.parentElement;
+    var texto  = fila ? fila.textContent.trim() : '';
+    var horaM  = texto.match(/(\d{1,2}:\d{2})/);
+    var hora   = horaM ? horaM[1] : '';
 
-      // Buscar nombre del partido (vs o - entre equipos)
-      const partidoMatch = texto.match(/([A-Za-záéíóúÁÉÍÓÚñÑ\s\.]+(?:vs?\.?|-)[ ]*[A-Za-záéíóúÁÉÍÓÚñÑ\s\.]+)/i);
-      if (!partidoMatch) return;
+    // Buscar nombre del partido (Equipo A vs Equipo B)
+    var nombreM = texto.match(/([A-Za-z\u00C0-\u024F][^\n<]{3,35}\s+(?:vs?\.?|-)\s+[A-Za-z\u00C0-\u024F][^\n<]{2,30})/i);
+    if (!nombreM) return;
+    var nombre = normalizarNombre(nombreM[1]);
+    if (nombre.length < 8) return;
 
-      const nombre = limpiarTexto(partidoMatch[1]);
-      if (nombre.length < 5) return;
-
-      // Buscar canales disponibles (links dentro de la fila expandida)
-      const canales = [];
-      const links = fila.querySelectorAll('a[href]');
-      links.forEach(function(a) {
-        const href  = a.getAttribute('href') || '';
-        const label = a.textContent.trim();
-        if (href && label && !href.startsWith('#') && label.length > 1) {
-          canales.push({ nombre: label, url: href });
-        }
-      });
-
-      // También buscar filas hijas (canales desplegados)
-      const subfilas = fila.querySelectorAll('tr, .canal, .stream, .link');
-      subfilas.forEach(function(sub) {
-        const subLinks = sub.querySelectorAll('a[href]');
-        subLinks.forEach(function(a) {
-          const href  = a.getAttribute('href') || '';
-          const label = a.textContent.trim();
-          if (href && label && !href.startsWith('#') && label.length > 1) {
-            const yaExiste = canales.find(function(c){ return c.url === href; });
-            if (!yaExiste) canales.push({ nombre: label, url: href });
-          }
-        });
-      });
-
-      partidos.push({
+    var key = nombre.toLowerCase().replace(/\s/g,'').slice(0,20);
+    if (!vistos[key]) {
+      vistos[key] = {
         hora:    hora,
         nombre:  nombre,
-        canales: canales,
-        enVivo:  esEnVivo(hora),
         liga:    detectarLiga(nombre),
-      });
-    });
-
-    // Si no encontró con selectores específicos, intentar regex sobre el HTML crudo
-    if (!partidos.length) {
-      return parsearPartidosRegex(html);
+        enVivo:  esEnVivo(hora),
+        canales: [],
+      };
+      partidos.push(vistos[key]);
     }
 
-    return partidos;
-  } catch(e) {
-    console.warn('[Recomendados] Error parseando HTML:', e);
-    return parsearPartidosRegex(html);
-  }
+    var canalNombre = (a.textContent || '').trim() || 'Canal';
+    vistos[key].canales.push({
+      nombre: canalNombre,
+      href:   href,
+      base64: base64,
+      stream: null,
+    });
+  });
+
+  return partidos.length ? partidos : parsearRegex(html);
 }
 
-function parsearPartidosRegex(html) {
-  const partidos = [];
-  // Buscar patrones HH:MM ... vs ... en el HTML
-  const regex = /(\d{1,2}:\d{2})[^<]*?([A-Za-záéíóúÁÉÍÓÚñÑ][^<]{3,40}(?:vs?\.?|-)[^<]{3,40})/gi;
-  let match;
-  const vistos = new Set();
-  while ((match = regex.exec(html)) !== null) {
-    const hora   = match[1];
-    const nombre = limpiarTexto(match[2]);
-    if (nombre.length < 8 || vistos.has(nombre)) continue;
-    vistos.add(nombre);
-    partidos.push({
-      hora:    hora,
-      nombre:  nombre,
-      canales: [],
-      enVivo:  esEnVivo(hora),
-      liga:    detectarLiga(nombre),
-    });
-    if (partidos.length >= 30) break;
-  }
+function parsearRegex(html) {
+  var partidos = [];
+  var vistos   = {};
+  var bloques  = html.split(/<tr[\s>]/i);
+
+  bloques.forEach(function(bloque) {
+    var horaM   = bloque.match(/(\d{1,2}:\d{2})/);
+    var hora    = horaM ? horaM[1] : '';
+    var nombreM = bloque.match(/([A-Za-z\u00C0-\u024F][^<\n]{3,35}\s+(?:vs?\.?|-)\s+[A-Za-z\u00C0-\u024F][^<\n]{2,30})/i);
+    if (!nombreM) return;
+    var nombre = normalizarNombre(nombreM[1]);
+    if (nombre.length < 8) return;
+    var key = nombre.toLowerCase().replace(/\s/g,'').slice(0,20);
+
+    var reLink = /href="([^"]*\/eventos\/\?r=([A-Za-z0-9+\/=]+))"/g;
+    var m;
+    while ((m = reLink.exec(bloque)) !== null) {
+      var href = m[1], base64 = m[2];
+      if (!vistos[key]) {
+        vistos[key] = { hora:hora, nombre:nombre, liga:detectarLiga(nombre), enVivo:esEnVivo(hora), canales:[] };
+        partidos.push(vistos[key]);
+      }
+      // Intentar sacar nombre del canal del contexto
+      var antes = bloque.substring(Math.max(0, m.index - 100), m.index);
+      var cnM   = antes.match(/>([^<]{1,20})<[^>]*$/);
+      var cn    = cnM ? cnM[1].trim() : 'Canal';
+      vistos[key].canales.push({ nombre:cn||'Canal', href:href, base64:base64, stream:null });
+    }
+  });
   return partidos;
 }
 
 // ════════════════════════════════════
-// VERIFICAR PARTIDOS EN VIVO
+// RESOLVER STREAM DESDE BASE64
 // ════════════════════════════════════
-async function verificarEnVivo() {
-  // Actualizar estado en vivo basado en hora actual
-  const ahora = new Date();
-  partidosHoy.forEach(function(p) {
-    p.enVivo = esEnVivo(p.hora);
-  });
-  construirItems();
-  renderTicker();
-}
-
-function esEnVivo(horaStr) {
+async function resolverStream(canal) {
+  if (canal.stream) return canal.stream;
   try {
-    const ahora = new Date();
-    const partes = horaStr.split(':');
-    const hPartido = parseInt(partes[0]);
-    const mPartido = parseInt(partes[1]);
-    const inicio = new Date();
-    inicio.setHours(hPartido, mPartido, 0, 0);
-    const fin = new Date(inicio.getTime() + 120 * 60 * 1000); // +2 horas
-    return ahora >= inicio && ahora <= fin;
-  } catch(e) { return false; }
+    var decoded = atob(canal.base64);
+    log('Decodificado: ' + decoded);
+
+    // Si ya es m3u8 directo
+    if (/\.m3u8/i.test(decoded)) { canal.stream = decoded; return decoded; }
+
+    // Fetch de la página intermediaria
+    var html = await proxyFetch(decoded);
+    if (!html) { canal.stream = decoded; return decoded; }
+
+    // Buscar m3u8 en el HTML
+    var patrones = [
+      /file\s*:\s*["']([^"']+\.m3u8[^"']*)/i,
+      /source\s*:\s*["']([^"']+\.m3u8[^"']*)/i,
+      /src\s*=\s*["']([^"']+\.m3u8[^"']*)/i,
+      /"(https?:\/\/[^"]+\.m3u8[^"]*)"/,
+      /'(https?:\/\/[^']+\.m3u8[^']*)'/,
+    ];
+    for (var i = 0; i < patrones.length; i++) {
+      var m = html.match(patrones[i]);
+      if (m) { canal.stream = m[1]; log('Stream: ' + m[1]); return m[1]; }
+    }
+
+    // Buscar iframe con src
+    var ifrM = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (ifrM) {
+      var html2 = await proxyFetch(ifrM[1]);
+      if (html2) {
+        for (var j = 0; j < patrones.length; j++) {
+          var m2 = html2.match(patrones[j]);
+          if (m2) { canal.stream = m2[1]; return m2[1]; }
+        }
+      }
+    }
+
+    canal.stream = decoded;
+    return decoded;
+  } catch(e) {
+    log('Error stream: ' + e.message);
+    return null;
+  }
 }
 
 // ════════════════════════════════════
-// CONSTRUIR ITEMS DEL TICKER
+// CONSTRUIR ITEMS
 // ════════════════════════════════════
-function construirItems() {
-  const items = [];
-  const favsApp = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
+function buildItems() {
+  var items   = [];
+  var favsApp = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
 
-  // 1. Partidos EN VIVO — ordenados por preferencia del usuario
-  const enVivo = partidosHoy.filter(function(p){ return p.enVivo; });
-  const priorizados = priorizarPorPreferencias(enVivo);
+  // 1. Partidos en vivo priorizados
+  var enVivo = priorizarPorPrefs(partidosHoy.filter(function(p){ return p.enVivo; }));
 
-  priorizados.forEach(function(partido) {
-    // Si tiene canales, crear un item por cada canal
-    if (partido.canales.length > 0) {
-      partido.canales.forEach(function(canal, idx) {
-        items.push({
-          tipo:    'partido',
-          emoji:   '🔴',
-          texto:   partido.nombre + ' · ' + canal.nombre,
-          hora:    partido.hora,
-          url:     canal.url,
-          partido: partido,
-          canal:   canal,
-          enVivo:  true,
-        });
-      });
+  enVivo.forEach(function(p) {
+    var cic = buscarCanalCIC(p.nombre);
+    if (cic) {
+      items.push(mkItem('🔴', p.hora + ' · ' + p.nombre + ' · ' + cic.name, p,
+        function(c){ return function(){ reproducirCanalCIC(c); }; }(cic), true));
     } else {
-      items.push({
-        tipo:    'partido',
-        emoji:   '🔴',
-        texto:   partido.nombre,
-        hora:    partido.hora,
-        url:     REC_CONFIG.urlFutbol,
-        partido: partido,
-        enVivo:  true,
+      p.canales.forEach(function(canal) {
+        items.push(mkItem('🔴', p.hora + ' · ' + p.nombre + ' · ' + canal.nombre, p,
+          function(c,pa){ return function(){ reproducirFutbolLibre(c, pa); }; }(canal, p), true));
       });
+      if (!p.canales.length) {
+        items.push(mkItem('🔴', p.hora + ' · ' + p.nombre, p, null, true));
+      }
     }
   });
 
-  // 2. Próximos partidos del día (no en vivo aún)
-  const proximos = partidosHoy
-    .filter(function(p){ return !p.enVivo; })
-    .slice(0, 5);
-
-  proximos.forEach(function(partido) {
-    items.push({
-      tipo:   'proximo',
-      emoji:  '⏰',
-      texto:  partido.hora + ' · ' + partido.nombre,
-      url:    null,
-      partido: partido,
-      enVivo: false,
+  // 2. Próximos partidos
+  partidosHoy
+    .filter(function(p){ return !p.enVivo && esFuturo(p.hora); })
+    .slice(0, 5)
+    .forEach(function(p) {
+      items.push(mkItem('⏰', p.hora + ' · ' + p.nombre, p, null, false));
     });
-  });
 
-  // 3. Si no hay partidos — mostrar canales favoritos del usuario
+  // 3. Sin partidos → favoritos del usuario
   if (!items.length) {
-    const allSrc = (typeof allTV !== 'undefined' ? allTV : [])
-      .concat(typeof allRadio !== 'undefined' ? allRadio : []);
-    const favCanales = allSrc.filter(function(c){ return favsApp.includes(c.id); });
-    favCanales.slice(0, 8).forEach(function(canal) {
-      items.push({
-        tipo:  'favorito',
-        emoji: '⭐',
-        texto: canal.name + ' · ' + canal.cat,
-        canal: canal,
-        url:   null,
-        enVivo: false,
-      });
-    });
+    var src = [];
+    if (typeof allTV    !== 'undefined') src = src.concat(allTV);
+    if (typeof allRadio !== 'undefined') src = src.concat(allRadio);
+    src.filter(function(c){ return favsApp.includes(c.id); })
+       .slice(0, 8)
+       .forEach(function(c) {
+         items.push(mkItem('⭐', c.name + ' · ' + c.cat, null,
+           function(ch){ return function(){ reproducirCanalCIC(ch); }; }(c), false));
+       });
   }
 
-  // 4. Si aún no hay nada — mensaje genérico
+  // 4. Mensaje vacío
   if (!items.length) {
-    items.push({
-      tipo:  'info',
-      emoji: '📺',
-      texto: 'Sin partidos en vivo ahora · Próximos eventos aparecerán aquí',
-      url:   null,
-    });
+    items.push(mkItem('📺', 'Sin partidos en vivo · Los próximos aparecerán aquí', null, null, false));
   }
 
   recItems = items;
-  if (recIndex >= recItems.length) recIndex = 0;
+  if (recIdx >= recItems.length) recIdx = 0;
+}
+
+function mkItem(emoji, label, partido, accion, enVivo) {
+  return { emoji:emoji, label:label, partido:partido, accion:accion, enVivo:enVivo };
 }
 
 // ════════════════════════════════════
-// PRIORIZAR POR PREFERENCIAS
+// RENDER
 // ════════════════════════════════════
-function priorizarPorPreferencias(partidos) {
-  return partidos.slice().sort(function(a, b) {
-    const scoreA = calcularScore(a);
-    const scoreB = calcularScore(b);
-    return scoreB - scoreA;
-  });
-}
-
-function calcularScore(partido) {
-  let score = 0;
-  const nombre = partido.nombre.toLowerCase();
-  const liga   = (partido.liga || '').toLowerCase();
-
-  // Puntos por equipo favorito
-  (preferencias.equipos || []).forEach(function(eq) {
-    if (nombre.includes(eq.toLowerCase())) score += eq.vistas * 10;
-  });
-
-  // Puntos por liga favorita
-  (preferencias.ligas || []).forEach(function(l) {
-    if (liga.includes(l.nombre.toLowerCase())) score += l.vistas * 5;
-  });
-
-  // Puntos si está en vivo
-  if (partido.enVivo) score += 50;
-
-  return score;
-}
-
-// ════════════════════════════════════
-// RENDER TICKER
-// ════════════════════════════════════
-function renderTicker() {
-  const track = document.getElementById('rec-track');
+function renderBar() {
+  var track = document.getElementById('rec-track');
   if (!track || !recItems.length) return;
 
-  track.innerHTML = recItems.map(function(item, idx) {
-    const activo   = idx === recIndex ? 'background:rgba(230,63,110,0.15);' : '';
-    const cursor   = (item.url || item.canal) ? 'pointer' : 'default';
-    const enVivoIndicador = item.enVivo
-      ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e63f6e;margin-right:4px;animation:pulse 2s infinite;vertical-align:middle;"></span>'
+  track.innerHTML = recItems.map(function(item, i) {
+    var activo = i === recIdx
+      ? 'background:rgba(230,63,110,0.18);border-bottom:2px solid #e63f6e;'
       : '';
-    return '<div class="rec-item" data-idx="'+idx+'" onclick="recClick('+idx+')" style="'
-      + 'flex-shrink:0;display:inline-flex;align-items:center;'
-      + 'padding:0 12px;height:35px;cursor:'+cursor+';'
+    var cursor = item.accion ? 'cursor:pointer;' : 'cursor:default;opacity:0.75;';
+    var dot = item.enVivo
+      ? '<span style="width:6px;height:6px;border-radius:50%;background:#e63f6e;display:inline-block;margin-right:5px;flex-shrink:0;animation:pulse 1.5s infinite;"></span>'
+      : '';
+    return '<div class="rec-item" data-idx="' + i + '" onclick="recClick(' + i + ')" style="'
+      + 'display:inline-flex;align-items:center;flex-shrink:0;'
+      + 'padding:0 14px;height:35px;box-sizing:border-box;'
       + 'border-right:1px solid rgba(255,255,255,0.07);'
-      + 'font-family:\'DM Sans\',sans-serif;font-size:11px;color:#f0f0f8;'
-      + 'white-space:nowrap;transition:background .2s;'+activo
-      + '">'
-      + enVivoIndicador
-      + '<span style="margin-right:5px;font-size:12px;">'+item.emoji+'</span>'
-      + '<span>'+item.texto+'</span>'
+      + "font-family:'DM Sans',sans-serif;font-size:11px;"
+      + 'color:#f0f0f8;white-space:nowrap;transition:background .2s;'
+      + cursor + activo + '">'
+      + dot
+      + '<span style="margin-right:5px;">' + item.emoji + '</span>'
+      + '<span>' + item.label + '</span>'
       + '</div>';
   }).join('');
 
-  // Scroll al item activo
-  scrollToActive();
-}
-
-function scrollToActive() {
-  const track = document.getElementById('rec-track');
-  if (!track) return;
-  const items = track.querySelectorAll('.rec-item');
-  if (!items[recIndex]) return;
-
-  // Calcular offset del item activo
-  let offsetLeft = 0;
-  for (let i = 0; i < recIndex; i++) {
-    offsetLeft += items[i].offsetWidth;
+  // Scroll al activo
+  var items = track.querySelectorAll('.rec-item');
+  var offset = 0;
+  for (var i = 0; i < recIdx && i < items.length; i++) {
+    offset += items[i].offsetWidth;
   }
-  track.style.transform = 'translateX(-' + offsetLeft + 'px)';
+  track.style.transform = 'translateX(-' + offset + 'px)';
 }
 
 // ════════════════════════════════════
-// NAVEGACIÓN TICKER
+// NAVEGACIÓN (llamadas desde index.html)
 // ════════════════════════════════════
 function recNext() {
   if (!recItems.length) return;
-  recIndex = (recIndex + 1) % recItems.length;
-  renderTicker();
-  resetAutoAvance();
+  recIdx = (recIdx + 1) % recItems.length;
+  renderBar();
+  resetAuto();
 }
 
 function recPrev() {
   if (!recItems.length) return;
-  recIndex = (recIndex - 1 + recItems.length) % recItems.length;
-  renderTicker();
-  resetAutoAvance();
+  recIdx = (recIdx - 1 + recItems.length) % recItems.length;
+  renderBar();
+  resetAuto();
 }
 
 function recClick(idx) {
-  const item = recItems[idx];
+  var item = recItems[idx];
   if (!item) return;
-
-  // Registrar interacción para aprender preferencias
-  if (item.partido) registrarInteraccion(item.partido);
-
-  if (item.canal && item.canal.id) {
-    // Es un canal de CIC TV — reproducir directamente
-    if (typeof playFromSide === 'function') playFromSide(item.canal.id);
-    else if (typeof playFromGrid === 'function') playFromGrid(item.canal.id);
-  } else if (item.url) {
-    // Es una URL de FutbolLibre — intentar reproducir en el player principal
-    abrirEnPlayer(item);
-  }
-
-  recIndex = idx;
-  renderTicker();
-}
-
-function abrirEnPlayer(item) {
-  // Crear un objeto canal temporal para reproducir en el player
-  const canalTemp = {
-    id:   'rec_' + Date.now(),
-    name: item.partido ? item.partido.nombre : item.texto,
-    cat:  'Deportes',
-    co:   '',
-    type: 'tv',
-    logo: '',
-    url:  item.url,
-  };
-
-  // Usar las funciones del player principal
-  if (typeof playVideo === 'function') {
-    if (typeof curCh !== 'undefined') curCh = canalTemp;
-    if (typeof g === 'function') g('pname').textContent = canalTemp.name;
-    playVideo(canalTemp);
-    // Guardar como último canal
-    localStorage.setItem('cicLastChannel', JSON.stringify(canalTemp));
-  }
+  recIdx = idx;
+  renderBar();
+  if (item.partido) registrarVista(item.partido);
+  if (item.accion) item.accion();
 }
 
 // ════════════════════════════════════
 // AUTO AVANCE
 // ════════════════════════════════════
-function iniciarAutoAvance() {
-  recAutoTimer = setInterval(function() {
-    recNext();
-  }, REC_CONFIG.tickerInterval);
+function startAuto() {
+  recAutoTmr = setInterval(function() {
+    recIdx = (recIdx + 1) % (recItems.length || 1);
+    renderBar();
+  }, REC.tickerMs);
 }
 
-function resetAutoAvance() {
-  clearInterval(recAutoTimer);
-  iniciarAutoAvance();
+function resetAuto() {
+  clearInterval(recAutoTmr);
+  startAuto();
 }
 
 // ════════════════════════════════════
-// APRENDIZAJE DE PREFERENCIAS
+// REPRODUCCIÓN EN PLAYER
 // ════════════════════════════════════
-function registrarInteraccion(partido) {
-  // Registrar equipo
-  const equipos = extraerEquipos(partido.nombre);
-  equipos.forEach(function(equipo) {
-    const existe = preferencias.equipos.find(function(e){ return e.nombre === equipo; });
-    if (existe) { existe.vistas++; }
-    else { preferencias.equipos.push({ nombre: equipo, vistas: 1 }); }
-  });
+function reproducirCanalCIC(canal) {
+  if (typeof playFromSide === 'function') playFromSide(canal.id);
+  else if (typeof playFromGrid === 'function') playFromGrid(canal.id);
+}
 
-  // Registrar liga
-  if (partido.liga) {
-    const ligaExiste = preferencias.ligas.find(function(l){ return l.nombre === partido.liga; });
-    if (ligaExiste) { ligaExiste.vistas++; }
-    else { preferencias.ligas.push({ nombre: partido.liga, vistas: 1 }); }
+async function reproducirFutbolLibre(canal, partido) {
+  var ld    = document.getElementById('ld');
+  var pp    = document.getElementById('pp');
+  var pname = document.getElementById('pname');
+  if (ld) ld.classList.add('show');
+  if (pp) pp.classList.add('hide');
+  if (pname) pname.textContent = partido.nombre + ' · ' + canal.nombre;
+
+  var url = await resolverStream(canal);
+  if (!url) {
+    if (ld) ld.classList.remove('show');
+    var er = document.getElementById('er');
+    if (er) er.classList.add('show');
+    return;
   }
 
-  // Ordenar por vistas y guardar
-  preferencias.equipos.sort(function(a, b){ return b.vistas - a.vistas; });
-  preferencias.ligas.sort(function(a, b){ return b.vistas - a.vistas; });
-  guardarPreferencias();
-}
+  var ch = { id:'fl_'+Date.now(), name:partido.nombre+' · '+canal.nombre, cat:'Deportes', co:'', type:'tv', logo:'', url:url };
+  if (typeof curCh !== 'undefined') curCh = ch;
+  if (typeof pname !== 'undefined' && pname) pname.textContent = ch.name;
 
-function extraerEquipos(nombre) {
-  // Separar por "vs", "v/s", "-"
-  const partes = nombre.split(/\s+vs\.?\s+|\s+v\/s\s+|\s+-\s+/i);
-  return partes.map(function(p){ return p.trim(); }).filter(function(p){ return p.length > 2; });
-}
-
-function detectarLiga(nombre) {
-  const ligas = [
-    'Liga MX','Premier League','LaLiga','Serie A','Bundesliga','Ligue 1',
-    'Champions League','Copa Libertadores','Copa Sudamericana','Liga Pro',
-    'Primera División','Liga Profesional','Eredivisie','Liga Portugal',
-  ];
-  const n = nombre.toLowerCase();
-  for (let i = 0; i < ligas.length; i++) {
-    if (n.includes(ligas[i].toLowerCase())) return ligas[i];
+  if (typeof playVideo === 'function') {
+    playVideo(ch);
+  } else {
+    var v = document.getElementById('vp');
+    if (!v) return;
+    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+      if (window._recHls) window._recHls.destroy();
+      window._recHls = new Hls({ enableWorker:true, lowLatencyMode:true });
+      window._recHls.loadSource(url);
+      window._recHls.attachMedia(v);
+      window._recHls.on(Hls.Events.MANIFEST_PARSED, function() {
+        if (ld) ld.classList.remove('show');
+        v.play().catch(function(){});
+      });
+      window._recHls.on(Hls.Events.ERROR, function(_, d) {
+        if (d.fatal) { if (ld) ld.classList.remove('show'); }
+      });
+    } else {
+      v.src = url; v.load(); v.play().catch(function(){});
+      if (ld) ld.classList.remove('show');
+    }
   }
-  return 'Fútbol';
 }
 
 // ════════════════════════════════════
-// FETCH CON PROXY CORS
+// BUSCAR CANAL CIC TV EQUIVALENTE
 // ════════════════════════════════════
-async function fetchConProxy(url) {
-  // Intentar directo primero
-  try {
-    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    if (r.ok) return await r.text();
-  } catch(e) {}
-
-  // Intentar con proxies
-  for (let i = 0; i < REC_CONFIG.proxies.length; i++) {
-    try {
-      const r = await fetch(
-        REC_CONFIG.proxies[i] + encodeURIComponent(url),
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (r.ok) return await r.text();
-    } catch(e) { continue; }
+function buscarCanalCIC(nombrePartido) {
+  if (typeof allTV === 'undefined') return null;
+  var n = nombrePartido.toLowerCase();
+  var mapeo = {
+    'champions':     ['espn','tnt','dazn','bein'],
+    'real madrid':   ['espn','tnt','dazn','bein'],
+    'barcelona':     ['espn','tnt','dazn','bein'],
+    'liga mx':       ['fox sports','tudn','azteca','canal 5'],
+    'premier':       ['espn','star','dazn'],
+    'serie a':       ['espn','dazn'],
+    'bundesliga':    ['espn','dazn'],
+    'ligue 1':       ['espn','dazn'],
+    'libertadores':  ['espn','fox sports'],
+    'sudamericana':  ['espn','fox sports'],
+  };
+  for (var clave in mapeo) {
+    if (n.includes(clave)) {
+      var buscados = mapeo[clave];
+      for (var i = 0; i < allTV.length; i++) {
+        var cn = allTV[i].name.toLowerCase();
+        for (var j = 0; j < buscados.length; j++) {
+          if (cn.includes(buscados[j])) return allTV[i];
+        }
+      }
+    }
   }
   return null;
 }
 
 // ════════════════════════════════════
-// PERSISTENCIA LOCAL
+// VERIFICAR EN VIVO (cada 5 min)
 // ════════════════════════════════════
-function cargarPreferencias() {
-  try {
-    return JSON.parse(localStorage.getItem(REC_CONFIG.prefsKey)) || { equipos: [], ligas: [] };
-  } catch(e) { return { equipos: [], ligas: [] }; }
+function checkEnVivo() {
+  var cambio = false;
+  partidosHoy.forEach(function(p) {
+    var nuevo = esEnVivo(p.hora);
+    if (nuevo !== p.enVivo) { p.enVivo = nuevo; cambio = true; }
+  });
+  if (cambio) { buildItems(); renderBar(); }
 }
 
-function guardarPreferencias() {
-  localStorage.setItem(REC_CONFIG.prefsKey, JSON.stringify(preferencias));
+// ════════════════════════════════════
+// PREFERENCIAS Y APRENDIZAJE
+// ════════════════════════════════════
+function registrarVista(partido) {
+  extraerEquipos(partido.nombre).forEach(function(eq) {
+    var e = prefs.equipos.find(function(x){ return x.n === eq; });
+    if (e) e.v++; else prefs.equipos.push({ n:eq, v:1 });
+  });
+  if (partido.liga) {
+    var l = prefs.ligas.find(function(x){ return x.n === partido.liga; });
+    if (l) l.v++; else prefs.ligas.push({ n:partido.liga, v:1 });
+  }
+  prefs.equipos.sort(function(a,b){ return b.v-a.v; });
+  prefs.ligas.sort(function(a,b){ return b.v-a.v; });
+  localStorage.setItem(REC.prefsKey, JSON.stringify(prefs));
 }
 
-function cargarHistorial() {
-  try {
-    return JSON.parse(localStorage.getItem(REC_CONFIG.historyKey)) || [];
-  } catch(e) { return []; }
+function priorizarPorPrefs(lista) {
+  return lista.slice().sort(function(a,b){ return getScore(b)-getScore(a); });
 }
 
-function guardarCalendario(partidos) {
-  try {
-    localStorage.setItem(REC_CONFIG.storageKey, JSON.stringify({
-      fecha:    new Date().toDateString(),
-      partidos: partidos,
-    }));
-  } catch(e) {}
-}
-
-function usarDatosGuardados() {
-  try {
-    const guardado = JSON.parse(localStorage.getItem(REC_CONFIG.storageKey));
-    if (guardado && guardado.fecha === new Date().toDateString()) {
-      partidosHoy = guardado.partidos || [];
-      console.log('[Recomendados] Usando datos guardados: ' + partidosHoy.length + ' partidos');
-      construirItems();
-      renderTicker();
-    }
-  } catch(e) {}
+function getScore(p) {
+  var s = p.enVivo ? 100 : 0;
+  var n = p.nombre.toLowerCase();
+  prefs.equipos.forEach(function(e){ if (n.includes(e.n.toLowerCase())) s += e.v*10; });
+  prefs.ligas.forEach(function(l){ if ((p.liga||'').toLowerCase().includes(l.n.toLowerCase())) s += l.v*5; });
+  return s;
 }
 
 // ════════════════════════════════════
 // UTILIDADES
 // ════════════════════════════════════
-function limpiarTexto(txt) {
-  return txt
-    .replace(/\s+/g, ' ')
-    .replace(/[^\w\sáéíóúÁÉÍÓÚñÑ\.\-:]/g, '')
-    .trim();
+function extraerBase64(href) {
+  var m = href.match(/[?&]r=([A-Za-z0-9+\/=]+)/);
+  return m ? m[1] : null;
 }
+
+function esEnVivo(hora) {
+  if (!hora) return false;
+  try {
+    var p = hora.split(':');
+    var ini = new Date(); ini.setHours(+p[0],+p[1],0,0);
+    var fin = new Date(ini.getTime() + 130*60000);
+    var ahora = new Date();
+    return ahora >= ini && ahora <= fin;
+  } catch(e){ return false; }
+}
+
+function esFuturo(hora) {
+  if (!hora) return false;
+  try {
+    var p = hora.split(':');
+    var ini = new Date(); ini.setHours(+p[0],+p[1],0,0);
+    return ini > new Date();
+  } catch(e){ return false; }
+}
+
+function detectarLiga(nombre) {
+  var n = nombre.toLowerCase();
+  var map = [
+    ['Champions League','champions'],['LaLiga','laliga'],['Liga MX','liga mx'],
+    ['Premier League','premier'],['Serie A','serie a'],['Bundesliga','bundesliga'],
+    ['Ligue 1','ligue 1'],['Copa Libertadores','libertadores'],
+    ['Copa Sudamericana','sudamericana'],['Liga Profesional','liga profesional'],
+    ['Primera División','primera división'],['Liga Pro','liga pro'],
+  ];
+  for (var i=0;i<map.length;i++){ if(n.includes(map[i][1])) return map[i][0]; }
+  return 'Fútbol';
+}
+
+function normalizarNombre(s) {
+  return s.replace(/\s+/g,' ').trim().replace(/\bvs\b/gi,'vs').replace(/\bv\/s\b/gi,'vs');
+}
+
+function extraerEquipos(nombre) {
+  return nombre.split(/\s+vs\.?\s+|\s+v\/s\s+|\s+-\s+/i)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length>2; });
+}
+
+async function proxyFetch(url) {
+  try {
+    var r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (r.ok) return await r.text();
+  } catch(e){}
+  for (var i=0; i<REC.proxies.length; i++) {
+    try {
+      var r2 = await fetch(REC.proxies[i]+encodeURIComponent(url), { signal: AbortSignal.timeout(9000) });
+      if (r2.ok) return await r2.text();
+    } catch(e){ continue; }
+  }
+  return null;
+}
+
+function guardarCache(partidos) {
+  try { localStorage.setItem(REC.storeKey, JSON.stringify({ fecha:new Date().toDateString(), partidos:partidos })); }
+  catch(e){}
+}
+
+function usarCache() {
+  try {
+    var c = JSON.parse(localStorage.getItem(REC.storeKey));
+    if (c && c.fecha===new Date().toDateString() && c.partidos.length) {
+      partidosHoy = c.partidos;
+      log('Caché: '+partidosHoy.length+' partidos');
+    }
+  } catch(e){}
+  buildItems(); renderBar();
+}
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(REC.prefsKey))||{equipos:[],ligas:[]}; }
+  catch(e){ return {equipos:[],ligas:[]}; }
+}
+
+function log(msg) { console.log('[Recomendados] '+msg); }
