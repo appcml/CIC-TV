@@ -464,8 +464,17 @@ body.is-fullscreen .fs-exit{display:block !important}
 <!-- MAIN -->
 <main>
 
-  <!-- BARRA RESERVADA: recomendaciones FutbolLibreTV -->
-  <div id="rec-bar" style="flex-shrink:0;min-height:35px;height:35px;max-height:35px;background:var(--bg2);border-bottom:1px solid var(--border);overflow:hidden;box-sizing:border-box;padding:0;line-height:0;font-size:0;"></div>
+  <!-- BARRA RECOMENDACIONES: FutbolLibreTV + preferencias usuario -->
+  <div id="rec-bar" style="flex-shrink:0;min-height:35px;height:35px;max-height:35px;background:var(--bg2);border-bottom:1px solid var(--border);overflow:hidden;box-sizing:border-box;display:flex;align-items:center;padding:0;position:relative;">
+    <!-- Botón anterior -->
+    <button id="rec-prev" onclick="recPrev()" style="flex-shrink:0;background:rgba(230,63,110,0.15);border:none;color:#e63f6e;width:22px;height:35px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;">&#9664;</button>
+    <!-- Ventana del ticker -->
+    <div style="flex:1;overflow:hidden;position:relative;height:35px;">
+      <div id="rec-track" style="display:flex;align-items:center;height:35px;gap:0;position:absolute;left:0;top:0;transition:transform 0.4s ease;white-space:nowrap;"></div>
+    </div>
+    <!-- Botón siguiente -->
+    <button id="rec-next" onclick="recNext()" style="flex-shrink:0;background:rgba(230,63,110,0.15);border:none;color:#e63f6e;width:22px;height:35px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;">&#9654;</button>
+  </div>
 
   <!-- PLAYER ZONE -->
   <div class="player-zone">
@@ -1411,5 +1420,9 @@ function toggleFav(e, id) {
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(function(){});
 </script>
+
+<!-- SISTEMA DE RECOMENDACIONES -->
+<script src="recomendados.js"></script>
+
 </body>
 </html>
