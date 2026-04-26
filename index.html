@@ -1207,6 +1207,9 @@ function playFromSide(id) {
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
   // Registrar vista para recomendaciones de frecuentes
   if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
+  // Resetear intentos de reemplazo al cambiar canal manualmente
+  intentosReemplazo = 0;
+  urlsIntentadas    = [];
 
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
@@ -1318,14 +1321,170 @@ vp.addEventListener('canplay',  function(){ clearTimeout(errTimer); g('ld').clas
 vp.addEventListener('playing',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
 vp.addEventListener('error',    function(){ showErr(); });
 
+// ════════════════════════════════════
+// SISTEMA DE AUTO-REEMPLAZO
+// Cuando un canal falla, busca alternativas automáticamente
+// ════════════════════════════════════
+var intentosReemplazo = 0;
+var urlsIntentadas    = [];
+
 function showErr() {
   clearTimeout(errTimer);
   g('ld').classList.remove('show');
-  g('er').classList.add('show');
+
+  // Intentar auto-reemplazo antes de mostrar el error
+  if (curCh && intentosReemplazo < 3) {
+    intentosReemplazo++;
+    showToast('🔄 Buscando alternativa... (' + intentosReemplazo + '/3)');
+    buscarAlternativa(curCh);
+  } else {
+    // Resetear intentos para la próxima vez
+    intentosReemplazo = 0;
+    urlsIntentadas    = [];
+    g('er').classList.add('show');
+  }
 }
+
+async function buscarAlternativa(ch) {
+  g('ld').classList.add('show');
+
+  // 1. Buscar en allTV canales con nombre similar (excluir URLs ya intentadas)
+  var candidatos = buscarEnLista(ch);
+  if (candidatos.length) {
+    var alt = candidatos[0];
+    log('Auto-reemplazo local: ' + alt.name + ' → ' + alt.url);
+    urlsIntentadas.push(ch.url);
+    var chAlt = Object.assign({}, curCh, { url: alt.url, name: ch.name });
+    playVideo(chAlt);
+    return;
+  }
+
+  // 2. Buscar en iptv-org por país + categoría
+  var urlAlt = await buscarEnIptvOrg(ch);
+  if (urlAlt) {
+    log('Auto-reemplazo iptv-org: ' + urlAlt);
+    urlsIntentadas.push(ch.url);
+    var chAlt2 = Object.assign({}, curCh, { url: urlAlt });
+    playVideo(chAlt2);
+    return;
+  }
+
+  // 3. Sin alternativas
+  g('ld').classList.remove('show');
+  g('er').classList.add('show');
+  intentosReemplazo = 0;
+  urlsIntentadas    = [];
+}
+
+// Buscar canales similares en allTV (misma cat + co, diferente URL)
+function buscarEnLista(ch) {
+  var nombre = (ch.name || '').toLowerCase().replace(/\s*\(.*?\)\s*/g,'').trim();
+  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
+
+  return allTV.filter(function(c) {
+    if (urlsIntentadas.indexOf(c.url) !== -1) return false; // ya intentada
+    if (c.url === ch.url) return false;                      // misma URL
+    var cn = c.name.toLowerCase();
+    // Coincidencia exacta de nombre (sin calidad)
+    var nombreBase = cn.replace(/\s*\(.*?\)\s*/g,'').trim();
+    if (nombreBase === nombre) return true;
+    // Coincidencia parcial: todas las palabras principales están presentes
+    return palabras.length > 0 && palabras.every(function(p){ return cn.indexOf(p) !== -1; });
+  }).sort(function(a, b) {
+    // Priorizar misma categoría y país
+    var score = function(c) {
+      return (c.cat === ch.cat ? 2 : 0) + (c.co === ch.co ? 1 : 0);
+    };
+    return score(b) - score(a);
+  });
+}
+
+// Buscar alternativa en iptv-org por país y categoría
+async function buscarEnIptvOrg(ch) {
+  var catSlug = {
+    'Deportes':       'sports',
+    'Noticias':       'news',
+    'Películas':      'movies',
+    'Series':         'series',
+    'Infantil':       'kids',
+    'Música':         'music',
+    'Documentales':   'documentary',
+    'Entretenimiento':'entertainment',
+    'General':        'general',
+  };
+
+  var urls = [];
+  // Por país primero
+  if (ch.co) {
+    urls.push('https://iptv-org.github.io/iptv/countries/' + ch.co.toLowerCase() + '.m3u');
+  }
+  // Por categoría
+  if (catSlug[ch.cat]) {
+    urls.push('https://iptv-org.github.io/iptv/categories/' + catSlug[ch.cat] + '.m3u');
+  }
+
+  var nombre = (ch.name || '').toLowerCase().replace(/\s*\(.*?\)\s*/g,'').trim();
+  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
+
+  for (var i = 0; i < urls.length; i++) {
+    var m3u = await fetchM3UConProxy(urls[i]);
+    if (!m3u) continue;
+
+    var canales = parsearM3USimpleAlt(m3u);
+    // Buscar canal con nombre similar
+    var match = canales.find(function(c) {
+      if (urlsIntentadas.indexOf(c.url) !== -1) return false;
+      var cn = c.name.toLowerCase();
+      return palabras.length > 0 && palabras.some(function(p){ return cn.indexOf(p) !== -1; });
+    });
+    if (match) return match.url;
+  }
+  return null;
+}
+
+// Parsear M3U simple para búsqueda de alternativas
+function parsearM3USimpleAlt(txt) {
+  var canales = [], cur = {};
+  txt.split('\n').forEach(function(l) {
+    l = l.trim();
+    if (l.startsWith('#EXTINF')) {
+      var nM = l.match(/tvg-name="([^"]*)"/);
+      cur = { name: nM ? nM[1] : l.split(',').pop().trim() };
+    } else if (l && !l.startsWith('#') && cur.name) {
+      cur.url = l;
+      canales.push({...cur});
+      cur = {};
+    }
+  });
+  return canales;
+}
+
+// Fetch M3U con proxy CORS
+async function fetchM3UConProxy(url) {
+  var proxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://thingproxy.freeboard.io/fetch/',
+  ];
+  try {
+    var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (r.ok) return await r.text();
+  } catch(e) {}
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var r2 = await fetch(proxies[i] + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+      if (r2.ok) return await r2.text();
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+function log(msg) { console.log('[CIC TV] ' + msg); }
 
 function retry() {
   if (!curCh) return;
+  intentosReemplazo = 0;
+  urlsIntentadas    = [];
   g('er').classList.remove('show');
   curCh.type === 'radio' ? playRadio(curCh) : playVideo(curCh);
 }
