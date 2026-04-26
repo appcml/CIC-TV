@@ -1169,6 +1169,8 @@ function playFromSide(id) {
   g('pname').textContent = ch.name;
   updatePlayerFavBtn();
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
+  // Registrar vista para recomendaciones de frecuentes
+  if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
 
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
