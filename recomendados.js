@@ -44,23 +44,46 @@ async function arrancar() {
 // El navegador ya tiene cookies/sesión → no hay 403
 // ════════════════════════════════════
 async function fetchCalendario() {
-  log('Buscando partidos del día via Claude API...');
+  log('Cargando partidos.json...');
 
-  // ── Estrategia principal: Claude API con web_search ──
-  // Claude busca los partidos en futbollibretv.su y los devuelve en JSON
-  var partidos = await buscarPartidosConClaude();
+  // ── Estrategia 1: leer partidos.json generado por GitHub Actions ──
+  // El JSON vive en el mismo dominio → sin CORS, siempre funciona
+  try {
+    var baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+    var jsonUrl = baseUrl + 'partidos.json?t=' + Date.now(); // evitar caché
+    var res = await fetch(jsonUrl, { cache: 'no-store' });
+    if (res.ok) {
+      var data = await res.json();
+      log('partidos.json cargado: ' + (data.total || 0) + ' partidos, generado: ' + (data.generado || '?'));
 
-  if (partidos && partidos.length) {
-    log('Claude encontró ' + partidos.length + ' partidos');
-    partidosHoy = partidos;
-    guardarCache(partidos);
-    buildItems();
-    renderBar();
-    return;
+      // Verificar que es de hoy
+      var hoy = new Date().toISOString().slice(0, 10);
+      if (data.fecha === hoy && data.partidos && data.partidos.length) {
+        partidosHoy = data.partidos.map(function(p) {
+          return Object.assign({}, p, { enVivo: esEnVivo(p.hora) });
+        });
+        guardarCache(partidosHoy);
+        buildItems();
+        renderBar();
+        return;
+      } else if (data.partidos && data.partidos.length) {
+        // Aunque no sea de hoy, mejor que nada
+        log('JSON no es de hoy (' + data.fecha + ') pero lo usamos igual');
+        partidosHoy = data.partidos.map(function(p) {
+          return Object.assign({}, p, { enVivo: esEnVivo(p.hora) });
+        });
+        guardarCache(partidosHoy);
+        buildItems();
+        renderBar();
+        return;
+      }
+    }
+  } catch(e) {
+    log('Error leyendo partidos.json: ' + e.message);
   }
 
-  // ── Fallback: caché local ──
-  log('Sin datos de Claude — usando caché');
+  // ── Estrategia 2: caché local del día anterior ──
+  log('Sin partidos.json — usando caché local');
   usarCache();
 }
 
