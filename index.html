@@ -75,6 +75,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   display:flex;
   flex:1;
   min-height:0;
+  max-height:calc(100vh - 52px - 35px - 36px - 60px);
   border-bottom:2px solid var(--border);
   background:#000;
   align-items:stretch;
@@ -508,6 +509,14 @@ body.is-fullscreen .fs-exit{display:block !important}
     </div>
 
   </div><!-- /player-zone -->
+
+  <!-- PUBLICIDAD DESKTOP — siempre visible debajo del player -->
+  <div id="ad-desktop" style="flex-shrink:0;height:50px;min-height:50px;max-height:50px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box;">
+    <ins class="adsbygoogle" style="display:block;width:100%;height:50px"
+      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
+      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
 
   <div class="ad-bottom-mobile">
     <ins class="adsbygoogle" style="display:block;width:100%;height:44px"
