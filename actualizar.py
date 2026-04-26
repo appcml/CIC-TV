@@ -21,22 +21,33 @@ from concurrent.futures import ThreadPoolExecutor
 # ══════════════════════════════════
 REPO_BASE = 'https://iptv-org.github.io/iptv'
 
-# ── Fuentes de plataformas gratuitas legales ──
+# ── Fuentes verificadas — alta disponibilidad ──
 FUENTES_EXTRA = [
-    # Pluto TV — miles de canales gratuitos legales
+    # Pluto TV — miles de canales 100% legales y gratuitos
     'https://i.mjh.nz/PlutoTV/all.m3u8',
-    # Samsung TV Plus
+    # Pluto TV por región
+    'https://i.mjh.nz/PlutoTV/us.m3u8',
+    'https://i.mjh.nz/PlutoTV/es.m3u8',
+    'https://i.mjh.nz/PlutoTV/mx.m3u8',
+    'https://i.mjh.nz/PlutoTV/ar.m3u8',
+    # Free TV — canales gratuitos verificados
+    'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8',
+    # Samsung TV Plus — canales oficiales
     'https://apsattv.com/ssungusa.m3u',
-    # Roku Channel
+    # Roku Channel — canales oficiales
     'https://www.apsattv.com/rok.m3u',
-    # DistroTV
+    # DistroTV — canales oficiales
     'https://www.apsattv.com/distro.m3u',
-    # XUMO
+    # XUMO — canales oficiales
     'https://www.apsattv.com/xumo.m3u',
     # Local Now
     'https://www.apsattv.com/localnow.m3u',
     # LG Channels
     'https://www.apsattv.com/lg.m3u',
+    # Vizio
+    'https://www.apsattv.com/vizio.m3u',
+    # m3u.cl — canales Chile verificados
+    'https://m3u.cl/lista.m3u',
 ]
 
 FUENTES = [
@@ -144,8 +155,8 @@ CAT_MAP = {
 }
 
 MAX_CANALES_POR_FUENTE = 500
-TIMEOUT_VALIDACION = 8
-WORKERS_VALIDACION = 30
+TIMEOUT_VALIDACION = 10  # segundos — más tiempo para canales lentos
+WORKERS_VALIDACION = 50  # más workers = validación más rápida
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), 'canales.json')
 
 
@@ -349,7 +360,7 @@ def main():
     ), reverse=False)
 
     # Validar en lotes de 200 (no más para no saturar)
-    MAX_VALIDAR = 1000
+    MAX_VALIDAR = 2000  # validar más canales por ciclo
     a_validar = lista[:MAX_VALIDAR]
     no_validar = lista[MAX_VALIDAR:]
 
