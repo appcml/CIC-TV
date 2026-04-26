@@ -2,9 +2,8 @@ name: Actualizar Canales CIC TV
 
 on:
   schedule:
-    # Cada 6 horas: 00:00, 06:00, 12:00, 18:00 UTC
     - cron: '0 0,6,12,18 * * *'
-  workflow_dispatch:  # Ejecución manual desde GitHub
+  workflow_dispatch:
 
 jobs:
   actualizar:
@@ -32,23 +31,24 @@ jobs:
 
       - name: Verificar canales.json
         run: |
-          python3 -c "
+          python3 << 'EOF'
           import json
           with open('canales.json') as f:
               d = json.load(f)
-          print(f'Total: {d[\"stats\"][\"total\"]}')
-          print(f'Vivos: {d[\"stats\"][\"vivos\"]}')
-          print(f'Caidos: {d[\"stats\"][\"caidos\"]}')
-          print(f'Generado: {d[\"generado\"]}')
-          # Verificar que hay canales de fútbol
+          print(f"Total: {d['stats']['total']}")
+          print(f"Vivos: {d['stats']['vivos']}")
+          print(f"Caidos: {d['stats']['caidos']}")
+          print(f"Generado: {d['generado']}")
           deportes = [c for c in d['canales'] if c.get('cat') == 'Deportes']
-          print(f'Canales Deportes: {len(deportes)}')
-          "
+          print(f"Canales Deportes: {len(deportes)}")
+          EOF
 
       - name: Commit y push canales.json
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "CIC TV Bot"
           git add canales.json
-          git diff --staged --quiet || git commit -m "🤖 Actualizar canales.json [$(date -u '+%Y-%m-%d %H:%M')] UTC - $(python3 -c \"import json; d=json.load(open('canales.json')); print(f'{d[\\\"stats\\\"][\\\"vivos\\\"]} vivos')\")"
+          FECHA=$(date -u '+%Y-%m-%d %H:%M')
+          VIVOS=$(python3 -c "import json; d=json.load(open('canales.json')); print(d['stats']['vivos'])")
+          git diff --staged --quiet || git commit -m "Actualizar canales.json [$FECHA UTC] - $VIVOS vivos"
           git push
