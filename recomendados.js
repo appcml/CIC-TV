@@ -44,57 +44,122 @@ async function arrancar() {
 // El navegador ya tiene cookies/sesión → no hay 403
 // ════════════════════════════════════
 async function fetchCalendario() {
-  log('Descargando futbollibretv.su desde el navegador...');
-  try {
-    var res = await fetch(REC.url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml',
-        'Accept-Language': 'es-ES,es;q=0.9',
-      },
-      credentials: 'include', // incluir cookies del usuario
-      mode: 'cors',
-    });
+  log('Descargando calendario...');
 
-    if (!res.ok) {
-      log('Error HTTP ' + res.status + ' — usando caché');
-      usarCache();
-      return;
-    }
+  // Estrategia 1: fetch con no-cors + proxies que sí permiten CORS
+  var html = await fetchConProxies(REC.url);
 
-    var html = await res.text();
+  if (html && html.length > 500) {
     log('HTML recibido: ' + html.length + ' chars');
-
-    var partidos = [];
-
-    // ── Paso 1: Extraer JSON-LD (Schema.org) ──
-    var jsonPartidos = extraerJSONLD(html);
-    if (jsonPartidos.length) {
-      log('JSON-LD: ' + jsonPartidos.length + ' partidos');
-      partidos = jsonPartidos;
-    }
-
-    // ── Paso 2: Si JSON-LD vacío, parsear HTML directamente ──
-    if (!partidos.length) {
-      log('Intentando parsear HTML directo...');
-      partidos = parsearHTMLDireto(html);
-    }
-
-    log('Total partidos: ' + partidos.length);
-
+    var partidos = extraerJSONLD(html);
+    if (!partidos.length) partidos = parsearHTMLDireto(html);
+    log('Partidos encontrados: ' + partidos.length);
     if (partidos.length) {
       partidosHoy = partidos;
       guardarCache(partidos);
-    } else {
-      log('Sin partidos — usando caché');
-      usarCache();
+      buildItems();
+      renderBar();
+      return;
+    }
+  }
+
+  // Estrategia 2: usar iframe oculto (mismo navegador, sin CORS)
+  log('Intentando via iframe...');
+  var htmlIframe = await fetchViaIframe(REC.url, 8000);
+  if (htmlIframe && htmlIframe.length > 500) {
+    var partidos2 = extraerJSONLD(htmlIframe);
+    if (!partidos2.length) partidos2 = parsearHTMLDireto(htmlIframe);
+    log('Iframe partidos: ' + partidos2.length);
+    if (partidos2.length) {
+      partidosHoy = partidos2;
+      guardarCache(partidos2);
+      buildItems();
+      renderBar();
+      return;
+    }
+  }
+
+  log('Sin datos — usando caché');
+  usarCache();
+}
+
+// ── Fetch con múltiples proxies CORS ──
+async function fetchConProxies(url) {
+  var proxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://api.codetabs.com/v1/proxy?quest=',
+    'https://thingproxy.freeboard.io/fetch/',
+    'https://yacdn.org/proxy/',
+  ];
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var r = await fetch(proxies[i] + encodeURIComponent(url), {
+        signal: AbortSignal.timeout(8000),
+        headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      if (r.ok) {
+        var txt = await r.text();
+        if (txt && txt.length > 500) { log('OK via: ' + proxies[i].slice(0,35)); return txt; }
+      }
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+// ── Fetch via iframe oculto ──
+// El iframe carga la página con las cookies del usuario
+// y devuelve el HTML via postMessage
+function fetchViaIframe(url, timeoutMs) {
+  return new Promise(function(resolve) {
+    var done = false;
+    var timer = setTimeout(function() {
+      if (!done) { done = true; cleanup(); resolve(null); }
+    }, timeoutMs || 8000);
+
+    // Crear iframe oculto
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+    iframe.sandbox = 'allow-scripts allow-same-origin';
+    document.body.appendChild(iframe);
+
+    function cleanup() {
+      clearTimeout(timer);
+      try { document.body.removeChild(iframe); } catch(e) {}
     }
 
-  } catch(e) {
-    log('Error fetch: ' + e.message);
-    // Si falla CORS, intentar con modo no-cors y caché
-    usarCache();
-  }
+    // Escuchar mensaje del iframe
+    function onMsg(e) {
+      if (e.data && e.data.type === 'cic_html') {
+        if (!done) {
+          done = true;
+          window.removeEventListener('message', onMsg);
+          cleanup();
+          resolve(e.data.html || null);
+        }
+      }
+    }
+    window.addEventListener('message', onMsg);
+
+    iframe.onload = function() {
+      try {
+        // Inyectar script que manda el HTML al padre
+        iframe.contentWindow.postMessage(
+          { type: 'cic_html', html: iframe.contentDocument.documentElement.outerHTML },
+          '*'
+        );
+      } catch(e) {
+        // Si el iframe es cross-origin no podemos leer — resolver null
+        if (!done) { done = true; window.removeEventListener('message', onMsg); cleanup(); resolve(null); }
+      }
+    };
+
+    iframe.onerror = function() {
+      if (!done) { done = true; window.removeEventListener('message', onMsg); cleanup(); resolve(null); }
+    };
+
+    iframe.src = url;
+  });
 }
 
 // ════════════════════════════════════
@@ -406,15 +471,32 @@ function buildItems() {
       });
     });
 
-  // ── 3. Sin partidos → canales favoritos del usuario ──
+  // ── 3. Sin partidos → canales frecuentes + favoritos ──
   if (!items.length) {
-    var favCanales = allSrc.filter(function(c){ return favsApp.includes(c.id); });
-    favCanales.slice(0, 8).forEach(function(c) {
+    // Primero canales frecuentes (los más vistos aunque no sean favoritos)
+    var frecuentes = getCanalesFrecuentes(allSrc);
+    var mostrados  = {};
+
+    frecuentes.slice(0, 5).forEach(function(c) {
+      mostrados[c.id] = true;
+      items.push({
+        tipo:   'frecuente',
+        emoji:  '📺',
+        label:  c.name,
+        sub:    (c._vistas || 1) + ' vistas · ' + c.cat,
+        logo:   c.logo || '',
+        accion: (function(ch){ return function(){ reproducirCanalCIC(ch); }; })(c),
+      });
+    });
+
+    // Luego favoritos no mostrados aún
+    var favCanales = allSrc.filter(function(c){ return favsApp.includes(c.id) && !mostrados[c.id]; });
+    favCanales.slice(0, 5).forEach(function(c) {
       items.push({
         tipo:   'fav',
         emoji:  '⭐',
         label:  c.name,
-        sub:    c.cat + (c.co ? ' · ' + c.co : ''),
+        sub:    'Favorito · ' + c.cat,
         logo:   c.logo || '',
         accion: (function(ch){ return function(){ reproducirCanalCIC(ch); }; })(c),
       });
@@ -681,6 +763,27 @@ function checkEnVivo() {
 // ════════════════════════════════════
 // PREFERENCIAS Y APRENDIZAJE
 // ════════════════════════════════════
+// ── Registrar vista de canal (llamar desde playFromGrid/playFromSide) ──
+function registrarVistaCanal(canal) {
+  if (!canal || !canal.id) return;
+  var vistas = loadVistasCan();
+  vistas[canal.id] = (vistas[canal.id] || 0) + 1;
+  localStorage.setItem('cicVistasCan', JSON.stringify(vistas));
+}
+
+function loadVistasCan() {
+  try { return JSON.parse(localStorage.getItem('cicVistasCan')) || {}; }
+  catch(e) { return {}; }
+}
+
+function getCanalesFrecuentes(src) {
+  var vistas = loadVistasCan();
+  return src
+    .filter(function(c){ return vistas[c.id] && vistas[c.id] > 0; })
+    .map(function(c){ return Object.assign({}, c, { _vistas: vistas[c.id] }); })
+    .sort(function(a,b){ return b._vistas - a._vistas; });
+}
+
 function registrarVista(partido) {
   extraerEquipos(partido.nombre).forEach(function(eq) {
     var e = prefs.equipos.find(function(x){ return x.n === eq; });
