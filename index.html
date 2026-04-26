@@ -638,74 +638,18 @@ let allTV = [
   {id:'es1',name:'La 1 RTVE',       cat:'General',        co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1688877.m3u8'},
   {id:'es2',name:'24h RTVE',        cat:'Noticias',       co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1694255.m3u8'},
 
-  // ══════════════════════════════════════════
-  // CANALES DEPORTIVOS — FÚTBOL
-  // Fuentes: iptv-org + streams públicos verificados
-  // ══════════════════════════════════════════
-
-  // ── ESPN / ESPN+ ──
-  {id:'sp01',name:'ESPN Deportes',     cat:'Deportes',co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ESPN_Deportes_logo.svg/120px-ESPN_Deportes_logo.svg.png',url:'https://iptv-org.github.io/iptv/channels/us/espndeportes.m3u'},
-  {id:'sp02',name:'ESPN 2',            cat:'Deportes',co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/ESPN2_logo.svg/120px-ESPN2_logo.svg.png',url:'http://190.92.10.66:4000/play/a003/index.m3u8'},
-  {id:'sp03',name:'ESPN Premium AR',   cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ESPN_Deportes_logo.svg/120px-ESPN_Deportes_logo.svg.png',url:'http://190.102.246.93:9005/play/a00x'},
-  {id:'sp04',name:'ESPN 2 CO',         cat:'Deportes',co:'CO',type:'tv',logo:'',url:'http://190.102.246.93:9005/play/a029'},
-  {id:'sp05',name:'ESPN 3 CO',         cat:'Deportes',co:'CO',type:'tv',logo:'',url:'http://190.102.246.93:9005/play/a02l'},
-
-  // ── FOX Sports ──
-  {id:'sp10',name:'Fox Sports 1 AR',   cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Fox_Sports_logo.svg/120px-Fox_Sports_logo.svg.png',url:'http://181.78.27.128:8000/play/a062/index.m3u8'},
-  {id:'sp11',name:'Fox Sports 1 HD',   cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Fox_Sports_logo.svg/120px-Fox_Sports_logo.svg.png',url:'http://190.110.99.102:8000/play/a016'},
-  {id:'sp12',name:'Fox Sports 2 HD',   cat:'Deportes',co:'AR',type:'tv',logo:'',url:'http://190.110.99.102:8000/play/a017'},
-  {id:'sp13',name:'Fox Sports 3 HD',   cat:'Deportes',co:'AR',type:'tv',logo:'',url:'http://190.110.99.102:8000/play/a018'},
-  {id:'sp14',name:'Fox Sports News',   cat:'Deportes',co:'AU',type:'tv',logo:'',url:'https://austchannel-live.akamaized.net/hls/live/2002736/austchannel-sport/master.m3u8'},
-
-  // ── DirecTV Sports ──
-  {id:'sp20',name:'DirecTV Sports +',  cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/DirecTV_Sports_logo.svg/120px-DirecTV_Sports_logo.svg.png',url:'http://199.223.255.67:8080/images/admin/progress/47727_.m3u8'},
-  {id:'sp21',name:'DirecTV Sports',    cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/DirecTV_Sports_logo.svg/120px-DirecTV_Sports_logo.svg.png',url:'https://rakuten-directvdep-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-
-  // ── TNT Sports ──
-  {id:'sp30',name:'TNT Sports 1',      cat:'Deportes',co:'GB',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/TNT_Sports_logo.svg/120px-TNT_Sports_logo.svg.png',url:'http://109.61.81.147:2080/cdn2/559/video.m3u8?token=4444'},
-  {id:'sp31',name:'TNT Sports 2',      cat:'Deportes',co:'GB',type:'tv',logo:'',url:'http://109.61.81.147:2080/cdn2/560/video.m3u8?token=4444'},
-
-  // ── TUDN ──
-  {id:'sp40',name:'TUDN MX',           cat:'Deportes',co:'MX',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/TUDN_logo.svg/120px-TUDN_logo.svg.png',url:'http://181.78.105.146:2000/play/a08j/index.m3u8'},
-
-  // ── Eurosport ──
+  // ── Canales deportivos verificados (CDN estables) ──
+  // Los demás se cargan dinámicamente desde canales.json via monitor.js
+  {id:'sp14',name:'Fox Sports News AU', cat:'Deportes',co:'AU',type:'tv',logo:'',url:'https://austchannel-live.akamaized.net/hls/live/2002736/austchannel-sport/master.m3u8'},
   {id:'sp50',name:'Eurosport 1',        cat:'Deportes',co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Eurosport_2016.svg/120px-Eurosport_2016.svg.png',url:'https://rakuten-eurosport-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
-
-  // ── BeIN Sports ──
-  {id:'sp60',name:'beIN Sports EN',     cat:'Deportes',co:'QA',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/BeIN_SPORTS_logo.svg/120px-BeIN_SPORTS_logo.svg.png',url:'http://51.178.65.238/BeinSport/mono.m3u8'},
   {id:'sp61',name:'beIN Sports xtra',   cat:'Deportes',co:'QA',type:'tv',logo:'',url:'https://d35j504z0x2vu2.cloudfront.net/v1/master/0bc8e8376bd8417a1b6761138aa41c26c7309312/bein-sports-xtra-en-espanol/playlist.m3u8'},
-
-  // ── LaLiga TV ──
-  {id:'sp70',name:'LaLiga TV',          cat:'Deportes',co:'ES',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/LaLiga_TV_logo.svg/120px-LaLiga_TV_logo.svg.png',url:'http://181.78.105.146:2000/play/a08m/index.m3u8'},
-
-  // ── Sky Sports LaLiga ──
-  {id:'sp71',name:'Sky Sports LaLiga',  cat:'Deportes',co:'GB',type:'tv',logo:'',url:'https://hls.streambtw.com/live/stream_1.m3u8'},
-
-  // ── DeporTV AR ──
-  {id:'sp80',name:'DeporTV',            cat:'Deportes',co:'AR',type:'tv',logo:'',url:'https://538d0bde28ccf.streamlock.net/live-cont.ar/deportv/playlist.m3u8'},
-
-  // ── TyC Sports (cargado vía países AR ya, pero agregamos directo) ──
-  {id:'sp81',name:'TyC Sports',         cat:'Deportes',co:'AR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/TyC_Sports_logo.svg/120px-TyC_Sports_logo.svg.png',url:'https://tycsports-live.akamaized.net/hls/live/2107655/tycsports/master.m3u8'},
-
-  // ── Edge Sports (gratuito 24/7) ──
-  {id:'sp90',name:'Edge Sports',         cat:'Deportes',co:'US',type:'tv',logo:'',url:'https://imgedge.akamaized.net/amagi_hls_data_imgAAA2AA-edgesports/CDN/playlist.m3u8'},
-
-  // ── Abu Dhabi Sports (Asia/Oriente Medio) ──
+  {id:'sp90',name:'Edge Sports',        cat:'Deportes',co:'US',type:'tv',logo:'',url:'https://imgedge.akamaized.net/amagi_hls_data_imgAAA2AA-edgesports/CDN/playlist.m3u8'},
   {id:'sp91',name:'Abu Dhabi Sports 1', cat:'Deportes',co:'AE',type:'tv',logo:'',url:'https://admdn1.cdn.mangomolo.com/adsports1/smil:adsports1.stream.smil/playlist.m3u8'},
   {id:'sp92',name:'Abu Dhabi Sports 2', cat:'Deportes',co:'AE',type:'tv',logo:'',url:'https://admdn5.cdn.mangomolo.com/adsports2/smil:adsports2.stream.smil/playlist.m3u8'},
-
-  // ── S Sport (Turquía — Champions/LaLiga) ──
-  {id:'sp93',name:'S Sport 1 TR',       cat:'Deportes',co:'TR',type:'tv',logo:'',url:'http://umka625.megogo.xyz/iptv/Z463DXTQ5XKBFL/19070/index.m3u8'},
-  {id:'sp94',name:'S Sport 2 TR',       cat:'Deportes',co:'TR',type:'tv',logo:'',url:'http://umka625.megogo.xyz/iptv/Z463DXTQ5XKBFL/19071/index.m3u8'},
-
-  // ── Tigo Sports (Centroamérica) ──
   {id:'sp95',name:'Tigo Sports GT',     cat:'Deportes',co:'GT',type:'tv',logo:'',url:'https://cnm-tsl.otteravision.com/cnm/tsl/tsl.m3u8'},
-
-  // ── DAZN Fútbol Femenino (gratuito) ──
   {id:'sp96',name:'DAZN Women Football',cat:'Deportes',co:'EU',type:'tv',logo:'',url:'https://apollo.production-public.tubi.io/live/dazn-womens-football.m3u8'},
-
-  // ── DF1 Alemania ──
   {id:'sp97',name:'DF1 DE',             cat:'Deportes',co:'DE',type:'tv',logo:'',url:'https://dbjwcot8t7nyd.cloudfront.net/out/v1/9d068a9428444b458324ad77b5a0a4b8/index.m3u8'},
+  {id:'sp98',name:'DeporTV AR',         cat:'Deportes',co:'AR',type:'tv',logo:'',url:'https://538d0bde28ccf.streamlock.net/live-cont.ar/deportv/playlist.m3u8'},
 ];
 
 // ════════════════════════════════════
