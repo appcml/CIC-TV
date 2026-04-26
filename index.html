@@ -31,7 +31,7 @@
   --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22223a;
   --accent:#e63f6e;--accent2:#ff9900;
   --text:#f0f0f8;--text2:#9090b0;
-  --border:rgba(255,255,255,0.07);--radius:12px;--sidebar:200px;
+  --border:rgba(255,255,255,0.07);--radius:12px;--sidebar:190px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
@@ -73,7 +73,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 /* ZONA PLAYER */
 .player-zone{
   display:flex;flex-shrink:0;
-  height:calc(90vh - 52px - 80px);
+  height:calc(90vh - 52px - 80px - 50px);
   border-bottom:2px solid var(--border);
   background:var(--bg);
 }
@@ -141,12 +141,11 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 
 /* LISTA LATERAL */
 .ch-side{
-  width:260px;flex-shrink:0;
+  width:180px;flex-shrink:0;
   background:var(--bg2);border-left:1px solid var(--border);
   display:flex;flex-direction:column;
   position:relative;
-  height:100%;
-  align-self:stretch;
+  overflow:hidden;
 }
 .ch-side-hd{
   flex-shrink:0;padding:7px 10px;
@@ -468,6 +467,11 @@ body.is-fullscreen .fs-exit{display:block !important}
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
+  <!-- BARRA RESERVADA: recomendaciones FutbolLibreTV -->
+  <div id="rec-bar" style="flex-shrink:0;height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 12px;gap:8px;overflow:hidden;">
+    <span style="font-size:10px;color:var(--text2);white-space:nowrap;">⚽ Recomendados</span>
+  </div>
+
   <!-- PLAYER ZONE -->
   <div class="player-zone">
 
@@ -508,25 +512,6 @@ body.is-fullscreen .fs-exit{display:block !important}
       <button class="fs-exit" id="fsExit" onclick="exitFS()">✕ Salir</button>
     </div>
 
-    <!-- LISTA LATERAL -->
-    <div class="ch-side">
-      <div class="ch-side-hd">
-        <span>Lista</span>
-        <small id="sideCount">0</small>
-      </div>
-      <div class="side-countries">
-        <div class="side-countries-bar" id="sideCountriesBar">
-          <button class="sc-chip active" onclick="setSideCountry('all',this)">🌐 Todos</button>
-        </div>
-      </div>
-      <div class="side-nav">
-        <button class="side-arrow" onclick="sideScroll(-150)">▲</button>
-        <span class="side-pos" id="sidePos">1/0</span>
-        <button class="side-arrow" onclick="sideScroll(150)">▼</button>
-      </div>
-      <div class="ch-side-list" id="chSideList"></div>
-    </div>
-
   </div><!-- /player-zone -->
 
   <div class="ad-bottom-mobile">
@@ -564,6 +549,26 @@ body.is-fullscreen .fs-exit{display:block !important}
   </div>
 
 </main>
+
+    <!-- ═══ LISTA LATERAL — hermana de aside y main ═══ -->
+    <div class="ch-side">
+      <div class="ch-side-hd">
+        <span>Lista</span>
+        <small id="sideCount">0</small>
+      </div>
+      <div class="side-countries">
+        <div class="side-countries-bar" id="sideCountriesBar">
+          <button class="sc-chip active" data-co="all">🌐 Todos</button>
+        </div>
+      </div>
+      <div class="side-nav">
+        <button class="side-arrow" onclick="sideScroll(-150)">▲</button>
+        <span class="side-pos" id="sidePos">1/0</span>
+        <button class="side-arrow" onclick="sideScroll(150)">▼</button>
+      </div>
+      <div class="ch-side-list" id="chSideList"></div>
+    </div>
+
 </div><!-- /body -->
 
 <div class="toast" id="toast"></div>
