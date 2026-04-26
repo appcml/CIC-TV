@@ -21,53 +21,112 @@ from concurrent.futures import ThreadPoolExecutor
 # ══════════════════════════════════
 REPO_BASE = 'https://iptv-org.github.io/iptv'
 
+# ── Fuentes de plataformas gratuitas legales ──
+FUENTES_EXTRA = [
+    # Pluto TV — miles de canales gratuitos legales
+    'https://i.mjh.nz/PlutoTV/all.m3u8',
+    # Samsung TV Plus
+    'https://apsattv.com/ssungusa.m3u',
+    # Roku Channel
+    'https://www.apsattv.com/rok.m3u',
+    # DistroTV
+    'https://www.apsattv.com/distro.m3u',
+    # XUMO
+    'https://www.apsattv.com/xumo.m3u',
+    # Local Now
+    'https://www.apsattv.com/localnow.m3u',
+    # LG Channels
+    'https://www.apsattv.com/lg.m3u',
+]
+
 FUENTES = [
-    # ── Por categoría (iptv-org) ──
-    {'url': f'{REPO_BASE}/categories/sports.m3u',        'cat': 'Deportes',       'co': None},
-    {'url': f'{REPO_BASE}/categories/football.m3u',      'cat': 'Deportes',       'co': None},
-    {'url': f'{REPO_BASE}/categories/movies.m3u',        'cat': 'Películas',      'co': None},
-    {'url': f'{REPO_BASE}/categories/series.m3u',        'cat': 'Series',         'co': None},
-    {'url': f'{REPO_BASE}/categories/animation.m3u',     'cat': 'Infantil',       'co': None},
-    {'url': f'{REPO_BASE}/categories/kids.m3u',          'cat': 'Infantil',       'co': None},
-    {'url': f'{REPO_BASE}/categories/entertainment.m3u', 'cat': 'Entretenimiento','co': None},
-    {'url': f'{REPO_BASE}/categories/news.m3u',          'cat': 'Noticias',       'co': None},
-    {'url': f'{REPO_BASE}/categories/documentary.m3u',   'cat': 'Documentales',   'co': None},
-    {'url': f'{REPO_BASE}/categories/music.m3u',         'cat': 'Música',         'co': None},
-    {'url': f'{REPO_BASE}/categories/religious.m3u',     'cat': 'Religiosos',     'co': None},
-    {'url': f'{REPO_BASE}/categories/business.m3u',      'cat': 'Negocios',       'co': None},
-    {'url': f'{REPO_BASE}/categories/general.m3u',       'cat': 'General',        'co': None},
+    # ══ IPTV-ORG POR CATEGORÍA ══
+    # Deportes (máxima prioridad — fútbol)
+    {'url': f'{REPO_BASE}/categories/sports.m3u',        'cat': 'Deportes',        'co': None},
+    {'url': f'{REPO_BASE}/categories/football.m3u',      'cat': 'Deportes',        'co': None},
+    # Entretenimiento y cine
+    {'url': f'{REPO_BASE}/categories/movies.m3u',        'cat': 'Películas',       'co': None},
+    {'url': f'{REPO_BASE}/categories/series.m3u',        'cat': 'Series',          'co': None},
+    {'url': f'{REPO_BASE}/categories/animation.m3u',     'cat': 'Infantil',        'co': None},
+    {'url': f'{REPO_BASE}/categories/kids.m3u',          'cat': 'Infantil',        'co': None},
+    {'url': f'{REPO_BASE}/categories/entertainment.m3u', 'cat': 'Entretenimiento', 'co': None},
+    # Información
+    {'url': f'{REPO_BASE}/categories/news.m3u',          'cat': 'Noticias',        'co': None},
+    {'url': f'{REPO_BASE}/categories/documentary.m3u',   'cat': 'Documentales',    'co': None},
+    {'url': f'{REPO_BASE}/categories/business.m3u',      'cat': 'Negocios',        'co': None},
+    # Otros
+    {'url': f'{REPO_BASE}/categories/music.m3u',         'cat': 'Música',          'co': None},
+    {'url': f'{REPO_BASE}/categories/religious.m3u',     'cat': 'Religiosos',      'co': None},
+    {'url': f'{REPO_BASE}/categories/general.m3u',       'cat': 'General',         'co': None},
+    {'url': f'{REPO_BASE}/categories/auto.m3u',          'cat': 'General',         'co': None},
+    {'url': f'{REPO_BASE}/categories/classic.m3u',       'cat': 'Entretenimiento', 'co': None},
+    {'url': f'{REPO_BASE}/categories/comedy.m3u',        'cat': 'Entretenimiento', 'co': None},
+    {'url': f'{REPO_BASE}/categories/cooking.m3u',       'cat': 'Entretenimiento', 'co': None},
+    {'url': f'{REPO_BASE}/categories/culture.m3u',       'cat': 'Documentales',    'co': None},
+    {'url': f'{REPO_BASE}/categories/family.m3u',        'cat': 'Infantil',        'co': None},
+    {'url': f'{REPO_BASE}/categories/lifestyle.m3u',     'cat': 'Entretenimiento', 'co': None},
+    {'url': f'{REPO_BASE}/categories/science.m3u',       'cat': 'Documentales',    'co': None},
+    {'url': f'{REPO_BASE}/categories/travel.m3u',        'cat': 'Documentales',    'co': None},
+    {'url': f'{REPO_BASE}/categories/weather.m3u',       'cat': 'Noticias',        'co': None},
 
-    # ── Por idioma español (muy relevante) ──
-    {'url': f'{REPO_BASE}/languages/spa.m3u',            'cat': None,             'co': None},
-    {'url': f'{REPO_BASE}/languages/por.m3u',            'cat': None,             'co': None},
+    # ══ IPTV-ORG POR IDIOMA ══
+    {'url': f'{REPO_BASE}/languages/spa.m3u', 'cat': None, 'co': None},  # Español
+    {'url': f'{REPO_BASE}/languages/por.m3u', 'cat': None, 'co': None},  # Portugués
+    {'url': f'{REPO_BASE}/languages/eng.m3u', 'cat': None, 'co': None},  # Inglés
+    {'url': f'{REPO_BASE}/languages/ara.m3u', 'cat': None, 'co': None},  # Árabe
 
-    # ── Por países latinos ──
-    {'url': f'{REPO_BASE}/countries/cl.m3u',  'cat': None, 'co': 'CL'},
+    # ══ IPTV-ORG POR PAÍS — LATINOAMÉRICA ══
     {'url': f'{REPO_BASE}/countries/ar.m3u',  'cat': None, 'co': 'AR'},
-    {'url': f'{REPO_BASE}/countries/mx.m3u',  'cat': None, 'co': 'MX'},
-    {'url': f'{REPO_BASE}/countries/co.m3u',  'cat': None, 'co': 'CO'},
-    {'url': f'{REPO_BASE}/countries/pe.m3u',  'cat': None, 'co': 'PE'},
-    {'url': f'{REPO_BASE}/countries/ve.m3u',  'cat': None, 'co': 'VE'},
-    {'url': f'{REPO_BASE}/countries/ec.m3u',  'cat': None, 'co': 'EC'},
     {'url': f'{REPO_BASE}/countries/bo.m3u',  'cat': None, 'co': 'BO'},
     {'url': f'{REPO_BASE}/countries/br.m3u',  'cat': None, 'co': 'BR'},
-    {'url': f'{REPO_BASE}/countries/es.m3u',  'cat': None, 'co': 'ES'},
-    {'url': f'{REPO_BASE}/countries/us.m3u',  'cat': None, 'co': 'US'},
-    {'url': f'{REPO_BASE}/countries/gb.m3u',  'cat': None, 'co': 'GB'},
+    {'url': f'{REPO_BASE}/countries/cl.m3u',  'cat': None, 'co': 'CL'},
+    {'url': f'{REPO_BASE}/countries/co.m3u',  'cat': None, 'co': 'CO'},
+    {'url': f'{REPO_BASE}/countries/cr.m3u',  'cat': None, 'co': 'CR'},
+    {'url': f'{REPO_BASE}/countries/do.m3u',  'cat': None, 'co': 'DO'},
+    {'url': f'{REPO_BASE}/countries/ec.m3u',  'cat': None, 'co': 'EC'},
+    {'url': f'{REPO_BASE}/countries/gt.m3u',  'cat': None, 'co': 'GT'},
+    {'url': f'{REPO_BASE}/countries/hn.m3u',  'cat': None, 'co': 'HN'},
+    {'url': f'{REPO_BASE}/countries/mx.m3u',  'cat': None, 'co': 'MX'},
+    {'url': f'{REPO_BASE}/countries/pa.m3u',  'cat': None, 'co': 'PA'},
+    {'url': f'{REPO_BASE}/countries/pe.m3u',  'cat': None, 'co': 'PE'},
+    {'url': f'{REPO_BASE}/countries/py.m3u',  'cat': None, 'co': 'PY'},
+    {'url': f'{REPO_BASE}/countries/sv.m3u',  'cat': None, 'co': 'SV'},
+    {'url': f'{REPO_BASE}/countries/uy.m3u',  'cat': None, 'co': 'UY'},
+    {'url': f'{REPO_BASE}/countries/ve.m3u',  'cat': None, 'co': 'VE'},
 
-    # ── Países europeos ──
+    # ══ IPTV-ORG POR PAÍS — NORTEAMÉRICA Y EUROPA ══
+    {'url': f'{REPO_BASE}/countries/us.m3u',  'cat': None, 'co': 'US'},
+    {'url': f'{REPO_BASE}/countries/ca.m3u',  'cat': None, 'co': 'CA'},
+    {'url': f'{REPO_BASE}/countries/es.m3u',  'cat': None, 'co': 'ES'},
+    {'url': f'{REPO_BASE}/countries/gb.m3u',  'cat': None, 'co': 'GB'},
     {'url': f'{REPO_BASE}/countries/de.m3u',  'cat': None, 'co': 'DE'},
     {'url': f'{REPO_BASE}/countries/fr.m3u',  'cat': None, 'co': 'FR'},
     {'url': f'{REPO_BASE}/countries/it.m3u',  'cat': None, 'co': 'IT'},
     {'url': f'{REPO_BASE}/countries/pt.m3u',  'cat': None, 'co': 'PT'},
     {'url': f'{REPO_BASE}/countries/nl.m3u',  'cat': None, 'co': 'NL'},
+    {'url': f'{REPO_BASE}/countries/at.m3u',  'cat': None, 'co': 'AT'},
+    {'url': f'{REPO_BASE}/countries/be.m3u',  'cat': None, 'co': 'BE'},
+    {'url': f'{REPO_BASE}/countries/ch.m3u',  'cat': None, 'co': 'CH'},
+    {'url': f'{REPO_BASE}/countries/pl.m3u',  'cat': None, 'co': 'PL'},
+    {'url': f'{REPO_BASE}/countries/ru.m3u',  'cat': None, 'co': 'RU'},
+    {'url': f'{REPO_BASE}/countries/tr.m3u',  'cat': None, 'co': 'TR'},
 
-    # ── Países asiáticos ──
+    # ══ IPTV-ORG POR PAÍS — ASIA ══
     {'url': f'{REPO_BASE}/countries/jp.m3u',  'cat': None, 'co': 'JP'},
     {'url': f'{REPO_BASE}/countries/kr.m3u',  'cat': None, 'co': 'KR'},
     {'url': f'{REPO_BASE}/countries/cn.m3u',  'cat': None, 'co': 'CN'},
-    {'url': f'{REPO_BASE}/countries/tr.m3u',  'cat': None, 'co': 'TR'},
     {'url': f'{REPO_BASE}/countries/in.m3u',  'cat': None, 'co': 'IN'},
+    {'url': f'{REPO_BASE}/countries/id.m3u',  'cat': None, 'co': 'ID'},
+    {'url': f'{REPO_BASE}/countries/th.m3u',  'cat': None, 'co': 'TH'},
+    {'url': f'{REPO_BASE}/countries/ph.m3u',  'cat': None, 'co': 'PH'},
+
+    # ══ IPTV-ORG POR PAÍS — MEDIO ORIENTE Y ÁFRICA ══
+    {'url': f'{REPO_BASE}/countries/sa.m3u',  'cat': None, 'co': 'SA'},
+    {'url': f'{REPO_BASE}/countries/ae.m3u',  'cat': None, 'co': 'AE'},
+    {'url': f'{REPO_BASE}/countries/eg.m3u',  'cat': None, 'co': 'EG'},
+    {'url': f'{REPO_BASE}/countries/ma.m3u',  'cat': None, 'co': 'MA'},
+    {'url': f'{REPO_BASE}/countries/ng.m3u',  'cat': None, 'co': 'NG'},
+    {'url': f'{REPO_BASE}/countries/za.m3u',  'cat': None, 'co': 'ZA'},
 ]
 
 # Mapeo de categorías
@@ -237,6 +296,22 @@ def main():
     # Preservar canales existentes
     for url, c in existentes.items():
         todos[url] = c
+
+    # ── Descargar y parsear fuentes extra (Pluto TV, Samsung, Roku, etc.) ──
+    for url_extra in FUENTES_EXTRA:
+        print(f'\n📥 Extra: {url_extra.split("/")[-1][:30]} ...', end=' ', flush=True)
+        txt = fetch_m3u(url_extra)
+        if not txt:
+            print('sin respuesta')
+            continue
+        nuevos_extra = parsear_m3u(txt, None, None)
+        print(f'{len(nuevos_extra)} canales')
+        agregados_extra = 0
+        for c in nuevos_extra[:300]:  # max 300 por fuente extra
+            if c.get('url') and c['url'] not in todos:
+                todos[c['url']] = c
+                agregados_extra += 1
+        print(f'   → {agregados_extra} nuevos')
 
     # ── Descargar y parsear todas las fuentes ──
     for fuente in FUENTES:
