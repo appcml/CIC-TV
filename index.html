@@ -616,7 +616,10 @@ let allTV = [
   {id:'n03',name:'Al Jazeera EN',   cat:'Noticias',       co:'QA',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/120px-Aljazeera_eng.svg.png',url:'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'},
   {id:'n04',name:'TRT World',       cat:'Noticias',       co:'TR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/TRT_World_logo.svg/120px-TRT_World_logo.svg.png',url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
   {id:'n05',name:'NASA TV',         cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n06',name:'Euronews EN',     cat:'Noticias',       co:'EU',type:'tv',logo:'',url:'https://rakuten-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
+  {id:'n05b',name:'NASA TV (Alt)',    cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV2-HLS/master.m3u8'},
+  {id:'n05c',name:'NASA TV Live',     cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'},
+  {id:'n06',name:'Euronews EN',     cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://rakuten-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
+  {id:'n06b',name:'Euronews EN (Alt)',cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://euronews-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'n07',name:'Bloomberg TV',    cat:'Negocios',       co:'US',type:'tv',logo:'',url:'https://bloomenglish.akamaized.net/hls/live/571329/bloombergenglish/master.m3u8'},
   {id:'n08',name:'Sky News',        cat:'Noticias',       co:'GB',type:'tv',logo:'',url:'https://skynews-iphone-hls.akamaized.net/hls/live/622358/skynewsiphone/master.m3u8'},
   {id:'n09',name:'RT en Español',   cat:'Noticias',       co:'RU',type:'tv',logo:'',url:'https://rt-esp.rttv.com/live/rtesp/playlist.m3u8'},
@@ -1319,7 +1322,14 @@ function playRadio(ch) {
 var vp = g('vp');
 vp.addEventListener('canplay',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
 vp.addEventListener('playing',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
-vp.addEventListener('error',    function(){ showErr(); });
+vp.addEventListener('error', function(e) {
+  // Solo activar auto-reemplazo si hay un canal cargando
+  if (curCh && g('ld').classList.contains('show')) {
+    showErr();
+  } else if (curCh) {
+    showErr();
+  }
+});
 
 // ════════════════════════════════════
 // SISTEMA DE AUTO-REEMPLAZO
@@ -1327,6 +1337,11 @@ vp.addEventListener('error',    function(){ showErr(); });
 // ════════════════════════════════════
 var intentosReemplazo = 0;
 var urlsIntentadas    = [];
+// URL del proxy Cloudflare Worker (dejar vacío si no está configurado)
+// Para configurarlo: ve a workers.cloudflare.com, crea un worker
+// y pega el contenido de worker.js. Luego pon aquí la URL.
+var PROXY_WORKER_URL  = ''; // ej: 'https://cic-tv-proxy.tuusuario.workers.dev'
+
 
 function showErr() {
   clearTimeout(errTimer);
@@ -1347,29 +1362,33 @@ function showErr() {
 
 async function buscarAlternativa(ch) {
   g('ld').classList.add('show');
+  urlsIntentadas.push(ch.url);
 
-  // 1. Buscar en allTV canales con nombre similar (excluir URLs ya intentadas)
+  // ── Paso 1: canal con mismo nombre en allTV ──
   var candidatos = buscarEnLista(ch);
   if (candidatos.length) {
-    var alt = candidatos[0];
-    log('Auto-reemplazo local: ' + alt.name + ' → ' + alt.url);
-    urlsIntentadas.push(ch.url);
-    var chAlt = Object.assign({}, curCh, { url: alt.url, name: ch.name });
-    playVideo(chAlt);
+    log('Reemplazo local: ' + candidatos[0].url);
+    playVideo(Object.assign({}, curCh, { url: candidatos[0].url, name: ch.name }));
     return;
   }
 
-  // 2. Buscar en iptv-org por país + categoría
+  // ── Paso 2: intentar con proxy Cloudflare Worker ──
+  if (PROXY_WORKER_URL && ch.url) {
+    var urlProxy = PROXY_WORKER_URL + '?url=' + encodeURIComponent(ch.url);
+    log('Intentando via proxy: ' + urlProxy);
+    playVideo(Object.assign({}, curCh, { url: urlProxy, name: ch.name }));
+    return;
+  }
+
+  // ── Paso 3: buscar en iptv-org ──
   var urlAlt = await buscarEnIptvOrg(ch);
   if (urlAlt) {
-    log('Auto-reemplazo iptv-org: ' + urlAlt);
-    urlsIntentadas.push(ch.url);
-    var chAlt2 = Object.assign({}, curCh, { url: urlAlt });
-    playVideo(chAlt2);
+    log('Reemplazo iptv-org: ' + urlAlt);
+    playVideo(Object.assign({}, curCh, { url: urlAlt, name: ch.name }));
     return;
   }
 
-  // 3. Sin alternativas
+  // ── Sin alternativas — mostrar error ──
   g('ld').classList.remove('show');
   g('er').classList.add('show');
   intentosReemplazo = 0;
