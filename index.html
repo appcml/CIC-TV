@@ -635,7 +635,8 @@ let allTV = [
   {id:'r01',name:'3ABN Latino',     cat:'Religiosos',     co:'US',type:'tv',logo:'',url:'https://videos.3abn.org/3abnlatino/playlist.m3u8'},
   {id:'g01',name:'Pluto News',      cat:'General',        co:'US',type:'tv',logo:'',url:'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/5cfa9491659b044d6e0b082b/master.m3u8?deviceId=cictv&deviceType=web'},
   {id:'g02',name:'Pluto Movies',    cat:'Películas',      co:'US',type:'tv',logo:'',url:'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/5d8d1c9d0a4a754a5b2b0e02/master.m3u8?deviceId=cictv&deviceType=web'},
-  {id:'es1',name:'La 1 RTVE',       cat:'General',        co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1688877.m3u8'},
+  {id:'es1',name:'La 1 RTVE',       cat:'General',        co:'ES',type:'tv',logo:'https://pbs.twimg.com/profile_images/2008842210414915584/zIp_go25_200x200.jpg',url:'https://ztnr.rtve.es/ztnr/1688877.m3u8'},
+  {id:'es3',name:'La 2 RTVE',       cat:'Documentales',   co:'ES',type:'tv',logo:'https://yt3.googleusercontent.com/ytc/AIdro_kqgHWySi5xprs1VFCNCX0IKNT8yXBLZC43JMoB8j0JUto=s200',url:'https://ztnr.rtve.es/ztnr/1688885.m3u8'},
   {id:'es2',name:'24h RTVE',        cat:'Noticias',       co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1694255.m3u8'},
 
   // ── Canales deportivos verificados (CDN estables) ──
@@ -672,7 +673,7 @@ let allRadio = [
 const COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
 const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
-const CAT_MAP = {news:'Noticias',sports:'Deportes',entertainment:'Entretenimiento',movies:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',business:'Negocios',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',religion:'Religiosos'};
+const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',business:'Negocios',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
 
 // ════════════════════════════════════
 // INIT
@@ -870,11 +871,17 @@ function parseM3U(txt, co, type) {
       const nM = l.match(/tvg-name="([^"]*)"/);
       const lM = l.match(/tvg-logo="([^"]*)"/);
       const cM = l.match(/group-title="([^"]*)"/);
+      const coM = l.match(/tvg-country="([^"]*)"/);
+      const rawName  = nM ? nM[1] : l.split(',').pop().trim();
+      const rawGroup = (cM ? cM[1] : '').toLowerCase();
+      // Categorizar por group-title primero, luego por nombre del canal
+      let cat = CAT_MAP[rawGroup] || inferirCategoria(rawName, rawGroup) || 'General';
       cur = {
-        name: nM ? nM[1] : l.split(',').pop().trim(),
+        name: rawName,
         logo: lM ? lM[1] : '',
-        cat:  CAT_MAP[(cM ? cM[1] : '').toLowerCase()] || 'General',
-        co, type,
+        cat,
+        co: coM ? coM[1].toUpperCase() : co,
+        type,
       };
     } else if (l && !l.startsWith('#') && cur.name) {
       cur.url = l;
@@ -884,6 +891,22 @@ function parseM3U(txt, co, type) {
     }
   }
   return res;
+}
+
+// Inferir categoría desde el nombre o group-title del canal
+function inferirCategoria(nombre, group) {
+  const n = (nombre + ' ' + group).toLowerCase();
+  if (/news|noticias|24h|cnn|bbc\s|dw\s|france\s24|aljazeera|telesur|rtn|notici|inform/.test(n)) return 'Noticias';
+  if (/sport|deport|futbol|football|soccer|espn|nba|golf|motor|tenis|racing|basket|liga|cup|mundial/.test(n)) return 'Deportes';
+  if (/movie|cine|film|cinema|hollywood|hbo|showtime|starz|pelicul/.test(n)) return 'Películas';
+  if (/series|axn|syfy|amc|drama|novela|tlnovela/.test(n)) return 'Series';
+  if (/kids|infantil|disney|nick|cartoon|baby|junior|clan|mini/.test(n)) return 'Infantil';
+  if (/music|mtv|vh1|radio|hits|melodia|ritmo|beats/.test(n)) return 'Música';
+  if (/documentary|documental|national|discovery|history|animal|nature|science|geo/.test(n)) return 'Documentales';
+  if (/religious|religion|cristian|church|god|faith|iglesia|catolico/.test(n)) return 'Religiosos';
+  if (/business|bloomberg|cnbc|finance|econom/.test(n)) return 'Negocios';
+  if (/comedy|humor|entretenimiento|entertainment|culture|lifestyle|fashion|arte/.test(n)) return 'Entretenimiento';
+  return null;
 }
 
 // ════════════════════════════════════
