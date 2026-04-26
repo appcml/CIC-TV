@@ -157,20 +157,34 @@ def validar_canal(canal):
     url = canal.get('url', '')
     if not url:
         return False
+    # Saltar URLs con IPs privadas o tokens hardcodeados poco confiables
+    if any(p in url for p in [
+        ':8000/play/', ':9005/play/', ':2000/play/', ':4000/play/',
+        ':2080/cdn2/', 'token=4444', 'megogo.xyz',
+    ]):
+        return False
+
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
     try:
-        req = urllib.request.Request(
-            url,
-            headers={'User-Agent': 'Mozilla/5.0', 'Range': 'bytes=0-1024'},
-            method='GET'
-        )
+        req = urllib.request.Request(url, headers={
+            'User-Agent': 'Mozilla/5.0 (compatible; StreamChecker)',
+            'Range': 'bytes=0-2048',
+        }, method='GET')
         with urllib.request.urlopen(req, context=ctx, timeout=TIMEOUT_VALIDACION) as r:
             status = r.status
-            data   = r.read(512)
-            # Aceptar si responde con 200/206 y tiene contenido
-            if status in (200, 206) and len(data) > 10:
+            data   = r.read(1024)
+            if status not in (200, 206):
+                return False
+            if len(data) < 10:
+                return False
+            # Verificar que es contenido HLS/stream válido (no una página HTML de error)
+            texto = data.decode('utf-8', errors='ignore').lower()
+            if '<html' in texto or '<!doctype' in texto:
+                return False
+            # HLS válido contiene #extm3u o datos binarios
+            if b'#extm3u' in data or b'#extinf' in data or len(data) > 100:
                 return True
             return False
     except Exception:
