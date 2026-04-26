@@ -44,43 +44,95 @@ async function arrancar() {
 // El navegador ya tiene cookies/sesión → no hay 403
 // ════════════════════════════════════
 async function fetchCalendario() {
-  log('Descargando calendario...');
+  log('Buscando partidos del día via Claude API...');
 
-  // Estrategia 1: fetch con no-cors + proxies que sí permiten CORS
-  var html = await fetchConProxies(REC.url);
+  // ── Estrategia principal: Claude API con web_search ──
+  // Claude busca los partidos en futbollibretv.su y los devuelve en JSON
+  var partidos = await buscarPartidosConClaude();
 
-  if (html && html.length > 500) {
-    log('HTML recibido: ' + html.length + ' chars');
-    var partidos = extraerJSONLD(html);
-    if (!partidos.length) partidos = parsearHTMLDireto(html);
-    log('Partidos encontrados: ' + partidos.length);
-    if (partidos.length) {
-      partidosHoy = partidos;
-      guardarCache(partidos);
-      buildItems();
-      renderBar();
-      return;
-    }
+  if (partidos && partidos.length) {
+    log('Claude encontró ' + partidos.length + ' partidos');
+    partidosHoy = partidos;
+    guardarCache(partidos);
+    buildItems();
+    renderBar();
+    return;
   }
 
-  // Estrategia 2: usar iframe oculto (mismo navegador, sin CORS)
-  log('Intentando via iframe...');
-  var htmlIframe = await fetchViaIframe(REC.url, 8000);
-  if (htmlIframe && htmlIframe.length > 500) {
-    var partidos2 = extraerJSONLD(htmlIframe);
-    if (!partidos2.length) partidos2 = parsearHTMLDireto(htmlIframe);
-    log('Iframe partidos: ' + partidos2.length);
-    if (partidos2.length) {
-      partidosHoy = partidos2;
-      guardarCache(partidos2);
-      buildItems();
-      renderBar();
-      return;
-    }
-  }
-
-  log('Sin datos — usando caché');
+  // ── Fallback: caché local ──
+  log('Sin datos de Claude — usando caché');
   usarCache();
+}
+
+// ── Buscar partidos usando API de Anthropic con web_search ──
+async function buscarPartidosConClaude() {
+  var hoy = new Date().toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: 'Eres un asistente que extrae partidos de fútbol de futbollibretv.su. '
+              + 'Responde SOLO con JSON válido, sin texto adicional, sin markdown. '
+              + 'Formato exacto: [{"hora":"HH:MM","nombre":"Equipo A vs Equipo B","liga":"Nombre Liga","enVivo":true/false,"canales":[]}]',
+        messages: [{
+          role: 'user',
+          content: 'Busca en https://futbollibretv.su/ los partidos de fútbol de hoy ' + hoy
+                 + '. Lista TODOS los partidos con su hora, nombre completo (Equipo A vs Equipo B) y liga. '
+                 + 'Responde SOLO con el array JSON, sin explicaciones.',
+        }],
+      }),
+    });
+
+    if (!response.ok) {
+      log('Claude API error: ' + response.status);
+      return null;
+    }
+
+    var data = await response.json();
+    log('Claude respondió: ' + JSON.stringify(data).slice(0, 100));
+
+    // Extraer texto de la respuesta
+    var texto = '';
+    if (data.content) {
+      data.content.forEach(function(bloque) {
+        if (bloque.type === 'text') texto += bloque.text;
+      });
+    }
+
+    // Parsear JSON de la respuesta
+    texto = texto.trim();
+    // Quitar markdown si hay
+    // Quitar markdown si hay
+    texto = texto.replace(/```[\w]*/g,'').trim();
+
+    // Buscar el array JSON en el texto
+    var jsonM = texto.match(/\[[\s\S]*\]/);
+    if (!jsonM) { log('No encontré JSON en respuesta'); return null; }
+
+    var partidos = JSON.parse(jsonM[0]);
+    if (!Array.isArray(partidos)) return null;
+
+    // Normalizar y marcar en vivo
+    return partidos.map(function(p) {
+      return {
+        hora:    p.hora || '',
+        nombre:  normalizarNombre(p.nombre || ''),
+        liga:    p.liga || detectarLiga(p.nombre || ''),
+        logo:    '',
+        enVivo:  p.enVivo || esEnVivo(p.hora || ''),
+        canales: p.canales || [],
+      };
+    }).filter(function(p){ return p.nombre.length > 5; });
+
+  } catch(e) {
+    log('Error Claude API: ' + e.message);
+    return null;
+  }
 }
 
 // ── Fetch con múltiples proxies CORS ──
@@ -399,6 +451,34 @@ async function resolverStream(canal) {
     log('Error resolverStream: ' + e.message);
     return null;
   }
+}
+
+// ── Resolver stream usando Claude API ──
+async function resolverStreamConClaude(nombrePartido, nombreCanal) {
+  try {
+    var response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: 'Responde SOLO con la URL directa del stream m3u8 o la URL del partido. Sin texto adicional.',
+        messages: [{
+          role: 'user',
+          content: 'Busca en futbollibretv.su el stream del partido "'
+                 + nombrePartido + '" en el canal "' + nombreCanal
+                 + '". Dame solo la URL directa del stream.',
+        }],
+      }),
+    });
+    if (!response.ok) return null;
+    var data = await response.json();
+    var texto = '';
+    if (data.content) data.content.forEach(function(b){ if(b.type==='text') texto += b.text; });
+    var urlM = texto.match(/https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*/);
+    return urlM ? urlM[0] : null;
+  } catch(e) { return null; }
 }
 
 // ════════════════════════════════════
