@@ -768,16 +768,15 @@ function markSideActive(ch) {
     // Scroll suave hacia el canal activo
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else {
-    // El canal puede no estar visible porque hay filtros activos —
-    // resetear filtros de la lista lateral para que aparezca
-    sideCatFilter     = 'all';
-    sideCountryFilter = 'all';
-    // Actualizar chips de países a "Todos"
-    document.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
-    var allChip = document.querySelector('.sc-chip');
-    if (allChip) allChip.classList.add('active');
-    renderSideList();
-    // Intentar scroll de nuevo tras renderizar
+    // Canal no visible en filtro actual — NO resetear filtro de países
+    // Solo marcar visualmente sin cambiar filtros
+    // Si el canal pertenece al país/categoría filtrada, simplemente
+    // está paginado — hacer scroll sin resetear nada
+    if (sideCountryFilter === 'all' || (ch.co && ch.co === sideCountryFilter)) {
+      // Está en el filtro actual — solo renderizar y scrollear
+      renderSideList();
+    }
+    // Si el canal es de otro país, no forzar reset — el usuario eligió ese filtro
     setTimeout(function() {
       var el2 = g('si-' + ch.id);
       if (el2) {
@@ -1117,15 +1116,15 @@ function renderSideList() {
 function renderSideFromList(src) {
   var list = g('chSideList');
   var isR  = curMode === 'radio';
-  g('sideCount').textContent = src.length + (isR ? ' radios' : ' canales');
+  var totalReal = src.length;
 
   if (!src.length) {
+    g('sideCount').textContent = '0 canales';
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">Sin canales</div>';
     return;
   }
 
-  // Si hay canal activo y está en el array pero fuera de los primeros 300,
-  // lo ponemos al principio para que siempre sea visible
+  // Si hay canal activo fuera de los primeros 300, subirlo al inicio
   var srcOrdered = src.slice();
   if (sideActive) {
     var activeIdx = srcOrdered.findIndex(function(c){ return c.id === sideActive.id; });
@@ -1135,9 +1134,12 @@ function renderSideFromList(src) {
     }
   }
 
+  // Mostrar total real en el header
+  g('sideCount').textContent = totalReal + (isR ? ' radios' : ' canales');
+  sideTotalReal = totalReal; // guardar para updateSidePos
+
   var html = '';
   var max  = Math.min(srcOrdered.length, 300);
-  // Reasignar src a la versión ordenada
   src = srcOrdered;
   for (var i = 0; i < max; i++) {
     var ch     = src[i];
@@ -1257,14 +1259,19 @@ function updateSideCountriesBar(src) {
   };
 }
 
+// Total real de canales en la lista actual (puede ser > 300)
+var sideTotalReal = 0;
+
 function updateSidePos() {
   var list  = g('chSideList');
   var items = list.querySelectorAll('.side-item');
-  var total = items.length;
-  if (!total) return;
+  var rendered = items.length;
+  if (!rendered) return;
   var itemH = 56;
   var idx   = Math.round(list.scrollTop / itemH) + 1;
-  g('sidePos').textContent = Math.min(idx, total) + '/' + total;
+  // Mostrar posición / total real (no solo los 300 renderizados)
+  var total = sideTotalReal > 0 ? sideTotalReal : rendered;
+  g('sidePos').textContent = Math.min(idx, rendered) + '/' + total;
 }
 
 document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
