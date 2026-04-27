@@ -1347,13 +1347,28 @@ function showErr() {
   clearTimeout(errTimer);
   g('ld').classList.remove('show');
 
-  // Intentar auto-reemplazo antes de mostrar el error
-  if (curCh && intentosReemplazo < 3) {
+  if (!curCh) { g('er').classList.add('show'); return; }
+
+  // Registrar fallo en el monitor
+  var key = curCh.id || curCh.url;
+  if (typeof canalStatus !== 'undefined') {
+    if (!canalStatus[key]) canalStatus[key] = { fallos: 0, vivo: true };
+    canalStatus[key].fallos++;
+    canalStatus[key].vivo = false;
+    // Si supera el umbral, ocultarlo del monitor
+    if (typeof canalesOcultos !== 'undefined' && canalStatus[key].fallos >= 3) {
+      canalesOcultos[key] = true;
+      allTV = allTV.filter(function(c){ return (c.id||c.url) !== key; });
+      if (typeof buscarAlternativaFondo === 'function') buscarAlternativaFondo(curCh);
+    }
+  }
+
+  // Intentar auto-reemplazo inmediato
+  if (intentosReemplazo < 3) {
     intentosReemplazo++;
     showToast('🔄 Buscando alternativa... (' + intentosReemplazo + '/3)');
     buscarAlternativa(curCh);
   } else {
-    // Resetear intentos para la próxima vez
     intentosReemplazo = 0;
     urlsIntentadas    = [];
     g('er').classList.add('show');
