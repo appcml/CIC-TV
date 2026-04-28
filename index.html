@@ -1,1762 +1,1260 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a0f">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="renderer" content="webkit">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>CIC TV — Canales en Vivo</title>
-<link rel="manifest" href="manifest.json">
-<meta name="google-adsense-account" content="ca-pub-6387207876125603">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603" crossorigin="anonymous"></script>
-<meta name="apple-touch-fullscreen" content="yes">
-<style>
-  :root { --app-height: 100%; }
-  html { height: var(--app-height); }
-</style>
-<script>
-  function setAppHeight() {
-    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
-  }
-  window.addEventListener('resize', setAppHeight);
-  setAppHeight();
-</script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22223a;
-  --accent:#e63f6e;--accent2:#ff9900;
-  --text:#f0f0f8;--text2:#9090b0;
-  --border:rgba(255,255,255,0.07);--radius:12px;--sidebar:190px;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Bot de Noticias Internacionales para Facebook - V5.0
+MEJORAS DE ENGAGEMENT:
+  - Horarios pico para audiencia hispanohablante
+  - CTA automático al final de cada publicación
+  - Límite diario de posts (máx. 6/día)
+"""
 
-/* HEADER */
-header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 12px;z-index:100}
-.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;letter-spacing:-0.5px;flex-shrink:0}
-.logo span{color:var(--accent)}
-.sw{flex:1;position:relative}
-.sw svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text2);pointer-events:none;width:13px;height:13px}
-#search{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:24px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none}
-#search:focus{border-color:rgba(230,63,110,0.5)}
-#search::placeholder{color:var(--text2)}
-.hbts{margin-left:auto;display:flex;gap:5px;flex-shrink:0}
-.hbt{padding:5px 11px;border-radius:16px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.hbt:hover{background:var(--bg4);color:var(--text)}
-.hbt.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-.hbt.ron{background:var(--accent2);color:#000;border-color:var(--accent2)}
+import requests
+import feedparser
+import re
+import hashlib
+import json
+import os
+import random
+from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
+from difflib import SequenceMatcher
+from urllib.parse import urlparse
 
-/* BODY LAYOUT */
-.body{flex:1;display:flex;overflow:hidden}
+# ──────────────────────────────────────────────────────────
+# CONFIGURACIÓN
+# ──────────────────────────────────────────────────────────
+NEWS_API_KEY       = os.getenv('NEWS_API_KEY')
+NEWSDATA_API_KEY   = os.getenv('NEWSDATA_API_KEY')
+GNEWS_API_KEY      = os.getenv('GNEWS_API_KEY')
+FB_PAGE_ID         = os.getenv('FB_PAGE_ID')
+FB_ACCESS_TOKEN    = os.getenv('FB_ACCESS_TOKEN')
 
-/* SIDEBAR */
-aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
-.sl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:10px 10px 4px;flex-shrink:0}
-.cb{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;text-align:left;width:100%;white-space:nowrap;flex-shrink:0}
-.cb:hover{background:var(--bg3);color:var(--text)}
-.cb.active{background:rgba(230,63,110,0.15);color:var(--accent)}
-.cb.ron{background:rgba(255,153,0,0.15);color:var(--accent2)}
-.cb .ic{font-size:13px;width:16px;text-align:center}
-.cb .ct{margin-left:auto;font-size:10px;background:var(--bg4);color:var(--text2);padding:1px 5px;border-radius:6px;min-width:18px;text-align:center}
-.cb.active .ct{background:rgba(230,63,110,0.2);color:var(--accent)}
+# RUTAS — en la raíz del repo para que git las encuentre fácil
+HISTORIAL_PATH     = os.getenv('HISTORIAL_PATH', 'historial_publicaciones.json')
+ESTADO_PATH        = os.getenv('ESTADO_PATH',    'estado_bot.json')
 
-/* MAIN */
-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+TIEMPO_ENTRE_PUBLICACIONES = 55   # minutos (un poco menos que 1h para dar margen)
+UMBRAL_SIMILITUD_TITULO    = 0.72
+UMBRAL_SIMILITUD_CONTENIDO = 0.62
+MAX_TITULOS_HISTORIA       = 300  # aumentado para mejor cobertura
+DIAS_HISTORIAL             = 14   # guardar 2 semanas
 
-/* ZONA PLAYER */
-.player-zone{
-  display:flex;
-  flex-shrink:0;
-  height:calc(86vh - 52px - 35px);
-  border-bottom:2px solid var(--border);
-  background:#000;
-  align-items:stretch;
-}
+# ── ENGAGEMENT V5 ──────────────────────────────────────────
+MAX_POSTS_POR_DIA = 6  # Mas de 6/dia penaliza el alcance organico en Facebook
 
-/* PLAYER */
-.player-col{
-  flex:1;min-width:0;
-  display:flex;flex-direction:column;
-  background:#000;position:relative;
-}
-.video-ratio{
-  flex:1;position:relative;overflow:hidden;background:#000;
-}
-.video-ratio video{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  object-fit:contain;border:none;
-}
-.audio-zone{
-  display:none;flex:1;align-items:center;justify-content:center;
-  flex-direction:column;gap:10px;background:var(--bg2);padding:16px;
-}
-.audio-zone.show{display:flex}
-.audio-zone .aicon{font-size:40px}
-.audio-zone .aname{font-weight:600;font-size:14px;text-align:center}
-.audio-zone .acat{font-size:11px;color:var(--text2)}
-.audio-zone audio{width:100%;height:36px;accent-color:var(--accent2);margin-top:8px}
+# Horarios pico para audiencia hispanohablante (hora UTC)
+# Rangos amplios para cubrir distintas zonas horarias:
+# 00-04 UTC = tarde/noche America Central y Mexico
+# 10-14 UTC = manana Espana / manana America del Sur
+# 17-22 UTC = tarde-noche Espana / mediodia America
+HORARIOS_PICO_UTC = [
+    (0, 4),
+    (10, 14),
+    (17, 22),
+]
 
-/* placeholder */
-.pp{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#000;color:var(--text2);z-index:2}
-.pp .bi{font-size:36px;opacity:.15}
-.pp p{font-size:11px;opacity:.35}
-.pp.hide{display:none}
+CTAS = [
+    "Que opinas sobre esto? Dejanos tu comentario. 👇",
+    "Sabias esto? Comenta SI o NO 👇",
+    "Como crees que afectara esto al mundo? 👇",
+    "Comparte si te parece importante 🔁",
+    "Estas al tanto de esta situacion? Cuentanos 👇",
+    "Que piensas? Tu opinion importa 👇",
+    "Te sorprende esta noticia? Comenta abajo 👇",
+    "Comparte con alguien que necesita ver esto 👁️",
+]
 
-/* loading */
-.ld{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:4}
-.ld.show{display:flex}
-.sp{width:26px;height:26px;border-radius:50%;border:3px solid var(--bg4);border-top-color:var(--accent);animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+BLACKLIST_TITULOS = [
+    r'^\s*última hora\s*$',
+    r'^\s*breaking news\s*$',
+    r'^\s*noticias de hoy\s*$',
+    r'^\s*\d+\s*$',
+]
 
-/* error */
-.er{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,0.9);color:var(--text2);font-size:12px;text-align:center;padding:12px;z-index:4}
-.er.show{display:flex}
-.er strong{color:var(--text);font-size:13px}
-.ebtns{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;justify-content:center}
-.ebtns button{padding:5px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:500}
-.retry{background:var(--accent);color:#fff}
-.skip{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+PALABRAS_ALTA_PRIORIDAD = [
+    "guerra", "conflicto armado", "invasion", "ofensiva militar", "bombardeo",
+    "misiles", "ataque aereo", "drones militares", "movilizacion militar",
+    "tropas", "escalada de tension", "amenaza nuclear", "armas nucleares",
+    "terrorismo", "atentado", "ataque terrorista",
+    "ucrania", "rusia", "israel", "gaza", "iran", "china", "taiwan",
+    "corea del norte", "otan", "nato", "brics", "medio oriente",
+    "siria", "yemen", "sudan",
+    "crisis humanitaria", "refugiados",
+    "crisis de gobierno", "golpe de estado", "coup", "estado de emergencia",
+    "negociaciones de paz", "alto el fuego", "sanciones internacionales",
+    "economia mundial", "inflacion", "crisis economica", "recesion",
+    "petroleo", "gas", "crisis energetica",
+    "ciberataque", "hackeo", "inteligencia artificial",
+    "ultima hora", "urgente", "breaking",
+    "putin", "zelensky", "trump", "biden", "netanyahu", "khamenei",
+    "xi jinping", "kim jong un", "macron", "scholz",
+    "hamas", "hezbollah", "isis", "estado islamico", "taliban", "houthis",
+    "elon musk",
+]
 
+PALABRAS_MEDIA_PRIORIDAD = [
+    "economia", "mercados", "FMI", "banco mundial",
+    "tecnologia", "innovacion", "salud", "educacion",
+    "medio ambiente", "cambio climatico",
+    "comercio internacional", "empresas",
+]
 
+# ──────────────────────────────────────────────────────────
+# UTILIDADES BÁSICAS
+# ──────────────────────────────────────────────────────────
+def log(mensaje, tipo='info'):
+    iconos = {'info': 'ℹ️', 'exito': '✅', 'error': '❌', 'advertencia': '⚠️', 'debug': '🔍'}
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {iconos.get(tipo, 'ℹ️')} {mensaje}")
 
-/* BARRA PLAYER */
-.pbar{
-  flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);
-  padding:6px 12px;display:flex;align-items:center;gap:8px;
-  min-height:36px;
-}
-.live-b{background:var(--accent);color:#fff;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px;border-radius:3px;flex-shrink:0}
-.radio-b{background:var(--accent2);color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px;border-radius:3px;flex-shrink:0}
-.pn{font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
-.pbts{display:flex;gap:3px}
-.pbt{background:var(--bg3);border:1px solid var(--border);color:var(--text2);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.pbt:hover{background:var(--bg4);color:var(--text)}
-.pbt.pin-on{background:rgba(230,63,110,0.2);color:var(--accent);border-color:var(--accent)}
-.pbt.fav-on{background:rgba(255,204,0,0.15);color:#ffcc00;border-color:#ffcc00;font-size:13px}
+def cargar_json(ruta, default=None):
+    if default is None:
+        default = {}
+    if os.path.exists(ruta):
+        try:
+            with open(ruta, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                return json.loads(content) if content else default.copy()
+        except Exception as e:
+            log(f"Error cargando JSON {ruta}: {e}", 'error')
+            try:
+                backup = f"{ruta}.backup.{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                os.rename(ruta, backup)
+                log(f"Backup creado: {backup}", 'advertencia')
+            except:
+                pass
+    return default.copy()
 
-/* LISTA LATERAL */
-.ch-side{
-  width:180px;flex-shrink:0;
-  background:var(--bg2);border-left:1px solid var(--border);
-  display:flex;flex-direction:column;
-  position:relative;
-  overflow:hidden;
-}
-.ch-side-hd{
-  flex-shrink:0;padding:7px 10px;
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.ch-side-hd span{font-family:'Syne',sans-serif;font-weight:700;font-size:12px}
-.ch-side-hd small{color:var(--text2);font-size:10px}
+def guardar_json(ruta, datos):
+    try:
+        directorio = os.path.dirname(ruta)
+        if directorio:
+            os.makedirs(directorio, exist_ok=True)
+        temp_path = f"{ruta}.tmp"
+        with open(temp_path, 'w', encoding='utf-8') as f:
+            json.dump(datos, f, ensure_ascii=False, indent=2)
+        os.replace(temp_path, ruta)
+        return True
+    except Exception as e:
+        log(f"Error guardando JSON {ruta}: {e}", 'error')
+        return False
 
-/* Flechas navegación */
-.side-nav{
-  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:4px 8px;border-bottom:1px solid var(--border);background:var(--bg3);
-}
-.side-arrow{
-  background:var(--bg4);border:1px solid var(--border);color:var(--text2);
-  width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
-  user-select:none;
-}
-.side-arrow:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-.side-pos{font-size:10px;color:var(--text2)}
+def generar_hash(texto):
+    if not texto:
+        return ""
+    t = re.sub(r'[^\w\s]', '', texto.lower().strip())
+    t = re.sub(r'\s+', ' ', t)
+    return hashlib.md5(t.encode()).hexdigest()
 
-/* Lista */
-.ch-side-list{
-  flex:1;overflow-y:auto;overflow-x:hidden;
-  scroll-behavior:smooth;
-  -webkit-overflow-scrolling:touch;
-}
-.side-item{
-  display:flex;align-items:center;gap:8px;
-  padding:8px 10px;cursor:pointer;
-  transition:all .15s;border-bottom:1px solid var(--border);
-  position:relative;
-}
-.side-item:hover{background:var(--bg3)}
+def normalizar_url(url):
+    if not url:
+        return ""
+    try:
+        parsed = urlparse(url)
+        netloc = re.sub(r'^(www\.|m\.|mobile\.|amp\.)', '', parsed.netloc.lower())
+        path   = parsed.path.lower().rstrip('/')
+        path   = re.sub(r'/index\.(html|php|htm|asp)$', '', path)
+        path   = re.sub(r'\.html?$', '', path)
+        return f"{netloc}{path}"
+    except:
+        return url.lower().strip()
 
-/* ══ CANAL ACTIVO EN LISTA LATERAL ══ */
-.side-item.active{
-  background:rgba(230,63,110,0.14);
-  border-left:3px solid var(--accent);
-  padding-left:8px;
-}
-.side-item.ractive{
-  background:rgba(255,153,0,0.12);
-  border-left:3px solid var(--accent2);
-  padding-left:8px;
-}
+def extraer_dominio(url):
+    try:
+        parts = urlparse(url).netloc.lower().split('.')
+        return '.'.join(parts[-2:]) if len(parts) > 2 else '.'.join(parts)
+    except:
+        return ""
 
-.side-logo{
-  width:38px;height:38px;border-radius:6px;
-  background:var(--bg3);object-fit:contain;padding:3px;flex-shrink:0;
-}
-.side-fb{
-  width:38px;height:38px;border-radius:6px;
-  background:var(--bg3);display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:var(--text2);flex-shrink:0;
-}
-.side-fb.rfb{background:rgba(255,153,0,0.1);color:var(--accent2)}
-.side-info{flex:1;min-width:0}
-.side-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.side-cat{font-size:9px;color:var(--text2);margin-top:1px}
-.side-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2s infinite}
-.side-dot.rd{background:var(--accent2)}
+def similitud_titulos(t1, t2):
+    if not t1 or not t2:
+        return 0.0
+    stopwords = {'el','la','los','las','un','una','en','de','del','al','y','o',
+                 'que','con','por','para','sobre','entre','the','of','and','to',
+                 'in','is','a','an','it','as','at','by','from','not','or'}
+    def normalizar(t):
+        t = re.sub(r'[^\w\s]', '', t.lower().strip())
+        t = re.sub(r'\s+', ' ', t)
+        palabras = [p for p in t.split() if p not in stopwords and len(p) > 3]
+        return ' '.join(palabras)
+    return SequenceMatcher(None, normalizar(t1), normalizar(t2)).ratio()
 
-/* Botón fav lista lateral */
-.side-fav{
-  background:none;border:none;color:var(--text2);
-  cursor:pointer;font-size:12px;padding:2px 4px;
-  flex-shrink:0;opacity:0;transition:all .15s;
-  line-height:1;
-}
-.side-item:hover .side-fav{opacity:1}
-.side-fav.on{opacity:1;color:#ffcc00}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+def similitud_contenido(c1, c2, longitud=120):
+    if not c1 or not c2:
+        return 0.0
+    def n(c):
+        c = re.sub(r'[^\w\s]', '', c.lower().strip())
+        return re.sub(r'\s+', ' ', c)[:longitud]
+    return SequenceMatcher(None, n(c1), n(c2)).ratio()
 
-/* ZONA INFERIOR */
-.bottom-zone{display:none}
-/* Ad móvil inferior: oculto en desktop */
-.ad-bottom-mobile{display:none}
+def es_titulo_generico(titulo):
+    if not titulo:
+        return True
+    tl = titulo.lower().strip()
+    for patron in BLACKLIST_TITULOS:
+        if re.match(patron, tl):
+            return True
+    stop = {'el','la','de','y','en','the','of','to','hoy','los','las'}
+    palabras = [p for p in re.findall(r'\b\w+\b', tl) if p not in stop and len(p) > 3]
+    return len(set(palabras)) < 4
 
-/* TABS */
-.mode-tabs{flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
-.mtab{flex:1;padding:7px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
-.mtab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.mtab.rtab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+def limpiar_texto(texto):
+    if not texto:
+        return ""
+    import html
+    t = html.unescape(texto)
+    t = re.sub(r'<[^>]+>', ' ', t)
+    t = re.sub(r'\s+', ' ', t)
+    t = re.sub(r'https?://\S*', '', t)
+    t = t.strip()
+    if t and t[-1] not in '.!?':
+        t += '.'
+    return t.strip()
 
-/* FILTROS PAÍS */
-.fbar-wrap{flex-shrink:0;padding:5px 10px;border-bottom:1px solid var(--border);background:var(--bg2)}
-.fbar{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
-.fbar::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.chip:hover{border-color:var(--accent);color:var(--text)}
-.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+def calcular_puntaje(titulo, desc):
+    txt = f"{titulo} {desc}".lower()
+    p = 0
+    for frase in PALABRAS_ALTA_PRIORIDAD:
+        if frase.lower() in txt:
+            p += 7
+        else:
+            for palabra in frase.lower().split():
+                if len(palabra) >= 4 and palabra in txt:
+                    p += 3
+                    break
+    for frase in PALABRAS_MEDIA_PRIORIDAD:
+        for palabra in frase.lower().split():
+            if len(palabra) >= 3 and palabra in txt:
+                p += 1
+                break
+    if 30 <= len(titulo) <= 150:
+        p += 2
+    if len(desc) >= 50:
+        p += 2
+    return p
 
-/* GRID */
-.grid-zone{flex:1;overflow-y:auto;min-height:0}
-.ch-hd{display:flex;align-items:center;justify-content:space-between;padding:7px 12px 3px;flex-shrink:0}
-.ch-hd h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
-.ch-hd span{font-size:10px;color:var(--text2)}
-.ch-load{text-align:center;padding:12px;color:var(--text2);font-size:11px;display:none}
-.ch-load.show{display:block}
-.grid{padding:5px 8px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .18s;position:relative}
-.card:hover{border-color:rgba(230,63,110,0.4);transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,0.4)}
-.card:active{transform:scale(0.97)}
-.card.playing{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.card.rplaying{border-color:var(--accent2);box-shadow:0 0 0 1px var(--accent2)}
-.clogo{width:100%;height:62px;object-fit:contain;background:var(--bg3);padding:5px;display:block}
-.cfb{width:100%;height:62px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--text2)}
-.cfb.rfb{background:rgba(255,153,0,0.08);color:var(--accent2);font-size:18px}
-.ldot{position:absolute;top:3px;left:3px;width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-.ldot.rd{background:var(--accent2)}
-.cinfo{padding:5px 6px}
-.cname{font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ccat{font-size:9px;color:var(--text2);margin-top:1px}
-.favbtn{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.7);border:none;width:18px;height:18px;border-radius:3px;color:var(--text2);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .15s}
-.card:hover .favbtn,.favbtn.on{opacity:1}
-.favbtn.on{color:#ffcc00}
-.empty{text-align:center;padding:24px;color:var(--text2);grid-column:1/-1;font-size:12px}
-
-/* TOAST */
-.toast{position:fixed;bottom:14px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:18px;font-size:12px;z-index:999;transition:transform .25s;pointer-events:none}
-.toast.show{transform:translateX(-50%) translateY(0)}
-
-/* AD */
-.ad{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:4px 6px;text-align:center;color:var(--text2);font-size:10px;height:50px;min-height:50px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-
-/* Contador canales en header */
-#cnt-tv-hdr,#cnt-radio-hdr{
-  font-size:9px;opacity:0.85;
-  background:rgba(255,255,255,0.18);
-  padding:1px 5px;border-radius:8px;margin-left:3px;
-  vertical-align:middle;transition:all .3s;
-}
-.hbt.on #cnt-tv-hdr{background:rgba(255,255,255,0.3)}
-.hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
-
-/* BARRA PAÍSES LISTA LATERAL */
-.side-countries{
-  flex-shrink:0;
-  padding:5px 6px;
-  border-bottom:1px solid var(--border);
-  background:var(--bg3);
-  overflow:hidden;
-}
-.side-countries-bar{
-  display:flex;gap:4px;
-  overflow-x:auto !important;
-  overflow-y:hidden;
-  scrollbar-width:thin;
-  scrollbar-color:var(--accent) transparent;
-  padding-bottom:4px;
-  -webkit-overflow-scrolling:touch;
-  cursor:grab;
-}
-.side-countries-bar:active{cursor:grabbing}
-.side-countries-bar::-webkit-scrollbar{height:3px}
-.side-countries-bar::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
-.sc-chip{
-  flex-shrink:0;
-  padding:3px 8px;border-radius:12px;
-  border:1px solid var(--border);
-  background:var(--bg4);color:var(--text2);
-  font-size:10px;cursor:pointer;
-  transition:all .15s;white-space:nowrap;
-}
-.sc-chip:hover{border-color:var(--accent);color:var(--text)}
-.sc-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-
-/* BOTÓN SALIR FULLSCREEN */
-.fs-exit{
-  display:none;
-  position:fixed;top:14px;right:14px;z-index:99999;
-  background:rgba(230,63,110,0.9);border:none;
-  color:#fff;padding:8px 18px;border-radius:20px;
-  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);
-  box-shadow:0 4px 16px rgba(0,0,0,0.5);
-  letter-spacing:0.3px;
-}
-.fs-exit:hover{background:rgba(200,30,70,0.95);transform:scale(1.05)}
-:fullscreen .fs-exit{display:block !important}
-:-webkit-full-screen .fs-exit{display:block !important}
-:-moz-full-screen .fs-exit{display:block !important}
-:-ms-fullscreen .fs-exit{display:block !important}
-body.is-fullscreen .fs-exit{display:block !important}
-
-/* TABLET */
-@media(max-width:900px) and (min-width:601px){
-  :root{--sidebar:0px}
-  aside{display:none}
-}
-@media(max-width:900px){
-  .ch-side{width:180px}
-  .player-zone{height:320px}
+# ──────────────────────────────────────────────────────────
+# HISTORIAL — LÓGICA ANTI-DUPLICADOS
+# ──────────────────────────────────────────────────────────
+HISTORIAL_DEFAULT = {
+    'urls': [],
+    'urls_normalizadas': [],
+    'hashes': [],
+    'timestamps': [],
+    'titulos': [],
+    'descripciones': [],
+    'hashes_contenido': [],
+    'hashes_permanentes': [],
+    'estadisticas': {'total_publicadas': 0}
 }
 
-/* MÓVIL */
-@media(max-width:600px){
-  :root{--sidebar:0px}
-  aside{display:none}
-  body{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-  .body{flex:1;flex-direction:column;overflow:hidden;min-height:0}
-  main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-  .ad-top-mobile{
-    flex-shrink:0;height:44px;
-    background:var(--bg2);border-bottom:1px solid var(--border);
-    display:flex;align-items:center;justify-content:center;
-    font-size:10px;color:var(--text2);
-  }
-  .player-zone{
-    flex-direction:column !important;
-    flex-shrink:0;
-    height:auto !important;
-    min-height:0;
-  }
-  .player-col{
-    flex:none !important;
-    width:100% !important;
-    display:flex;flex-direction:column;position:relative;background:#000;
-  }
-  .video-ratio{
-    position:relative !important;
-    width:100% !important;
-    padding-bottom:56.25% !important;
-    height:0 !important;
-    flex:none !important;
-    overflow:hidden;
-  }
-  .video-ratio video{
-    position:absolute !important;
-    inset:0;width:100% !important;height:100% !important;
-    object-fit:contain;
-  }
-  .audio-zone{
-    flex:none !important;
-    min-height:90px;padding:12px;
-  }
-  .ch-side{display:none !important}
-  .pbar{padding:4px 10px;flex-shrink:0}
-  .pn{font-size:10px}
-  .pbt{width:22px;height:22px;font-size:10px}
-  .live-b,.radio-b{font-size:8px;padding:2px 5px}
-  .ad-bottom-mobile{
-    flex-shrink:0;height:44px;
-    background:var(--bg2);border-top:1px solid var(--border);
-    display:flex;align-items:center;justify-content:center;
-    font-size:10px;color:var(--text2);
-  }
-  .ad{display:none !important}
-  .bottom-zone{flex:1;min-height:0;display:flex !important;flex-direction:column;overflow:hidden}
-  .mode-tabs{flex-shrink:0;height:36px}
-  .mtab{font-size:12px;padding:7px}
-  .fbar-wrap{flex-shrink:0;padding:5px 10px}
-  .chip{padding:3px 9px;font-size:11px}
-  .grid-zone{flex:1;min-height:0;overflow-y:auto}
-  .grid{
-    grid-template-columns:repeat(3,1fr) !important;
-    gap:6px;padding:5px 8px 16px;
-  }
-  .clogo,.cfb{height:58px}
-  .cfb{font-size:11px}
-  .cname{font-size:11px}
-  .ccat{font-size:9px}
-  .ch-hd{padding:6px 10px 3px}
-  .ch-hd h2{font-size:13px}
-  .ch-hd span{font-size:11px}
-  .ch-load{padding:8px;font-size:11px}
-}
-</style>
-</head>
-<body>
+def cargar_historial():
+    h = cargar_json(HISTORIAL_PATH, HISTORIAL_DEFAULT)
+    for k, v in HISTORIAL_DEFAULT.items():
+        if k not in h:
+            h[k] = v if not isinstance(v, dict) else v.copy()
+    _limpiar_historial_antiguo(h)
+    return h
 
-<!-- HEADER -->
-<header>
-  <div class="logo">CIC<span> TV</span></div>
-  <div class="sw">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="search" placeholder="Buscar canal o radio..." oninput="doSearch()">
-  </div>
-  <div class="hbts">
-    <!-- ⭐ botón header: muestra TODOS los favoritos en el grid/lista -->
-    <button class="hbt" onclick="showFavs()" title="Ver mis favoritos">⭐</button>
-    <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV <span id="cnt-tv-hdr">0</span></button>
-    <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio <span id="cnt-radio-hdr">0</span></button>
-    <button class="hbt" onclick="refreshAll()">↻</button>
-  </div>
-</header>
+def _limpiar_historial_antiguo(h):
+    ahora = datetime.now()
+    indices_validos = []
+    for i, ts in enumerate(h.get('timestamps', [])):
+        try:
+            if (ahora - datetime.fromisoformat(ts)).days < DIAS_HISTORIAL:
+                indices_validos.append(i)
+        except:
+            continue
 
-<div class="body">
+    claves_con_indice = ['urls', 'urls_normalizadas', 'hashes', 'timestamps',
+                         'titulos', 'descripciones', 'hashes_contenido']
+    for key in claves_con_indice:
+        if key in h and isinstance(h[key], list):
+            h[key] = [h[key][i] for i in indices_validos if i < len(h[key])]
 
-<!-- SIDEBAR -->
-<aside>
-  <div class="sl">Modo</div>
-  <button class="cb active" id="sb-tv" onclick="setMode('tv')"><span class="ic">📺</span>TV<span class="ct" id="cn-tv">0</span></button>
-  <button class="cb" id="sb-radio" onclick="setMode('radio')"><span class="ic">📻</span>Radio<span class="ct" id="cn-radio">0</span></button>
-  <button class="cb" onclick="showFavs()"><span class="ic">⭐</span>Favoritos<span class="ct" id="cn-fav">0</span></button>
-  <div class="sl" id="cat-label">Categorías TV</div>
-  <button class="cb active" id="cat-all" onclick="setCat('all',this)"><span class="ic">📋</span>Todos<span class="ct" id="cn-all">0</span></button>
-  <button class="cb" onclick="setCat('Noticias',this)"><span class="ic">📰</span>Noticias<span class="ct" id="cn-Noticias">0</span></button>
-  <button class="cb" onclick="setCat('Deportes',this)"><span class="ic">⚽</span>Deportes<span class="ct" id="cn-Deportes">0</span></button>
-  <button class="cb" onclick="setCat('Entretenimiento',this)"><span class="ic">🎬</span>Entretenimiento<span class="ct" id="cn-Entretenimiento">0</span></button>
-  <button class="cb" onclick="setCat('Películas',this)"><span class="ic">🎥</span>Películas<span class="ct" id="cn-Películas">0</span></button>
-  <button class="cb" onclick="setCat('Series',this)"><span class="ic">🎞</span>Series<span class="ct" id="cn-Series">0</span></button>
-  <button class="cb" onclick="setCat('Infantil',this)"><span class="ic">🧒</span>Infantil<span class="ct" id="cn-Infantil">0</span></button>
-  <button class="cb" onclick="setCat('Música',this)"><span class="ic">🎵</span>Música<span class="ct" id="cn-Música">0</span></button>
-  <button class="cb" onclick="setCat('Documentales',this)"><span class="ic">🌍</span>Documentales<span class="ct" id="cn-Documentales">0</span></button>
-  <button class="cb" onclick="setCat('Religiosos',this)"><span class="ic">🙏</span>Religiosos<span class="ct" id="cn-Religiosos">0</span></button>
-  <button class="cb" onclick="setCat('Negocios',this)"><span class="ic">💼</span>Negocios<span class="ct" id="cn-Negocios">0</span></button>
-  <button class="cb" onclick="setCat('General',this)"><span class="ic">📡</span>General<span class="ct" id="cn-General">0</span></button>
-</aside>
+    # Limitar hashes permanentes
+    if len(h.get('hashes_permanentes', [])) > 500:
+        h['hashes_permanentes'] = h['hashes_permanentes'][-500:]
 
-<!-- MAIN -->
-<main>
+def noticia_ya_publicada(h, url, titulo, desc=""):
+    """
+    Devuelve (True, razon) si la noticia ya fue publicada, (False, "nuevo") si es nueva.
+    """
+    if es_titulo_generico(titulo):
+        return True, "titulo_generico"
 
-  <!-- BARRA RECOMENDACIONES: FutbolLibreTV + preferencias usuario -->
-  <div id="rec-bar" style="flex-shrink:0;min-height:35px;height:35px;max-height:35px;background:var(--bg2);border-bottom:1px solid var(--border);overflow:hidden;box-sizing:border-box;display:flex;align-items:center;padding:0;position:relative;">
-    <!-- Botón anterior -->
-    <button id="rec-prev" onclick="recPrev()" style="flex-shrink:0;background:rgba(230,63,110,0.15);border:none;color:#e63f6e;width:22px;height:35px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;">&#9664;</button>
-    <!-- Ventana del ticker -->
-    <div style="flex:1;overflow:hidden;position:relative;height:35px;">
-      <div id="rec-track" style="display:flex;align-items:center;height:35px;gap:0;position:absolute;left:0;top:0;transition:transform 0.4s ease;white-space:nowrap;"></div>
-    </div>
-    <!-- Botón siguiente -->
-    <button id="rec-next" onclick="recNext()" style="flex-shrink:0;background:rgba(230,63,110,0.15);border:none;color:#e63f6e;width:22px;height:35px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;">&#9654;</button>
-  </div>
+    url_n   = normalizar_url(url)
+    hash_t  = generar_hash(titulo)
+    hash_d  = generar_hash(desc) if desc else ""
+    dominio = extraer_dominio(url)
 
-  <!-- PLAYER ZONE -->
-  <div class="player-zone">
+    # 1. URL normalizada exacta
+    if url_n in h.get('urls_normalizadas', []):
+        log(f"   ❌ URL duplicada: {url_n[:60]}", 'debug')
+        return True, "url_duplicada"
 
-    <!-- PLAYER -->
-    <div class="player-col">
-      <div class="video-ratio" id="vr">
-        <video id="vp" playsinline webkit-playsinline preload="none" controls></video>
-        <div class="pp" id="pp"><div class="bi">📺</div><p>Selecciona un canal</p></div>
-        <div class="ld" id="ld"><div class="sp"></div></div>
-        <div class="er" id="er">
-          <strong>⚠️ Canal no disponible</strong>
-          <p>Offline o bloqueado.</p>
-          <div class="ebtns">
-            <button class="skip" onclick="prevCh()">◀ Anterior</button>
-            <button class="retry" onclick="retry()">↺ Reintentar</button>
-            <button class="skip" onclick="nextCh()">▶ Siguiente</button>
-          </div>
-        </div>
-      </div>
+    # 2. Hash de título exacto (incluye permanentes)
+    todos_hashes = set(h.get('hashes', [])) | set(h.get('hashes_permanentes', []))
+    if hash_t in todos_hashes:
+        log(f"   ❌ Hash título duplicado", 'debug')
+        return True, "hash_titulo"
 
-      <div class="audio-zone" id="audioZone">
-        <div class="aicon">📻</div>
-        <div class="aname" id="aname">Selecciona una radio</div>
-        <div class="acat" id="acat">—</div>
-        <audio id="ap" controls></audio>
-      </div>
+    # 3. Hash de descripción
+    if hash_d and hash_d in h.get('hashes_contenido', []):
+        log(f"   ❌ Hash contenido duplicado", 'debug')
+        return True, "hash_contenido"
 
-      <div class="pbar">
-        <span class="live-b" id="liveBadge">EN VIVO</span>
-        <span class="pn" id="pname">—</span>
-        <div class="pbts">
-          <!-- botón fav en barra inferior también (redundante pero útil) -->
-          <button class="pbt" id="playerFavBtn" onclick="togglePlayerFav()" title="Favorito">☆</button>
-          <button class="pbt" id="pinBtn" onclick="togglePin()" title="Fijar">📌</button>
-          <button class="pbt" id="fsBtn" onclick="goFS()" title="Pantalla completa">⛶</button>
-        </div>
-      </div>
-      <button class="fs-exit" id="fsExit" onclick="exitFS()">✕ Salir</button>
-    </div>
+    # 4. Similitud de títulos (global)
+    for th in h.get('titulos', []):
+        if not isinstance(th, str):
+            continue
+        sim = similitud_titulos(titulo, th)
+        if sim >= UMBRAL_SIMILITUD_TITULO:
+            log(f"   ❌ Título similar ({sim:.1%}): {th[:50]}", 'debug')
+            return True, f"titulo_similar_{sim:.2f}"
 
-  </div><!-- /player-zone -->
+    # 5. Mismo dominio + título muy parecido
+    for i, uh in enumerate(h.get('urls', [])):
+        if extraer_dominio(uh) == dominio and i < len(h.get('titulos', [])):
+            sim = similitud_titulos(titulo, h['titulos'][i])
+            if sim >= 0.82:
+                log(f"   ❌ Misma noticia en {dominio} ({sim:.1%})", 'debug')
+                return True, f"mismo_sitio_{sim:.2f}"
 
-  <!-- PUBLICIDAD DESKTOP — siempre visible debajo del player -->
-  <div id="ad-desktop" style="flex-shrink:0;height:50px;min-height:50px;max-height:50px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box;">
-    <ins class="adsbygoogle" style="display:block;width:100%;height:50px"
-      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
+    # 6. Similitud de descripción
+    if desc:
+        for dh in h.get('descripciones', []):
+            if isinstance(dh, str) and dh:
+                if similitud_contenido(desc, dh, 150) >= UMBRAL_SIMILITUD_CONTENIDO:
+                    log(f"   ❌ Descripción similar", 'debug')
+                    return True, "descripcion_similar"
 
-  <div class="ad-bottom-mobile">
-    <ins class="adsbygoogle" style="display:block;width:100%;height:44px"
-      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-  </div>
+    return False, "nuevo"
 
-  <!-- ZONA INFERIOR (solo móvil) -->
-  <div class="bottom-zone">
-    <div class="mode-tabs">
-      <button class="mtab active" id="tab-tv" onclick="setMode('tv')">📺 TV en Vivo</button>
-      <button class="mtab rtab" id="tab-radio" onclick="setMode('radio')">📻 Radio</button>
-    </div>
-    <div class="fbar-wrap">
-      <div class="fbar" id="fbar">
-        <button class="chip active" onclick="setCountry('all',this)">🌐 Todos</button>
-      </div>
-    </div>
-    <div class="grid-zone">
-      <div class="ch-hd">
-        <h2 id="stitle">Cargando...</h2>
-        <span id="scnt"></span>
-      </div>
-      <div class="ch-load show" id="chload">⏳ Cargando canales...</div>
-      <div class="grid" id="grid"></div>
-      <div class="ad">
-        <ins class="adsbygoogle" style="display:block;width:100%;height:90px"
-          data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-          data-ad-format="horizontal" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-      </div>
-    </div>
-  </div>
+def guardar_en_historial(h, url, titulo, desc=""):
+    url_n  = normalizar_url(url)
+    hash_t = generar_hash(titulo)
 
-</main>
+    # Doble check antes de guardar
+    if url_n in h.get('urls_normalizadas', []):
+        log("⚠️ Intento de duplicado en guardar_en_historial", 'advertencia')
+        return h
 
-    <!-- ═══ LISTA LATERAL — hermana de aside y main ═══ -->
-    <div class="ch-side">
-      <div class="ch-side-hd">
-        <span>Lista</span>
-        <small id="sideCount">0</small>
-      </div>
-      <div class="side-countries">
-        <div class="side-countries-bar" id="sideCountriesBar">
-          <button class="sc-chip active" data-co="all">🌐 Todos</button>
-        </div>
-      </div>
-      <div class="side-nav">
-        <button class="side-arrow" onclick="sideScroll(-150)">▲</button>
-        <span class="side-pos" id="sidePos">1/0</span>
-        <button class="side-arrow" onclick="sideScroll(150)">▼</button>
-      </div>
-      <div class="ch-side-list" id="chSideList"></div>
-    </div>
+    h['urls'].append(url)
+    h['urls_normalizadas'].append(url_n)
+    h['hashes'].append(hash_t)
+    h['timestamps'].append(datetime.now().isoformat())
+    h['titulos'].append(titulo)
+    h['descripciones'].append(desc[:600] if desc else "")
+    h['hashes_contenido'].append(generar_hash(desc) if desc else "")
+    h['hashes_permanentes'].append(hash_t)
+    h['estadisticas']['total_publicadas'] = h['estadisticas'].get('total_publicadas', 0) + 1
 
-</div><!-- /body -->
+    # Recortar listas largas
+    for k in ['urls', 'urls_normalizadas', 'hashes', 'timestamps',
+              'titulos', 'descripciones', 'hashes_contenido']:
+        if len(h[k]) > MAX_TITULOS_HISTORIA:
+            h[k] = h[k][-MAX_TITULOS_HISTORIA:]
 
-<div class="toast" id="toast"></div>
+    if len(h['hashes_permanentes']) > 500:
+        h['hashes_permanentes'] = h['hashes_permanentes'][-500:]
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
-<script>
-// ════════════════════════════════════
-// VARIABLES GLOBALES
-// ════════════════════════════════════
-let toastTimer       = null;
-let errTimer         = null;
-let hlsObj           = null;
-let curCh            = null;
-let curIdx           = -1;
-let curMode          = 'tv';
-let curCat           = 'all';
-let curCountry       = 'all';
-let curSearch        = '';
-let isPinned         = false;
-let filtered         = [];
-let favs             = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
-let gridActive       = null;
-let sideActive       = null;
-let sideCatFilter    = 'all';
-let sideCountryFilter= 'all';
+    if guardar_json(HISTORIAL_PATH, h):
+        log(f"💾 Historial guardado: {len(h['urls'])} entradas", 'exito')
+    else:
+        log("❌ Error guardando historial", 'error')
 
-// ════════════════════════════════════
-// CANALES BASE TV
-// ════════════════════════════════════
-let allTV = [
-  {id:'n01',name:'DW Español',      cat:'Noticias',       co:'DE',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/DW_Logo_2012.svg/120px-DW_Logo_2012.svg.png',url:'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'},
-  {id:'n02',name:'France 24 ES',    cat:'Noticias',       co:'FR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/France_24_logo.svg/120px-France_24_logo.svg.png',url:'https://stream.france24.com/hls/live/2037897/F24_ES_LO_HLS/master.m3u8'},
-  {id:'n03',name:'Al Jazeera EN',   cat:'Noticias',       co:'QA',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/120px-Aljazeera_eng.svg.png',url:'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'},
-  {id:'n04',name:'TRT World',       cat:'Noticias',       co:'TR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/TRT_World_logo.svg/120px-TRT_World_logo.svg.png',url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
-  {id:'n05',name:'NASA TV',         cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n05b',name:'NASA TV (Alt)',    cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV2-HLS/master.m3u8'},
-  {id:'n05c',name:'NASA TV Live',     cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n06',name:'Euronews EN',     cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://rakuten-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'n06b',name:'Euronews EN (Alt)',cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://euronews-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'n07',name:'Bloomberg TV',    cat:'Negocios',       co:'US',type:'tv',logo:'',url:'https://bloomenglish.akamaized.net/hls/live/571329/bloombergenglish/master.m3u8'},
-  {id:'n08',name:'Sky News',        cat:'Noticias',       co:'GB',type:'tv',logo:'',url:'https://skynews-iphone-hls.akamaized.net/hls/live/622358/skynewsiphone/master.m3u8'},
-  {id:'n09',name:'RT en Español',   cat:'Noticias',       co:'RU',type:'tv',logo:'',url:'https://rt-esp.rttv.com/live/rtesp/playlist.m3u8'},
-  {id:'d01',name:'Outside TV',      cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-outsidetv-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'d02',name:'Fight Sports',    cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-fightsports-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'d03',name:'Motor Trend',     cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-motortrend-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'d04',name:'Red Bull TV',     cat:'Deportes',       co:'AT',type:'tv',logo:'',url:'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'},
-  {id:'e01',name:'Tastemade',       cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-tastemade-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'e02',name:'Dove Channel',    cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-dovechannel-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'e03',name:'Comedy Dynamics', cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-comedydynamics-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'m01',name:'Mezzo Live HD',   cat:'Música',         co:'FR',type:'tv',logo:'',url:'https://d1zx6l1dn8vaj5.cloudfront.net/out/v1/6c8e8aad908143d9b11caf43a23e0f61/index.m3u8'},
-  {id:'k01',name:'Baby TV',         cat:'Infantil',       co:'GB',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/BabyTV.svg/120px-BabyTV.svg.png',url:'https://d1zx6l1dn8vaj5.cloudfront.net/out/v1/babytv/index.m3u8'},
-  {id:'k02',name:'Kidstream',       cat:'Infantil',       co:'US',type:'tv',logo:'',url:'https://rakuten-kidstream-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'dc1',name:'History Hit',     cat:'Documentales',   co:'GB',type:'tv',logo:'',url:'https://rakuten-historyhit-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'dc2',name:'Insight TV',      cat:'Documentales',   co:'NL',type:'tv',logo:'',url:'https://d1zx6l1dn8vaj5.cloudfront.net/out/v1/insighttv/index.m3u8'},
-  {id:'r01',name:'3ABN Latino',     cat:'Religiosos',     co:'US',type:'tv',logo:'',url:'https://videos.3abn.org/3abnlatino/playlist.m3u8'},
-  {id:'g01',name:'Pluto News',      cat:'General',        co:'US',type:'tv',logo:'',url:'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/5cfa9491659b044d6e0b082b/master.m3u8?deviceId=cictv&deviceType=web'},
-  {id:'g02',name:'Pluto Movies',    cat:'Películas',      co:'US',type:'tv',logo:'',url:'https://service-stitcher.clusters.pluto.tv/stitch/hls/channel/5d8d1c9d0a4a754a5b2b0e02/master.m3u8?deviceId=cictv&deviceType=web'},
-  {id:'es1',name:'La 1 RTVE',       cat:'General',        co:'ES',type:'tv',logo:'https://pbs.twimg.com/profile_images/2008842210414915584/zIp_go25_200x200.jpg',url:'https://ztnr.rtve.es/ztnr/1688877.m3u8'},
-  {id:'es3',name:'La 2 RTVE',       cat:'Documentales',   co:'ES',type:'tv',logo:'https://yt3.googleusercontent.com/ytc/AIdro_kqgHWySi5xprs1VFCNCX0IKNT8yXBLZC43JMoB8j0JUto=s200',url:'https://ztnr.rtve.es/ztnr/1688885.m3u8'},
-  {id:'es2',name:'24h RTVE',        cat:'Noticias',       co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1694255.m3u8'},
+    return h
 
-  // ── Canales deportivos verificados (CDN estables) ──
-  // Los demás se cargan dinámicamente desde canales.json via monitor.js
-  {id:'sp14',name:'Fox Sports News AU', cat:'Deportes',co:'AU',type:'tv',logo:'',url:'https://austchannel-live.akamaized.net/hls/live/2002736/austchannel-sport/master.m3u8'},
-  {id:'sp50',name:'Eurosport 1',        cat:'Deportes',co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Eurosport_2016.svg/120px-Eurosport_2016.svg.png',url:'https://rakuten-eurosport-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'sp61',name:'beIN Sports xtra',   cat:'Deportes',co:'QA',type:'tv',logo:'',url:'https://d35j504z0x2vu2.cloudfront.net/v1/master/0bc8e8376bd8417a1b6761138aa41c26c7309312/bein-sports-xtra-en-espanol/playlist.m3u8'},
-  {id:'sp90',name:'Edge Sports',        cat:'Deportes',co:'US',type:'tv',logo:'',url:'https://imgedge.akamaized.net/amagi_hls_data_imgAAA2AA-edgesports/CDN/playlist.m3u8'},
-  {id:'sp91',name:'Abu Dhabi Sports 1', cat:'Deportes',co:'AE',type:'tv',logo:'',url:'https://admdn1.cdn.mangomolo.com/adsports1/smil:adsports1.stream.smil/playlist.m3u8'},
-  {id:'sp92',name:'Abu Dhabi Sports 2', cat:'Deportes',co:'AE',type:'tv',logo:'',url:'https://admdn5.cdn.mangomolo.com/adsports2/smil:adsports2.stream.smil/playlist.m3u8'},
-  {id:'sp95',name:'Tigo Sports GT',     cat:'Deportes',co:'GT',type:'tv',logo:'',url:'https://cnm-tsl.otteravision.com/cnm/tsl/tsl.m3u8'},
-  {id:'sp96',name:'DAZN Women Football',cat:'Deportes',co:'EU',type:'tv',logo:'',url:'https://apollo.production-public.tubi.io/live/dazn-womens-football.m3u8'},
-  {id:'sp97',name:'DF1 DE',             cat:'Deportes',co:'DE',type:'tv',logo:'',url:'https://dbjwcot8t7nyd.cloudfront.net/out/v1/9d068a9428444b458324ad77b5a0a4b8/index.m3u8'},
-  {id:'sp98',name:'DeporTV AR',         cat:'Deportes',co:'AR',type:'tv',logo:'',url:'https://538d0bde28ccf.streamlock.net/live-cont.ar/deportv/playlist.m3u8'},
-];
+# ──────────────────────────────────────────────────────────
+# CONTROL DE TIEMPO
+# ──────────────────────────────────────────────────────────
+def verificar_tiempo():
+    e = cargar_json(ESTADO_PATH, {'ultima_publicacion': None})
+    u = e.get('ultima_publicacion')
+    if not u:
+        return True
+    try:
+        minutos = (datetime.now() - datetime.fromisoformat(u)).total_seconds() / 60
+        if minutos < TIEMPO_ENTRE_PUBLICACIONES:
+            log(f"⏱️ Publicado hace {minutos:.0f} min — mínimo {TIEMPO_ENTRE_PUBLICACIONES} min", 'info')
+            return False
+    except:
+        pass
+    return True
 
-// ════════════════════════════════════
-// RADIOS BASE
-// ════════════════════════════════════
-let allRadio = [
-  {id:'rd1',name:'Cadena SER',       cat:'Noticias', co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SER.mp3'},
-  {id:'rd2',name:'Los 40',           cat:'Música',   co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3'},
-  {id:'rd3',name:'BBC World Service',cat:'Noticias', co:'GB',type:'radio',logo:'',url:'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service'},
-  {id:'rd4',name:'Rock FM',          cat:'Música',   co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/ROCKFM.mp3'},
-  {id:'rd5',name:'Caracol Radio',    cat:'Noticias', co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/CARACOL_RADIO.mp3'},
-  {id:'rd6',name:'Radio Mitre AR',   cat:'Noticias', co:'AR',type:'radio',logo:'',url:'https://streaming.radiomitre.cienradios.com/radiomitre.mp3'},
-  {id:'rd7',name:'Radio Uno MX',     cat:'Música',   co:'MX',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHRCO_CO.mp3'},
-  {id:'rd8',name:'Radio Nacional ES',cat:'General',  co:'ES',type:'radio',logo:'',url:'https://rne.es/radionacional.ogg'},
-];
+def guardar_estado():
+    guardar_json(ESTADO_PATH, {'ultima_publicacion': datetime.now().isoformat()})
 
-// ════════════════════════════════════
-// DATOS PAÍSES
-// ════════════════════════════════════
-const COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
-const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
-const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
-const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',business:'Negocios',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
+# ──────────────────────────────────────────────────────────
+# CONTROL DE ENGAGEMENT (V5)
+# ──────────────────────────────────────────────────────────
+def esta_en_horario_pico():
+    """Devuelve True si la hora UTC actual está en una ventana de alta audiencia."""
+    hora_utc = datetime.utcnow().hour
+    for inicio, fin in HORARIOS_PICO_UTC:
+        if inicio <= hora_utc < fin:
+            return True
+    log(f"⏰ Fuera de horario pico (hora UTC: {hora_utc:02d}:xx) — publicación omitida", 'info')
+    return False
 
-// ════════════════════════════════════
-// INIT
-// ════════════════════════════════════
-updateAll();
-applyFilter();
-renderSideList();
-showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
-setTimeout(loadCountries, 800);
+def limite_diario_alcanzado(h):
+    """Devuelve True si ya se publicaron MAX_POSTS_POR_DIA hoy."""
+    hoy = datetime.now().date()
+    publicadas_hoy = sum(
+        1 for ts in h.get('timestamps', [])
+        if ts and datetime.fromisoformat(ts).date() == hoy
+    )
+    if publicadas_hoy >= MAX_POSTS_POR_DIA:
+        log(f"🚫 Límite diario alcanzado: {publicadas_hoy}/{MAX_POSTS_POR_DIA} posts hoy", 'advertencia')
+        return True
+    log(f"📊 Posts hoy: {publicadas_hoy}/{MAX_POSTS_POR_DIA}", 'info')
+    return False
 
-// ════════════════ MEJORA 2 + 3 ════════════════
-// AUTOPLAY AL INICIAR + MARCA EN LISTA LATERAL
-// Espera a window.load para que Hls.js esté disponible
-// ═══════════════════════════════════════════════
-function autoplayLast() {
-  try {
-    var last = JSON.parse(localStorage.getItem('cicLastChannel'));
-    if (!last || !last.url) return;
+def agregar_cta(texto):
+    """Añade un CTA aleatorio al final del texto de la publicación."""
+    cta = random.choice(CTAS)
+    return f"{texto}\n\n{cta}"
 
-    // Usar playVideo directamente — es la misma función que usa el usuario
-    // al hacer clic en un canal, funciona siempre correctamente
-    curCh      = last;
-    sideActive = last;
-    intentosReemplazo = 0;
-    urlsIntentadas    = [];
-    g('er').classList.remove('show');
+# ──────────────────────────────────────────────────────────
+# FUENTES DE NOTICIAS
+# ──────────────────────────────────────────────────────────
+def obtener_newsapi():
+    if not NEWS_API_KEY:
+        return []
+    queries = [
+        'Ukraine war Russia Putin Zelensky',
+        'Israel Gaza Hamas Iran conflict',
+        'China Taiwan US tensions',
+        'Trump Biden US politics',
+        'economy inflation recession',
+        'NATO EU Europe summit',
+        'cyberattack hacking security',
+        'coup dictatorship sanctions',
+        'climate change disaster',
+        'India Pakistan Asia conflict',
+    ]
+    noticias = []
+    for q in queries:
+        try:
+            r = requests.get(
+                'https://newsapi.org/v2/everything',
+                params={'apiKey': NEWS_API_KEY, 'q': q, 'language': 'es',
+                        'sortBy': 'publishedAt', 'pageSize': 5},
+                timeout=15
+            ).json()
+            if r.get('status') == 'ok':
+                for a in r.get('articles', []):
+                    t = a.get('title', '')
+                    if t and '[Removed]' not in t:
+                        d = a.get('description', '')
+                        noticias.append({
+                            'titulo':      limpiar_texto(t),
+                            'descripcion': limpiar_texto(d),
+                            'url':         a.get('url', ''),
+                            'imagen':      a.get('urlToImage'),
+                            'fuente':      f"NewsAPI:{a.get('source', {}).get('name', 'Unknown')}",
+                            'fecha':       a.get('publishedAt'),
+                            'puntaje':     calcular_puntaje(t, d),
+                        })
+        except Exception as e:
+            log(f"NewsAPI error ({q[:20]}): {e}", 'advertencia')
+            continue
+    log(f"NewsAPI: {len(noticias)} noticias", 'info')
+    return noticias
 
-    if (last.type === 'radio') {
-      setMode('radio');
-      playRadio(last);
-    } else {
-      playVideo(last);
+def obtener_newsdata():
+    if not NEWSDATA_API_KEY:
+        return []
+    categorias = ['world', 'politics', 'business', 'technology']
+    noticias = []
+    for cat in categorias:
+        try:
+            r = requests.get(
+                'https://newsdata.io/api/1/news',
+                params={'apikey': NEWSDATA_API_KEY, 'language': 'es',
+                        'category': cat, 'size': 10},
+                timeout=15
+            ).json()
+            if r.get('status') == 'success':
+                for a in r.get('results', []):
+                    t = a.get('title', '')
+                    if t:
+                        d = a.get('description', '')
+                        noticias.append({
+                            'titulo':      limpiar_texto(t),
+                            'descripcion': limpiar_texto(d),
+                            'url':         a.get('link', ''),
+                            'imagen':      a.get('image_url'),
+                            'fuente':      f"NewsData:{a.get('source_id', 'Unknown')}",
+                            'fecha':       a.get('pubDate'),
+                            'puntaje':     calcular_puntaje(t, d),
+                        })
+        except Exception as e:
+            log(f"NewsData error ({cat}): {e}", 'advertencia')
+            continue
+    log(f"NewsData: {len(noticias)} noticias", 'info')
+    return noticias
+
+def obtener_gnews():
+    if not GNEWS_API_KEY:
+        return []
+    topicos = ['world', 'nation', 'business', 'technology']
+    noticias = []
+    for topic in topicos:
+        try:
+            r = requests.get(
+                'https://gnews.io/api/v4/top-headlines',
+                params={'apikey': GNEWS_API_KEY, 'lang': 'es', 'max': 10, 'topic': topic},
+                timeout=15
+            ).json()
+            for a in r.get('articles', []):
+                t = a.get('title', '')
+                if t:
+                    d = a.get('description', '')
+                    noticias.append({
+                        'titulo':      limpiar_texto(t),
+                        'descripcion': limpiar_texto(d),
+                        'url':         a.get('url', ''),
+                        'imagen':      a.get('image'),
+                        'fuente':      f"GNews:{a.get('source', {}).get('name', 'Unknown')}",
+                        'fecha':       a.get('publishedAt'),
+                        'puntaje':     calcular_puntaje(t, d),
+                    })
+        except Exception as e:
+            log(f"GNews error ({topic}): {e}", 'advertencia')
+            continue
+    log(f"GNews: {len(noticias)} noticias", 'info')
+    return noticias
+
+def obtener_rss():
+    fuentes = [
+        ('http://feeds.bbci.co.uk/mundo/rss.xml',             'BBC Mundo'),
+        ('https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/internacional/portada', 'El País'),
+        ('https://www.infobae.com/arc/outboundfeeds/rss/mundo/', 'Infobae'),
+        ('https://feeds.france24.com/es/',                    'France 24'),
+        ('https://www.efe.com/efe/espana/1/rss',              'EFE'),
+    ]
+    noticias = []
+    for url_feed, nombre in fuentes:
+        try:
+            r = requests.get(url_feed, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            if r.status_code != 200:
+                continue
+            feed = feedparser.parse(r.content)
+            if not feed or not feed.entries:
+                continue
+            for e in feed.entries[:8]:
+                t = e.get('title', '')
+                if not t:
+                    continue
+                t = re.sub(r'\s*-\s*[^-]*$', '', t)
+                l = e.get('link', '')
+                if not l:
+                    continue
+                d = re.sub(r'<[^>]+>', '', e.get('summary', '') or e.get('description', ''))
+                img = None
+                if hasattr(e, 'media_content') and e.media_content:
+                    img = e.media_content[0].get('url')
+                noticias.append({
+                    'titulo':      limpiar_texto(t),
+                    'descripcion': limpiar_texto(d),
+                    'url':         l,
+                    'imagen':      img,
+                    'fuente':      f"RSS:{nombre}",
+                    'fecha':       e.get('published'),
+                    'puntaje':     calcular_puntaje(t, d),
+                })
+        except Exception as e:
+            log(f"RSS error ({nombre}): {e}", 'advertencia')
+            continue
+    log(f"RSS: {len(noticias)} noticias", 'info')
+    return noticias
+
+# ──────────────────────────────────────────────────────────
+# DEDUPLICACIÓN LOCAL (dentro del batch actual)
+# ──────────────────────────────────────────────────────────
+def deduplicar_batch(noticias):
+    urls_vistas    = set()
+    titulos_vistos = []
+    resultado      = []
+
+    for n in noticias:
+        url_n  = normalizar_url(n.get('url', ''))
+        titulo = n.get('titulo', '')
+
+        if not url_n or not titulo:
+            continue
+        if url_n in urls_vistas:
+            continue
+
+        es_dup = False
+        for t_previo in titulos_vistos:
+            if similitud_titulos(titulo, t_previo) > 0.78:
+                es_dup = True
+                break
+
+        if es_dup:
+            continue
+
+        urls_vistas.add(url_n)
+        titulos_vistos.append(titulo)
+        resultado.append(n)
+
+    log(f"Dedup batch: {len(noticias)} → {len(resultado)} únicas", 'info')
+    return resultado
+
+# ──────────────────────────────────────────────────────────
+# EXTRACCIÓN DE CONTENIDO E IMAGEN
+# ──────────────────────────────────────────────────────────
+def extraer_contenido(url):
+    if not url:
+        return None, None
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=20)
+        s = BeautifulSoup(r.content, 'html.parser')
+        for e in s(['script', 'style', 'nav', 'header', 'footer']):
+            e.decompose()
+        for selector in ['article', '[class*="article-content"]', '[class*="entry-content"]', '[class*="post-content"]']:
+            art = s.select_one(selector)
+            if art:
+                ps = [p for p in art.find_all('p') if len(p.get_text()) > 40]
+                if len(ps) >= 2:
+                    txt = ' '.join([limpiar_texto(p.get_text()) for p in ps])
+                    if len(txt) > 200:
+                        return txt[:2000], None
+        return None, None
+    except:
+        return None, None
+
+def extraer_imagen_web(url):
+    if not url:
+        return None
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+        s = BeautifulSoup(r.content, 'html.parser')
+        for prop in ['og:image', 'twitter:image']:
+            tag = s.find('meta', property=prop) or s.find('meta', attrs={'name': prop})
+            if tag:
+                img = tag.get('content', '').strip()
+                if img and img.startswith('http') and 'google' not in img.lower():
+                    return img
+        return None
+    except:
+        return None
+
+def descargar_imagen(url):
+    if not url:
+        return None
+    for bloqueo in ['google.com', 'gstatic.com', 'facebook.com', 'logo', 'icon', 'favicon']:
+        if bloqueo in url.lower():
+            return None
+    try:
+        from PIL import Image
+        from io import BytesIO
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=20, stream=True)
+        if r.status_code != 200:
+            return None
+        if 'image' not in r.headers.get('content-type', ''):
+            return None
+        img = Image.open(BytesIO(r.content))
+        w, h = img.size
+        if w < 400 or h < 300:
+            return None
+        if w / h > 4 or w / h < 0.2:
+            return None
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
+        img.thumbnail((1200, 1200))
+        p = f'/tmp/noticia_{generar_hash(url)}.jpg'
+        img.save(p, 'JPEG', quality=85)
+        if os.path.getsize(p) < 5000:
+            os.remove(p)
+            return None
+        return p
+    except:
+        return None
+
+def crear_imagen_titulo(titulo):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import textwrap
+        img  = Image.new('RGB', (1200, 630), color='#0f172a')
+        draw = ImageDraw.Draw(img)
+        try:
+            fb = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 44)
+            fs = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 24)
+        except:
+            fb = fs = ImageFont.load_default()
+        draw.rectangle([(0, 0), (1200, 8)], fill='#3b82f6')
+        tt = textwrap.fill(titulo[:140], width=36)
+        ls = tt.split('\n')
+        y  = (630 - len(ls) * 50) // 2 - 50
+        draw.text((60, y), tt, font=fb, fill='white')
+        draw.text((60, 550), "🌍 Noticias Internacionales", font=fs, fill='#94a3b8')
+        draw.text((60, 580), "Verdad Hoy • Agencia de Noticias", font=fs, fill='#64748b')
+        p = f'/tmp/noticia_gen_{generar_hash(titulo)}.jpg'
+        img.save(p, 'JPEG', quality=90)
+        return p
+    except:
+        return None
+
+# ──────────────────────────────────────────────────────────
+# GENERACIÓN DE VIDEO (V5)
+# ──────────────────────────────────────────────────────────
+def crear_frame(titulo, resumen, logo_texto, ancho=1280, alto=720,
+                fondo_path=None, progreso=0.0):
+    """
+    Genera un frame PIL con el diseño del video noticiario.
+    progreso: 0.0 a 1.0 para controlar opacidad del texto (fade-in).
+    """
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    import textwrap
+
+    # ── Fondo ──────────────────────────────────────────────
+    if fondo_path:
+        try:
+            bg = Image.open(fondo_path).convert('RGB')
+            bg = bg.resize((ancho, alto), Image.LANCZOS)
+            bg = bg.filter(ImageFilter.GaussianBlur(radius=8))
+        except:
+            bg = Image.new('RGB', (ancho, alto), '#0f172a')
+    else:
+        bg = Image.new('RGB', (ancho, alto), '#0f172a')
+
+    frame = bg.copy()
+    overlay = Image.new('RGBA', (ancho, alto), (0, 0, 0, 170))
+    frame.paste(Image.alpha_composite(frame.convert('RGBA'), overlay).convert('RGB'))
+
+    draw = ImageDraw.Draw(frame)
+
+    # ── Fuentes ────────────────────────────────────────────
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+    ]
+    font_paths_reg = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+    ]
+    def cargar_fuente(paths, size):
+        for p in paths:
+            try:
+                return ImageFont.truetype(p, size)
+            except:
+                continue
+        return ImageFont.load_default()
+
+    font_breaking = cargar_fuente(font_paths, 28)
+    font_titulo   = cargar_fuente(font_paths, 52)
+    font_resumen  = cargar_fuente(font_paths_reg, 28)
+    font_logo     = cargar_fuente(font_paths, 22)
+
+    alpha = int(255 * min(progreso * 2, 1.0))  # fade-in
+
+    # ── Barra superior roja "ÚLTIMA HORA" ─────────────────
+    draw.rectangle([(0, 0), (ancho, 56)], fill='#dc2626')
+    breaking_txt = "🔴  ÚLTIMA HORA  |  VERDAD HOY"
+    draw.text((24, 14), breaking_txt, font=font_breaking, fill='white')
+
+    # ── Título (fade-in) ──────────────────────────────────
+    titulo_wrap = textwrap.fill(titulo[:120], width=30)
+    lineas_titulo = titulo_wrap.split('\n')
+    y_titulo = 110
+    for linea in lineas_titulo:
+        color = (255, 255, 255, alpha)
+        # PIL no soporta alpha en texto directamente, usamos capa separada
+        tmp = Image.new('RGBA', (ancho, alto), (0, 0, 0, 0))
+        d2  = ImageDraw.Draw(tmp)
+        d2.text((60, y_titulo), linea, font=font_titulo, fill=(255, 255, 255, alpha))
+        frame.paste(Image.alpha_composite(frame.convert('RGBA'), tmp).convert('RGB'))
+        draw = ImageDraw.Draw(frame)
+        y_titulo += 64
+
+    # ── Línea separadora ──────────────────────────────────
+    sep_y = y_titulo + 12
+    draw.rectangle([(60, sep_y), (ancho - 60, sep_y + 3)], fill='#3b82f6')
+
+    # ── Resumen (aparece después) ─────────────────────────
+    if progreso > 0.5:
+        alpha2 = int(255 * min((progreso - 0.5) * 2, 1.0))
+        resumen_corto = resumen[:220] + ('...' if len(resumen) > 220 else '')
+        resumen_wrap  = textwrap.fill(resumen_corto, width=58)
+        tmp2 = Image.new('RGBA', (ancho, alto), (0, 0, 0, 0))
+        d3   = ImageDraw.Draw(tmp2)
+        d3.text((60, sep_y + 20), resumen_wrap, font=font_resumen,
+                fill=(203, 213, 225, alpha2))
+        frame.paste(Image.alpha_composite(frame.convert('RGBA'), tmp2).convert('RGB'))
+        draw = ImageDraw.Draw(frame)
+
+    # ── Barra inferior con logo ────────────────────────────
+    draw.rectangle([(0, alto - 48), (ancho, alto)], fill='#1e293b')
+    draw.text((24, alto - 34), f"🌐 {logo_texto}  •  noticias internacionales",
+              font=font_logo, fill='#94a3b8')
+
+    return frame
+
+
+def crear_audio_noticia(titulo, resumen):
+    """
+    Genera audio TTS en español latino usando espeak (offline, sin API key).
+    Retorna la ruta del archivo .mp3 o None si falla.
+    """
+    try:
+        import subprocess
+        resumen_corto = resumen[:300]
+        for sep in ['. ', '! ', '? ']:
+            idx = resumen_corto.rfind(sep)
+            if idx > 80:
+                resumen_corto = resumen_corto[:idx + 1]
+                break
+
+        guion = (
+            f"Última hora. {titulo}. "
+            f"{resumen_corto} "
+            f"Lee todos los detalles en la publicación."
+        )
+        guion = re.sub(r'[#@\[\]<>*_]', '', guion)
+        guion = re.sub(r'https?://\S+', '', guion)
+        guion = re.sub(r'\s+', ' ', guion).strip()
+
+        hash_a    = generar_hash(titulo)
+        wav_path  = f'/tmp/noticia_audio_{hash_a}.wav'
+        mp3_path  = f'/tmp/noticia_audio_{hash_a}.mp3'
+
+        # Generar WAV con espeak (offline, español latinoamericano)
+        r = subprocess.run(
+            ['espeak', '-v', 'es-la', '-s', '145', '-p', '48', '-a', '180',
+             '-w', wav_path, guion],
+            capture_output=True, text=True, timeout=30
+        )
+        if r.returncode != 0 or not os.path.exists(wav_path):
+            log(f"⚠️ espeak falló: {r.stderr[:100]}", 'advertencia')
+            return None
+
+        # Convertir WAV → MP3 con ffmpeg
+        subprocess.run(
+            ['ffmpeg', '-y', '-i', wav_path, '-codec:a', 'libmp3lame', '-q:a', '4', mp3_path],
+            capture_output=True, timeout=30
+        )
+        try:
+            os.remove(wav_path)
+        except:
+            pass
+
+        if os.path.exists(mp3_path):
+            log(f"🔊 Audio TTS generado ({os.path.getsize(mp3_path)//1024} KB)", 'exito')
+            return mp3_path
+
+        return None
+    except FileNotFoundError:
+        log("⚠️ espeak no instalado — video sin audio", 'advertencia')
+        return None
+    except Exception as e:
+        log(f"⚠️ Error generando audio: {e} — video sin audio", 'advertencia')
+        return None
+
+
+def crear_video_noticia(titulo, resumen, fondo_path=None, duracion=28, fps=24):
+    """
+    Genera un video MP4 de tipo noticiario con voz en español latino.
+    Retorna la ruta del archivo o None si falla.
+    """
+    try:
+        from moviepy.editor import ImageSequenceClip, AudioFileClip, CompositeAudioClip
+        import numpy as np
+        import textwrap
+
+        log("🎬 Generando video noticiario...", 'info')
+
+        # ── Generar audio TTS ─────────────────────────────
+        audio_path = crear_audio_noticia(titulo, resumen)
+
+        # Si hay audio, ajustar duración del video al audio (mín 20s, máx 45s)
+        if audio_path:
+            try:
+                audio_clip = AudioFileClip(audio_path)
+                duracion = max(20, min(45, int(audio_clip.duration) + 3))
+                audio_clip.close()
+                log(f"⏱️ Duración ajustada al audio: {duracion}s", 'info')
+            except:
+                duracion = 28
+
+        ancho, alto = 1280, 720
+        total_frames = duracion * fps
+        frames = []
+
+        for i in range(total_frames):
+            t = i / total_frames
+            if t < 0.08:
+                progreso = 0.0
+            elif t < 0.50:
+                progreso = (t - 0.08) / 0.42
+            elif t < 0.85:
+                progreso = 1.0
+            else:
+                progreso = 1.0 - (t - 0.85) / 0.15
+
+            frame_pil = crear_frame(
+                titulo=titulo,
+                resumen=resumen,
+                logo_texto="Verdad Hoy | Agencia de Noticias",
+                ancho=ancho, alto=alto,
+                fondo_path=fondo_path,
+                progreso=max(0.0, progreso),
+            )
+            frames.append(np.array(frame_pil))
+
+        # ── Ensamblar video ───────────────────────────────
+        clip = ImageSequenceClip(frames, fps=fps)
+        hash_v = generar_hash(titulo)
+        video_path = f'/tmp/noticia_video_{hash_v}.mp4'
+
+        if audio_path:
+            try:
+                audio_clip = AudioFileClip(audio_path).set_duration(duracion)
+                clip = clip.set_audio(audio_clip)
+                clip.write_videofile(
+                    video_path,
+                    codec='libx264',
+                    audio_codec='aac',
+                    preset='ultrafast',
+                    ffmpeg_params=['-crf', '28'],
+                    logger=None,
+                )
+                audio_clip.close()
+            except Exception as e:
+                log(f"⚠️ Error mezclando audio: {e} — generando sin audio", 'advertencia')
+                clip.write_videofile(
+                    video_path, codec='libx264', audio=False,
+                    preset='ultrafast', ffmpeg_params=['-crf', '28'], logger=None,
+                )
+            finally:
+                try:
+                    if os.path.exists(audio_path):
+                        os.remove(audio_path)
+                except:
+                    pass
+        else:
+            clip.write_videofile(
+                video_path, codec='libx264', audio=False,
+                preset='ultrafast', ffmpeg_params=['-crf', '28'], logger=None,
+            )
+
+        clip.close()
+        size_mb = os.path.getsize(video_path) / (1024 * 1024)
+        log(f"✅ Video generado: {video_path} ({size_mb:.1f} MB, {duracion}s)", 'exito')
+        return video_path
+
+    except ImportError:
+        log("⚠️ moviepy no disponible — usando imagen", 'advertencia')
+        return None
+    except Exception as e:
+        log(f"⚠️ Error generando video: {e} — usando imagen", 'advertencia')
+        return None
+
+
+def _truncar_mensaje(texto, hashtags, firma, limite=2000):
+    """Trunca el mensaje al límite seguro de Facebook conservando hashtags y firma."""
+    sufijo = f"\n\n{hashtags}\n\n— {firma}"
+    espacio = limite - len(sufijo)
+    if len(texto) > espacio:
+        texto = texto[:espacio - 4].rsplit(' ', 1)[0] + ' [...]'
+    return re.sub(r'https?://\S+', '', f"{texto}{sufijo}")
+
+def publicar_facebook_video(titulo, texto, video_path, hashtags):
+    """Publica un video nativo en Facebook (mayor alcance orgánico que fotos)."""
+    if not FB_PAGE_ID or not FB_ACCESS_TOKEN:
+        return False
+    descripcion = _truncar_mensaje(texto, hashtags, "🌐 Verdad Hoy | Agencia de Noticias Internacionales")
+    try:
+        url = f"https://graph.facebook.com/v18.0/{FB_PAGE_ID}/videos"
+        with open(video_path, 'rb') as f:
+            r = requests.post(
+                url,
+                files={'source': ('video.mp4', f, 'video/mp4')},
+                data={
+                    'title':        titulo[:255],
+                    'description':  descripcion,
+                    'access_token': FB_ACCESS_TOKEN,
+                },
+                timeout=120,
+            ).json()
+        if 'id' in r:
+            log(f"✅ Video publicado en Facebook — ID: {r['id']}", 'exito')
+            return True
+        else:
+            log(f"❌ Error Facebook video: {r.get('error', {}).get('message', 'desconocido')}", 'error')
+    except Exception as e:
+        log(f"❌ Excepción publicando video: {e}", 'error')
+    return False
+
+
+# ──────────────────────────────────────────────────────────
+# CONSTRUCCIÓN Y PUBLICACIÓN
+# ──────────────────────────────────────────────────────────
+def dividir_parrafos(texto):
+    if not texto:
+        return []
+    oraciones = [o.strip() for o in re.split(r'(?<=[.!?])\s+', texto) if len(o.strip()) > 15]
+    if len(oraciones) < 3:
+        return [texto] if len(texto) > 100 else []
+    parrafos, actual, palabras = [], [], 0
+    for i, o in enumerate(oraciones):
+        actual.append(o)
+        palabras += len(o.split())
+        if palabras >= 40 or i == len(oraciones) - 1:
+            if len(' '.join(actual).split()) >= 15:
+                parrafos.append(' '.join(actual))
+            actual, palabras = [], 0
+    return parrafos[:8]
+
+def construir_publicacion(titulo, contenido, creditos, fuente):
+    t    = limpiar_texto(titulo)
+    pars = dividir_parrafos(contenido)
+    if len(pars) < 2:
+        ors  = [o.strip() for o in re.split(r'(?<=[.!?])\s+', contenido) if len(o.strip()) > 20]
+        pars = [' '.join(ors[i:i+2]) for i in range(0, len(ors), 2)][:8]
+    lineas = [f"📰 ÚLTIMA HORA | {t}", ""]
+    for i, p in enumerate(pars):
+        lineas.append(p)
+        if i < len(pars) - 1:
+            lineas.append("")
+    lineas += ["", "──────────────────────────────", ""]
+    if creditos:
+        lineas += [f"✍️ {creditos}", ""]
+    lineas.append(f"📎 {fuente}")
+    return '\n'.join(lineas)
+
+def generar_hashtags(titulo, contenido):
+    txt = f"{titulo} {contenido}".lower()
+    tags = ['#NoticiasInternacionales', '#ÚltimaHora']
+    mapa = {
+        r'guerra|conflicto|ataque|bombardeo': '#ConflictoArmado',
+        r'ucrania|rusia|putin':               '#UcraniaRusia',
+        r'gaza|israel|hamas':                 '#IsraelGaza',
+        r'trump|biden|eeuu|estados unidos':   '#PolíticaGlobal',
+        r'economía|inflación|recesión':       '#EconomíaMundial',
+        r'china|taiwan':                      '#ChinaTaiwán',
+        r'iran|medio oriente':                '#MedioOriente',
+        r'terrorismo|atentado':               '#Terrorismo',
     }
-
-    setTimeout(function() { markSideActive(last); }, 600);
-
-  } catch(e) { console.warn('autoplayLast:', e); }
-}
-
-// Ejecutar tras window load para asegurar que Hls.js está disponible
-window.addEventListener('load', function() {
-  // Esperar a que Hls.js esté disponible antes de autoplay
-  function waitHlsAndPlay(intentos) {
-    intentos = intentos || 0;
-    if (typeof Hls !== 'undefined') {
-      // Si el usuario ya interactuó antes, el autoplay con sonido funcionará
-      autoplayLast();
-    } else if (intentos < 30) {
-      setTimeout(function(){ waitHlsAndPlay(intentos + 1); }, 200);
-    }
-  }
-  waitHlsAndPlay();
-});
-
-// Overlay transparente sobre el video — un clic activa sonido completo
-function mostrarOverlayPlay(v, nombre) {
-  var vr = document.getElementById('vr');
-  if (!vr) return;
-
-  // Quitar overlay anterior
-  var old = document.getElementById('overlay-play');
-  if (old) old.remove();
-
-  // Reproducir muteado para que haya imagen
-  v.muted = true;
-  v.play().catch(function(){});
-
-  // Crear overlay transparente sobre el video
-  var overlay = document.createElement('div');
-  overlay.id = 'overlay-play';
-  overlay.style.cssText =
-    'position:absolute;inset:0;z-index:50;cursor:pointer;'
-    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-    + 'background:rgba(0,0,0,0.35);transition:background .2s;';
-
-  overlay.innerHTML =
-    '<div style="background:rgba(230,63,110,0.92);border-radius:50%;'
-    + 'width:70px;height:70px;display:flex;align-items:center;justify-content:center;'
-    + 'margin-bottom:12px;box-shadow:0 4px 24px rgba(230,63,110,0.5);">'
-    + '<span style="font-size:32px;margin-left:4px;">▶</span></div>'
-    + '<span style="color:#fff;font-size:14px;font-weight:600;'
-    + 'text-shadow:0 2px 8px rgba(0,0,0,0.8);background:rgba(0,0,0,0.4);'
-    + 'padding:6px 16px;border-radius:20px;">Clic para reproducir con sonido</span>';
-
-  // Un solo clic activa sonido y quita el overlay
-  overlay.onclick = function() {
-    v.muted  = false;
-    v.volume = 1;
-    overlay.remove();
-    audioDesbloqueado = true;
-    localStorage.setItem('cicAutoplayOk', '1');
-    v.play().catch(function(){});
-  };
-
-  // Quitar overlay y reproducir cuando el audio se desbloquee
-  var checkAudio = setInterval(function() {
-    if (audioDesbloqueado && overlay.parentNode) {
-      v.muted  = false;
-      v.volume = 1;
-      overlay.remove();
-      clearInterval(checkAudio);
-      v.play().catch(function(){});
-    }
-  }, 300);
-
-  overlay.onmouseenter = function(){ overlay.style.background = 'rgba(0,0,0,0.15)'; };
-  overlay.onmouseleave = function(){ overlay.style.background = 'rgba(0,0,0,0.35)'; };
-
-  vr.style.position = 'relative';
-  vr.appendChild(overlay);
-}
-
-// Mantener compatibilidad
-function mostrarBtnSonido(v) { mostrarOverlayPlay(v, ''); }
-
-// ════════════════════════════════════
-// FUNCIÓN CENTRAL: marcar canal activo en lista lateral
-// Elimina clases previas, aplica active, y hace scroll al elemento
-// ════════════════════════════════════
-function markSideActive(ch) {
-  if (!ch) return;
-  // Quitar cualquier marca previa
-  document.querySelectorAll('.side-item').forEach(function(el) {
-    el.classList.remove('active', 'ractive');
-  });
-  // Buscar el elemento en la lista lateral
-  var el = g('si-' + ch.id);
-  if (el) {
-    el.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
-    // Scroll suave hacia el canal activo
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } else {
-    // Canal no visible en filtro actual — NO resetear filtro de países
-    // Solo marcar visualmente sin cambiar filtros
-    // Si el canal pertenece al país/categoría filtrada, simplemente
-    // está paginado — hacer scroll sin resetear nada
-    if (sideCountryFilter === 'all' || (ch.co && ch.co === sideCountryFilter)) {
-      // Está en el filtro actual — solo renderizar y scrollear
-      renderSideList();
-    }
-    // Si el canal es de otro país, no forzar reset — el usuario eligió ese filtro
-    setTimeout(function() {
-      var el2 = g('si-' + ch.id);
-      if (el2) {
-        el2.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
-        el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 200);
-  }
-}
-
-// ════════════════════════════════════
-// UTILIDADES
-// ════════════════════════════════════
-function isSlowDevice() {
-  var nav = navigator;
-  var slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
-  var slowRAM = nav.deviceMemory && nav.deviceMemory <= 2;
-  var isTVBox = /TV|Android.*Box|AFTM|AFTT|FireTV|Chromecast/i.test(nav.userAgent);
-  return slowCPU || slowRAM || isTVBox;
-}
-
-function showToast(msg) {
-  var t = g('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2500);
-}
-
-function g(id) { return document.getElementById(id); }
-
-// ════════════════════════════════════
-// CARGA DE PAÍSES
-// ════════════════════════════════════
-async function loadCountries() {
-  const proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url=',
-    'https://proxy.cors.sh/',
-    'https://thingproxy.freeboard.io/fetch/',
-  ];
-
-  async function fetchM3U(url) {
-    try {
-      const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
-      if (r.ok) return await r.text();
-    } catch(e) {}
-    for (const px of proxies) {
-      try {
-        const r = await fetch(px + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
-        if (r.ok) return await r.text();
-      } catch(e) { continue; }
-    }
-    return null;
-  }
-
-  await Promise.allSettled(Object.entries(COUNTRY_URLS).map(async ([code, slug]) => {
-    const txt = await fetchM3U(`https://iptv-org.github.io/iptv/countries/${slug}.m3u`);
-    if (!txt) return;
-    const parsed = parseM3U(txt, code, 'tv');
-    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
-    if (newCh.length) {
-      allTV = [...allTV, ...newCh];
-      updateAll();
-      if (curMode === 'tv') { applyFilter(); renderSideList(); }
-      // Si hay canal activo, re-marcarlo tras re-renderizar la lista
-      if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
-    }
-  }));
-
-  const txtSpa = await fetchM3U('https://iptv-org.github.io/iptv/languages/spa.m3u');
-  if (txtSpa) {
-    const parsed = parseM3U(txtSpa, 'INT', 'tv');
-    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
-    if (newCh.length) {
-      allTV = [...allTV, ...newCh];
-      updateAll();
-      if (curMode === 'tv') { applyFilter(); renderSideList(); }
-      if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
-    }
-  }
-
-  g('chload').classList.remove('show');
-  showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
-}
-
-function parseM3U(txt, co, type) {
-  const lines = txt.split('\n');
-  const res = [];
-  let cur = {};
-  for (let l of lines) {
-    l = l.trim();
-    if (l.startsWith('#EXTINF')) {
-      const nM = l.match(/tvg-name="([^"]*)"/);
-      const lM = l.match(/tvg-logo="([^"]*)"/);
-      const cM = l.match(/group-title="([^"]*)"/);
-      const coM = l.match(/tvg-country="([^"]*)"/);
-      const rawName  = nM ? nM[1] : l.split(',').pop().trim();
-      const rawGroup = (cM ? cM[1] : '').toLowerCase();
-      // Categorizar por group-title primero, luego por nombre del canal
-      let cat = CAT_MAP[rawGroup] || inferirCategoria(rawName, rawGroup) || 'General';
-      cur = {
-        name: rawName,
-        logo: lM ? lM[1] : '',
-        cat,
-        co: coM ? coM[1].toUpperCase() : co,
-        type,
-      };
-    } else if (l && !l.startsWith('#') && cur.name) {
-      cur.url = l;
-      cur.id  = type[0] + Math.random().toString(36).slice(2, 8);
-      res.push({...cur});
-      cur = {};
-    }
-  }
-  return res;
-}
-
-// Inferir categoría desde el nombre o group-title del canal
-function inferirCategoria(nombre, group) {
-  const n = (nombre + ' ' + group).toLowerCase();
-  if (/news|noticias|24h|cnn|bbc\s|dw\s|france\s24|aljazeera|telesur|rtn|notici|inform/.test(n)) return 'Noticias';
-  if (/sport|deport|futbol|football|soccer|espn|nba|golf|motor|tenis|racing|basket|liga|cup|mundial/.test(n)) return 'Deportes';
-  if (/movie|cine|film|cinema|hollywood|hbo|showtime|starz|pelicul/.test(n)) return 'Películas';
-  if (/series|axn|syfy|amc|drama|novela|tlnovela/.test(n)) return 'Series';
-  if (/kids|infantil|disney|nick|cartoon|baby|junior|clan|mini/.test(n)) return 'Infantil';
-  if (/music|mtv|vh1|radio|hits|melodia|ritmo|beats/.test(n)) return 'Música';
-  if (/documentary|documental|national|discovery|history|animal|nature|science|geo/.test(n)) return 'Documentales';
-  if (/religious|religion|cristian|church|god|faith|iglesia|catolico/.test(n)) return 'Religiosos';
-  if (/business|bloomberg|cnbc|finance|econom/.test(n)) return 'Negocios';
-  if (/comedy|humor|entretenimiento|entertainment|culture|lifestyle|fashion|arte/.test(n)) return 'Entretenimiento';
-  return null;
-}
-
-// ════════════════════════════════════
-// CONTADORES + FILTROS PAÍS
-// ════════════════════════════════════
-// Fallback de imágenes rotas en el grid (llamado desde onerror en HTML)
-function imgFallback(el, fc, fb) {
-  var div = document.createElement('div');
-  div.className = 'cfb' + fc;
-  div.textContent = fb;
-  if (el.parentNode) el.parentNode.replaceChild(div, el);
-}
-
-function updateAll() {
-  const src  = curMode === 'tv' ? allTV : allRadio;
-  const cats = ['Noticias','Deportes','Entretenimiento','Películas','Series','Infantil','Música','Documentales','Religiosos','Negocios','General'];
-  const set  = function(id, v){ var e = g(id); if(e) e.textContent = v; };
-
-  set('cn-tv',         allTV.length);
-  set('cn-radio',      allRadio.length);
-  set('cnt-tv-hdr',    allTV.length);
-  set('cnt-radio-hdr', allRadio.length);
-  set('cn-fav',        favs.length);
-  set('cn-all',        src.length);
-  cats.forEach(function(c){ set('cn-'+c, src.filter(function(ch){ return ch.cat===c; }).length); });
-
-  const countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
-  const bar = g('fbar');
-  if (!bar) return;
-  bar.innerHTML = '';
-  const ab = mkChip('🌐 Todos', curCountry === 'all');
-  ab.onclick = function(){ setCountry('all', ab); };
-  bar.appendChild(ab);
-  countries.forEach(function(co) {
-    const b = mkChip((CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co), curCountry === co);
-    b.onclick = function(){ setCountry(co, b); };
-    bar.appendChild(b);
-  });
-}
-
-function mkChip(text, active) {
-  const b = document.createElement('button');
-  b.className = 'chip' + (active ? ' active' : '');
-  b.textContent = text;
-  return b;
-}
-
-// ════════════════════════════════════
-// FILTROS Y NAVEGACIÓN
-// ════════════════════════════════════
-function setMode(mode) {
-  curMode    = mode;
-  curCat     = 'all';
-  curCountry = 'all';
-  curSearch  = '';
-  g('search').value = '';
-
-  const isR = mode === 'radio';
-  g('sb-tv').classList.toggle('active', !isR);
-  g('sb-radio').classList.toggle('active', isR);
-  g('sb-radio').classList.toggle('ron', isR);
-  g('hbt-tv').classList.toggle('on', !isR);
-  g('hbt-radio').classList.toggle('ron', isR);
-  g('hbt-radio').classList.toggle('on', false);
-  g('tab-tv').classList.toggle('active', !isR);
-  g('tab-radio').classList.toggle('active', isR);
-  g('cat-label').textContent = isR ? 'Categorías Radio' : 'Categorías TV';
-
-  g('vr').style.display = isR ? 'none' : 'block';
-  g('audioZone').classList.toggle('show', isR);
-  g('liveBadge').textContent  = isR ? '📻 RADIO' : 'EN VIVO';
-  g('liveBadge').style.background = isR ? 'var(--accent2)' : 'var(--accent)';
-  g('liveBadge').style.color = isR ? '#000' : '#fff';
-
-  document.querySelectorAll('aside .cb').forEach(function(b){ b.classList.remove('active'); });
-  g('sb-'+mode).classList.add('active');
-  g('cat-all').classList.add('active');
-
-  sideCatFilter     = 'all';
-  sideCountryFilter = 'all';
-  updateAll();
-  applyFilter();
-  renderSideList();
-}
-
-function setCat(cat, btn) {
-  curCat    = cat;
-  curSearch = '';
-  g('search').value = '';
-  document.querySelectorAll('aside .cb').forEach(function(b){ b.classList.remove('active'); });
-  g('sb-'+curMode).classList.add('active');
-  if (btn) btn.classList.add('active');
-  sideCatFilter     = cat;
-  sideCountryFilter = 'all';
-  applyFilter();
-  renderSideList();
-}
-
-function setCountry(co, btn) {
-  curCountry = co;
-  document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  applyFilter();
-}
-
-function doSearch() {
-  curSearch = g('search').value.toLowerCase();
-  applyFilter();
-  if (curSearch) {
-    var src = curMode === 'tv' ? allTV : allRadio;
-    var results = src.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
-    renderSideFromList(results);
-  } else {
-    renderSideList();
-  }
-}
-
-function showFavs() {
-  // Mostrar todos los favoritos en el grid
-  filtered = [...allTV, ...allRadio].filter(function(c){ return favs.includes(c.id); });
-  g('stitle').textContent = '⭐ Favoritos';
-  g('scnt').textContent   = filtered.length + ' guardados';
-  renderGrid();
-  // También mostrar solo favoritos en la lista lateral
-  renderSideFromList(filtered);
-}
-
-function refreshAll() {
-  allTV    = allTV.slice(0, 26);
-  allRadio = allRadio.slice(0, 8);
-  updateAll();
-  applyFilter();
-  renderSideList();
-  loadCountries();
-}
-
-function applyFilter() {
-  const src = curMode === 'tv' ? allTV : allRadio;
-  let list = src;
-  if (curCat !== 'all')     list = list.filter(function(c){ return c.cat === curCat; });
-  if (curCountry !== 'all') list = list.filter(function(c){ return c.co === curCountry; });
-  if (curSearch)            list = list.filter(function(c){
-    return c.name.toLowerCase().includes(curSearch) ||
-           (CNAMES[c.co]||'').toLowerCase().includes(curSearch);
-  });
-  filtered = list;
-  g('stitle').textContent = curCat === 'all'
-    ? (curMode === 'tv' ? 'Todos los canales' : 'Todas las radios')
-    : curCat;
-  g('scnt').textContent = filtered.length + (curMode === 'tv' ? ' canales' : ' radios');
-  renderGrid();
-}
-
-// ════════════════════════════════════
-// RENDER GRID
-// ════════════════════════════════════
-function renderGrid() {
-  const grid = g('grid');
-  const isR  = curMode === 'radio';
-  if (!filtered.length) {
-    grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
-    return;
-  }
-  const MAX = isSlowDevice() ? 50 : 300;
-  grid.innerHTML = filtered.slice(0, MAX).map(function(ch) {
-    const isFav  = favs.includes(ch.id);
-    const isPlay = gridActive && gridActive.id === ch.id;
-    const pc     = isPlay ? (isR ? ' rplaying' : ' playing') : '';
-    const dc     = isR ? ' rd' : '';
-    const fc     = isR ? ' rfb' : '';
-    const fb     = isR ? '📻' : ch.name.slice(0,3).toUpperCase();
-    // Logo: si falla la imagen, reemplazar con fallback via función global
-    const logoHtml = ch.logo
-      ? '<img class="clogo" src="'+ch.logo+'" alt="'+ch.name+'" loading="lazy" decoding="async" onerror="imgFallback(this,\''+fc+'\',\''+fb+'\')">'
-      : '<div class="cfb'+fc+'">'+fb+'</div>';
-    return '<div class="card'+pc+'" onclick="playFromGrid(\''+ch.id+'\')" id="cd-'+ch.id+'">'
-      + logoHtml
-      + '<div class="ldot'+dc+'"></div>'
-      + '<div class="cinfo"><div class="cname" title="'+ch.name+'">'+ch.name+'</div>'
-      + '<div class="ccat">'+ch.cat+(ch.co?' &middot; '+(CFLAGS[ch.co]||'')+ch.co:'')+'</div></div>'
-      + '<button class="favbtn'+(isFav?' on':'')+'" onclick="toggleFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>'
-      + '</div>';
-  }).join('');
-  if (filtered.length > MAX)
-    grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda para filtrar</div>';
-}
-
-// ════════════════════════════════════
-// RENDER LISTA LATERAL
-// ════════════════════════════════════
-function renderSideList() {
-  var isR = curMode === 'radio';
-  var src = (isR ? allRadio : allTV).slice();
-  if (sideCatFilter !== 'all')     src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
-  var base = isR ? allRadio : allTV;
-  var forPaises = sideCatFilter !== 'all'
-    ? base.filter(function(ch){ return ch.cat === sideCatFilter; })
-    : base;
-  updateSideCountriesBar(forPaises);
-  if (sideCountryFilter !== 'all') src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
-  renderSideFromList(src);
-}
-
-// Renderiza la lista lateral desde un array dado
-function renderSideFromList(src) {
-  var list = g('chSideList');
-  var isR  = curMode === 'radio';
-  var totalReal = src.length;
-
-  if (!src.length) {
-    g('sideCount').textContent = '0 canales';
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">Sin canales</div>';
-    return;
-  }
-
-  // Si hay canal activo fuera de los primeros 300, subirlo al inicio
-  var srcOrdered = src.slice();
-  if (sideActive) {
-    var activeIdx = srcOrdered.findIndex(function(c){ return c.id === sideActive.id; });
-    if (activeIdx > 299) {
-      var activeItem = srcOrdered.splice(activeIdx, 1)[0];
-      srcOrdered.unshift(activeItem);
-    }
-  }
-
-  // Mostrar total real en el header
-  g('sideCount').textContent = totalReal + (isR ? ' radios' : ' canales');
-  sideTotalReal = totalReal; // guardar para updateSidePos
-
-  var html = '';
-  var max  = Math.min(srcOrdered.length, 300);
-  src = srcOrdered;
-  for (var i = 0; i < max; i++) {
-    var ch     = src[i];
-    var isPlay = sideActive && sideActive.id === ch.id;
-    var isFav  = favs.includes(ch.id);
-    var ac     = isPlay ? (ch.type === 'radio' ? ' ractive' : ' active') : '';
-    var fc     = ch.type === 'radio' ? ' rfb' : '';
-    var flag   = ch.co ? ' &middot; '+(CFLAGS[ch.co]||'')+ch.co : '';
-    var logo   = ch.logo
-      ? '<img class="side-logo" src="'+ch.logo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';
-    var fav = '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
-    html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
-          + logo
-          + '<div class="side-info"><div class="side-name">'+ch.name+'</div>'
-          + '<div class="side-cat">'+ch.cat+flag+'</div></div>'
-          + fav + '</div>';
-  }
-  list.innerHTML = html;
-  updateSidePos();
-
-  // ══ Scroll automático al canal activo después de renderizar ══
-  if (sideActive) {
-    setTimeout(function() {
-      var el = g('si-' + sideActive.id);
-      if (el) {
-        el.classList.add(sideActive.type === 'radio' ? 'ractive' : 'active');
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 80);
-  }
-}
-
-// Clic en GRID
-function playFromGrid(id) {
-  const src = curMode === 'tv' ? allTV : allRadio;
-  const ch  = src.find(function(c){ return c.id === id; });
-  if (!ch) return;
-  gridActive = ch; curCh = ch; sideActive = ch;
-  curIdx = filtered.findIndex(function(c){ return c.id === id; });
-
-  document.querySelectorAll('.card').forEach(function(c){ c.classList.remove('playing','rplaying'); });
-  var cd = g('cd-'+id);
-  if (cd) cd.classList.add(ch.type==='radio'?'rplaying':'playing');
-
-  g('pname').textContent = ch.name;
-  updatePlayerFavBtn();
-  localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
-
-  // Marcar en lista lateral y hacer scroll
-  markSideActive(ch);
-
-  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
-}
-
-// Clic en LISTA LATERAL
-function playFromSide(id) {
-  const allSrc = curMode === 'tv' ? allTV : allRadio;
-  const ch     = allSrc.find(function(c){ return c.id === id; });
-  if (!ch) return;
-  sideActive = ch; curCh = ch; gridActive = ch;
-
-  // Marcar en lista lateral
-  document.querySelectorAll('.side-item').forEach(function(c){ c.classList.remove('active','ractive'); });
-  var si = g('si-'+id);
-  if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-
-  g('pname').textContent = ch.name;
-  updatePlayerFavBtn();
-  localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
-  // Registrar vista para recomendaciones de frecuentes
-  if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
-  // Subir historial a Supabase si hay sesión
-  if (typeof subirHistorial === 'function') subirHistorial(ch);
-  // Resetear intentos de reemplazo al cambiar canal manualmente
-  intentosReemplazo = 0;
-  urlsIntentadas    = [];
-
-  ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
-}
-
-// Filtro país lista lateral
-function setSideCountry(co, btn) {
-  sideCountryFilter = co;
-  // Solo actualizar chips de la barra lateral (no los del grid principal)
-  var bar = g('sideCountriesBar');
-  if (bar) bar.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  renderSideList();
-  if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 150);
-}
-
-function sideScroll(delta) {
-  var list = g('chSideList');
-  list.scrollTop += delta;
-  updateSidePos();
-}
-
-function updateSideCountriesBar(src) {
-  var bar = g('sideCountriesBar');
-  if (!bar) return;
-  var countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
-  // Construir HTML directamente, más simple y sin problemas de closure
-  var html = '<button class="sc-chip'+(sideCountryFilter==='all'?' active':'')+'" data-co="all">🌐 Todos</button>';
-  countries.slice(0, 30).forEach(function(co) {
-    html += '<button class="sc-chip'+(sideCountryFilter===co?' active':'')+'" data-co="'+co+'">'+(CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co)+'</button>';
-  });
-  bar.innerHTML = html;
-  // Event delegation: un solo listener persistente (se reasigna cada vez pero es correcto)
-  bar.onclick = function(e) {
-    var btn = e.target.closest('[data-co]');
-    if (!btn) return;
-    var co = btn.dataset.co;
-    sideCountryFilter = co;
-    bar.querySelectorAll('[data-co]').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
-    renderSideList();
-    if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 150);
-  };
-}
-
-// Total real de canales en la lista actual (puede ser > 300)
-var sideTotalReal = 0;
-
-function updateSidePos() {
-  var list  = g('chSideList');
-  var items = list.querySelectorAll('.side-item');
-  var rendered = items.length;
-  if (!rendered) return;
-  var itemH = 56;
-  var idx   = Math.round(list.scrollTop / itemH) + 1;
-  // Mostrar posición / total real (no solo los 300 renderizados)
-  var total = sideTotalReal > 0 ? sideTotalReal : rendered;
-  g('sidePos').textContent = Math.min(idx, rendered) + '/' + total;
-}
-
-document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
-
-// ════════════════════════════════════
-// PLAYER
-// ════════════════════════════════════
-function playVideo(ch) {
-  g('pp').classList.add('hide');
-  g('er').classList.remove('show');
-  g('ld').classList.add('show');
-  clearTimeout(errTimer);
-  errTimer = setTimeout(function(){ if (g('ld').classList.contains('show')) showErr(); }, 15000);
-
-  var v = g('vp');
-  if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
-  v.src = ''; v.load();
-
-  if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-    hlsObj = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
-    hlsObj.loadSource(ch.url);
-    hlsObj.attachMedia(v);
-    hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
-      clearTimeout(errTimer);
-      g('ld').classList.remove('show');
-      v.play().catch(function(){});
-    });
-    hlsObj.on(Hls.Events.ERROR, function(_, d){ if (d.fatal) tryNative(v, ch.url); });
-  } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
-    tryNative(v, ch.url);
-  } else {
-    tryNative(v, ch.url);
-  }
-}
-
-function tryNative(v, url) {
-  clearTimeout(errTimer);
-  g('ld').classList.add('show');
-  v.src = url; v.load();
-  v.play()
-    .then(function(){ g('ld').classList.remove('show'); })
-    .catch(function(){ g('ld').classList.remove('show'); });
-  errTimer = setTimeout(function(){ if (v.readyState < 2) showErr(); }, 10000);
-}
-
-function playRadio(ch) {
-  g('aname').textContent = ch.name;
-  g('acat').textContent  = ch.cat + (ch.co ? ' · '+(CNAMES[ch.co]||ch.co) : '');
-  var a = g('ap');
-  a.src = ch.url;
-  a.play().catch(function(){});
-  showToast('📻 ' + ch.name);
-}
-
-var vp = g('vp');
-vp.addEventListener('canplay',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
-vp.addEventListener('playing',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
-vp.addEventListener('error', function(e) {
-  // Ignorar errores cuando src está vacío (estado inicial)
-  if (!vp.src || vp.src === window.location.href) return;
-  if (curCh) {
-    // Pequeño delay para no disparar en errores transitorios del autoplay
-    setTimeout(function() {
-      if (curCh && !vp.played.length && g('ld').classList.contains('show')) {
-        showErr();
-      } else if (curCh && vp.error && vp.error.code > 1) {
-        showErr();
-      }
-    }, 1000);
-  }
-});
-
-// ════════════════════════════════════
-// SISTEMA DE AUTO-REEMPLAZO
-// Cuando un canal falla, busca alternativas automáticamente
-// ════════════════════════════════════
-var intentosReemplazo = 0;
-var urlsIntentadas    = [];
-var audioDesbloqueado = localStorage.getItem('cicAutoplayOk') === '1';
-
-// ── Desbloquear audio al primer clic en cualquier lugar ──
-// Chrome permite autoplay con sonido después de que el usuario interactúa
-function desbloquearAudio() {
-  if (audioDesbloqueado) return;
-  // Crear y reproducir audio silencioso para desbloquear el contexto
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var buf = ctx.createBuffer(1, 1, 22050);
-    var src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume().then(function() {
-      audioDesbloqueado = true;
-      localStorage.setItem('cicAutoplayOk', '1');
-    });
-  } catch(e) {}
-}
-
-// Desbloquear en el primer clic/toque en cualquier parte
-['click','touchstart','keydown'].forEach(function(ev) {
-  document.addEventListener(ev, function onFirst() {
-    desbloquearAudio();
-    // Quitar overlay si hay uno activo y el video está muteado
-    var overlay = document.getElementById('overlay-play');
-    var vp = document.getElementById('vp');
-    if (overlay && vp) {
-      vp.muted  = false;
-      vp.volume = 1;
-      overlay.remove();
-      vp.play().catch(function(){});
-    }
-    document.removeEventListener(ev, onFirst);
-  }, { once: true });
-});
-// URL del proxy Cloudflare Worker (dejar vacío si no está configurado)
-// Para configurarlo: ve a workers.cloudflare.com, crea un worker
-// y pega el contenido de worker.js. Luego pon aquí la URL.
-var PROXY_WORKER_URL  = ''; // ej: 'https://cic-tv-proxy.tuusuario.workers.dev'
-
-
-function showErr() {
-  clearTimeout(errTimer);
-  g('ld').classList.remove('show');
-
-  if (!curCh) { g('er').classList.add('show'); return; }
-
-  // Registrar fallo en el monitor
-  var key = curCh.id || curCh.url;
-  if (typeof canalStatus !== 'undefined') {
-    if (!canalStatus[key]) canalStatus[key] = { fallos: 0, vivo: true };
-    canalStatus[key].fallos++;
-    canalStatus[key].vivo = false;
-    // Si supera el umbral, ocultarlo del monitor
-    if (typeof canalesOcultos !== 'undefined' && canalStatus[key].fallos >= 3) {
-      canalesOcultos[key] = true;
-      allTV = allTV.filter(function(c){ return (c.id||c.url) !== key; });
-      if (typeof buscarAlternativaFondo === 'function') buscarAlternativaFondo(curCh);
-    }
-  }
-
-  // Intentar auto-reemplazo inmediato
-  if (intentosReemplazo < 3) {
-    intentosReemplazo++;
-    showToast('🔄 Buscando alternativa... (' + intentosReemplazo + '/3)');
-    buscarAlternativa(curCh);
-  } else {
-    intentosReemplazo = 0;
-    urlsIntentadas    = [];
-    g('er').classList.add('show');
-  }
-}
-
-async function buscarAlternativa(ch) {
-  g('ld').classList.add('show');
-  urlsIntentadas.push(ch.url);
-
-  // ── Paso 1: canal con mismo nombre en allTV ──
-  var candidatos = buscarEnLista(ch);
-  if (candidatos.length) {
-    log('Reemplazo local: ' + candidatos[0].url);
-    playVideo(Object.assign({}, curCh, { url: candidatos[0].url, name: ch.name }));
-    return;
-  }
-
-  // ── Paso 2: intentar con proxy Cloudflare Worker ──
-  if (PROXY_WORKER_URL && ch.url) {
-    var urlProxy = PROXY_WORKER_URL + '?url=' + encodeURIComponent(ch.url);
-    log('Intentando via proxy: ' + urlProxy);
-    playVideo(Object.assign({}, curCh, { url: urlProxy, name: ch.name }));
-    return;
-  }
-
-  // ── Paso 3: buscar en iptv-org ──
-  var urlAlt = await buscarEnIptvOrg(ch);
-  if (urlAlt) {
-    log('Reemplazo iptv-org: ' + urlAlt);
-    playVideo(Object.assign({}, curCh, { url: urlAlt, name: ch.name }));
-    return;
-  }
-
-  // ── Sin alternativas — mostrar error ──
-  g('ld').classList.remove('show');
-  g('er').classList.add('show');
-  intentosReemplazo = 0;
-  urlsIntentadas    = [];
-}
-
-// Buscar canales similares en allTV (misma cat + co, diferente URL)
-function buscarEnLista(ch) {
-  var nombre = (ch.name || '').toLowerCase().replace(/\s*\(.*?\)\s*/g,'').trim();
-  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
-
-  return allTV.filter(function(c) {
-    if (urlsIntentadas.indexOf(c.url) !== -1) return false; // ya intentada
-    if (c.url === ch.url) return false;                      // misma URL
-    var cn = c.name.toLowerCase();
-    // Coincidencia exacta de nombre (sin calidad)
-    var nombreBase = cn.replace(/\s*\(.*?\)\s*/g,'').trim();
-    if (nombreBase === nombre) return true;
-    // Coincidencia parcial: todas las palabras principales están presentes
-    return palabras.length > 0 && palabras.every(function(p){ return cn.indexOf(p) !== -1; });
-  }).sort(function(a, b) {
-    // Priorizar misma categoría y país
-    var score = function(c) {
-      return (c.cat === ch.cat ? 2 : 0) + (c.co === ch.co ? 1 : 0);
-    };
-    return score(b) - score(a);
-  });
-}
-
-// Buscar alternativa en iptv-org por país y categoría
-async function buscarEnIptvOrg(ch) {
-  var catSlug = {
-    'Deportes':       'sports',
-    'Noticias':       'news',
-    'Películas':      'movies',
-    'Series':         'series',
-    'Infantil':       'kids',
-    'Música':         'music',
-    'Documentales':   'documentary',
-    'Entretenimiento':'entertainment',
-    'General':        'general',
-  };
-
-  var urls = [];
-  // Por país primero
-  if (ch.co) {
-    urls.push('https://iptv-org.github.io/iptv/countries/' + ch.co.toLowerCase() + '.m3u');
-  }
-  // Por categoría
-  if (catSlug[ch.cat]) {
-    urls.push('https://iptv-org.github.io/iptv/categories/' + catSlug[ch.cat] + '.m3u');
-  }
-
-  var nombre = (ch.name || '').toLowerCase().replace(/\s*\(.*?\)\s*/g,'').trim();
-  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
-
-  for (var i = 0; i < urls.length; i++) {
-    var m3u = await fetchM3UConProxy(urls[i]);
-    if (!m3u) continue;
-
-    var canales = parsearM3USimpleAlt(m3u);
-    // Buscar canal con nombre similar
-    var match = canales.find(function(c) {
-      if (urlsIntentadas.indexOf(c.url) !== -1) return false;
-      var cn = c.name.toLowerCase();
-      return palabras.length > 0 && palabras.some(function(p){ return cn.indexOf(p) !== -1; });
-    });
-    if (match) return match.url;
-  }
-  return null;
-}
-
-// Parsear M3U simple para búsqueda de alternativas
-function parsearM3USimpleAlt(txt) {
-  var canales = [], cur = {};
-  txt.split('\n').forEach(function(l) {
-    l = l.trim();
-    if (l.startsWith('#EXTINF')) {
-      var nM = l.match(/tvg-name="([^"]*)"/);
-      cur = { name: nM ? nM[1] : l.split(',').pop().trim() };
-    } else if (l && !l.startsWith('#') && cur.name) {
-      cur.url = l;
-      canales.push({...cur});
-      cur = {};
-    }
-  });
-  return canales;
-}
-
-// Fetch M3U con proxy CORS
-async function fetchM3UConProxy(url) {
-  var proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url=',
-    'https://thingproxy.freeboard.io/fetch/',
-  ];
-  try {
-    var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
-    if (r.ok) return await r.text();
-  } catch(e) {}
-  for (var i = 0; i < proxies.length; i++) {
-    try {
-      var r2 = await fetch(proxies[i] + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
-      if (r2.ok) return await r2.text();
-    } catch(e) { continue; }
-  }
-  return null;
-}
-
-function log(msg) { console.log('[CIC TV] ' + msg); }
-
-function retry() {
-  if (!curCh) return;
-  intentosReemplazo = 0;
-  urlsIntentadas    = [];
-  g('er').classList.remove('show');
-  curCh.type === 'radio' ? playRadio(curCh) : playVideo(curCh);
-}
-
-function nextCh() {
-  const allSrc = curMode === 'tv' ? allTV : allRadio;
-  if (!allSrc.length) return;
-  const idx  = curCh ? allSrc.findIndex(function(c){ return c.id === curCh.id; }) : -1;
-  const next = allSrc[(idx + 1) % allSrc.length];
-  playFromSide(next.id);
-}
-
-function prevCh() {
-  const allSrc = curMode === 'tv' ? allTV : allRadio;
-  if (!allSrc.length) return;
-  const idx  = curCh ? allSrc.findIndex(function(c){ return c.id === curCh.id; }) : 0;
-  const prev = allSrc[idx <= 0 ? allSrc.length - 1 : idx - 1];
-  playFromSide(prev.id);
-}
-
-function togglePin() {
-  isPinned = !isPinned;
-  var pz  = document.querySelector('.player-zone');
-  var btn = g('pinBtn');
-  btn.classList.toggle('pin-on', isPinned);
-  if (isPinned) {
-    pz.style.position = 'sticky'; pz.style.top = '0'; pz.style.zIndex = '50';
-    showToast('📌 Reproductor fijado');
-  } else {
-    pz.style.position = ''; pz.style.top = ''; pz.style.zIndex = '';
-    showToast('Reproductor libre');
-  }
-}
-
-function goFS() {
-  if (document.fullscreenElement || document.webkitFullscreenElement) {
-    exitFS();
-  } else {
-    var target = document.querySelector('.player-col');
-    (target.requestFullscreen || target.webkitRequestFullscreen).call(target);
-    document.body.classList.add('is-fullscreen');
-    g('fsBtn') && (g('fsBtn').textContent = '⊡');
-  }
-}
-function exitFS() {
-  (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-  document.body.classList.remove('is-fullscreen');
-  g('fsBtn') && (g('fsBtn').textContent = '⛶');
-}
-document.addEventListener('fullscreenchange', function(){
-  if (!document.fullscreenElement) { document.body.classList.remove('is-fullscreen'); g('fsBtn') && (g('fsBtn').textContent='⛶'); }
-});
-document.addEventListener('webkitfullscreenchange', function(){
-  if (!document.webkitFullscreenElement) { document.body.classList.remove('is-fullscreen'); g('fsBtn') && (g('fsBtn').textContent='⛶'); }
-});
-
-// ════════════════════════════════════
-// FAVORITOS
-// ════════════════════════════════════
-
-// ── MEJORA 1: Actualizar AMBOS botones favoritos (barra + flotante) ──
-function updatePlayerFavBtn() {
-  if (!curCh) return;
-  var isFav = favs.includes(curCh.id);
-
-  // Botón en barra inferior
-  var btn = g('playerFavBtn');
-  if (btn) {
-    btn.textContent = isFav ? '⭐' : '☆';
-    btn.title       = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
-    btn.classList.toggle('fav-on', isFav);
-  }
-}
-
-// Toggle favorito (llamado por ambos botones)
-function togglePlayerFav() {
-  if (!curCh) return;
-  var id  = curCh.id;
-  var idx = favs.indexOf(id);
-  if (idx === -1) { favs.push(id); showToast('⭐ ' + curCh.name + ' guardado'); }
-  else            { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
-  localStorage.setItem('cicFavs3', JSON.stringify(favs));
-  // Sincronizar con Supabase
-  var allSrc = allTV.concat(allRadio);
-  var ch = allSrc.find(function(c){ return c.id === id; });
-  if (typeof subirFavorito === 'function' && ch) subirFavorito(ch, i === -1);
-  updateAll();
-  updatePlayerFavBtn();
-  // Sync botones en lista lateral y grid
-  var sb = document.querySelector('#si-'+id+' .side-fav');
-  if (sb) { sb.classList.toggle('on', favs.includes(id)); sb.textContent = favs.includes(id)?'⭐':'☆'; }
-  var gb = document.querySelector('#cd-'+id+' .favbtn');
-  if (gb) { gb.classList.toggle('on', favs.includes(id)); gb.textContent = favs.includes(id)?'⭐':'☆'; }
-}
-
-// Favorito desde lista lateral
-function toggleSideFav(e, id) {
-  e.stopPropagation();
-  var i = favs.indexOf(id);
-  if (i === -1) { favs.push(id); showToast('⭐ Favorito agregado'); }
-  else          { favs.splice(i, 1); showToast('Eliminado de favoritos'); }
-  localStorage.setItem('cicFavs3', JSON.stringify(favs));
-  updateAll();
-  var btn = document.querySelector('#si-'+id+' .side-fav');
-  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
-  var gbtn = document.querySelector('#cd-'+id+' .favbtn');
-  if (gbtn) { gbtn.classList.toggle('on', favs.includes(id)); gbtn.textContent = favs.includes(id)?'⭐':'☆'; }
-  // Si el canal es el actual, sync botón player
-  if (curCh && curCh.id === id) updatePlayerFavBtn();
-}
-
-// Favorito desde grid
-function toggleFav(e, id) {
-  e.stopPropagation();
-  var i = favs.indexOf(id);
-  if (i === -1) { favs.push(id); showToast('⭐ Guardado'); }
-  else          { favs.splice(i, 1); showToast('Eliminado'); }
-  localStorage.setItem('cicFavs3', JSON.stringify(favs));
-  updateAll();
-  var btn = document.querySelector('#cd-'+id+' .favbtn');
-  if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
-  if (curCh && curCh.id === id) updatePlayerFavBtn();
-}
-
-// Drag scroll barra países lateral
-(function(){
-  var bar = document.getElementById('sideCountriesBar');
-  if (!bar) return;
-  var isDown = false, startX, scrollLeft;
-  bar.addEventListener('mousedown', function(e){ isDown=true; startX=e.pageX-bar.offsetLeft; scrollLeft=bar.scrollLeft; });
-  document.addEventListener('mouseup', function(){ isDown=false; });
-  bar.addEventListener('mousemove', function(e){ if(!isDown)return; e.preventDefault(); bar.scrollLeft=scrollLeft-(e.pageX-bar.offsetLeft-startX); });
-})();
-
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(function(){});
-</script>
-
-<!-- SISTEMA DE RECOMENDACIONES -->
-<script src="recomendados.js"></script>
-
-<!-- MONITOR DE SALUD DE CANALES -->
-<script src="monitor.js"></script>
-
-<!-- SISTEMA DE AUTENTICACIÓN -->
-<script src="auth.js"></script>
-
-</body>
-</html>
+    for patron, tag in mapa.items():
+        if re.search(patron, txt):
+            tags.append(tag)
+            break
+    tags.append('#Mundo')
+    return ' '.join(tags)
+
+def publicar_facebook(titulo, texto, imagen_path, hashtags):
+    if not FB_PAGE_ID or not FB_ACCESS_TOKEN:
+        return False
+    mensaje = _truncar_mensaje(texto, hashtags, "🌐 Verdad Hoy | Agencia de Noticias Internacionales")
+    try:
+        url = f"https://graph.facebook.com/v18.0/{FB_PAGE_ID}/photos"
+        with open(imagen_path, 'rb') as f:
+            r = requests.post(
+                url,
+                files={'file': ('imagen.jpg', f, 'image/jpeg')},
+                data={'message': mensaje, 'access_token': FB_ACCESS_TOKEN},
+                timeout=60
+            ).json()
+        if 'id' in r:
+            log(f"✅ Publicado en Facebook — ID: {r['id']}", 'exito')
+            return True
+        else:
+            log(f"❌ Error Facebook: {r.get('error', {}).get('message', 'desconocido')}", 'error')
+    except Exception as e:
+        log(f"❌ Excepción publicando: {e}", 'error')
+    return False
+
+# ──────────────────────────────────────────────────────────
+# MAIN
+# ──────────────────────────────────────────────────────────
+def main():
+    print("\n" + "=" * 60)
+    print("🌍 BOT DE NOTICIAS - V5.0 (ENGAGEMENT OPTIMIZADO)")
+    print(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"📁 Historial: {os.path.abspath(HISTORIAL_PATH)}")
+    print(f"📁 Estado:    {os.path.abspath(ESTADO_PATH)}")
+    print("=" * 60)
+
+    if not FB_PAGE_ID or not FB_ACCESS_TOKEN:
+        log("ERROR CRÍTICO: Faltan credenciales Facebook (FB_PAGE_ID / FB_ACCESS_TOKEN)", 'error')
+        return False  # Error real — exit 1
+
+    # Control de tiempo — PRIMERA barrera (salida normal — exit 0)
+    if not verificar_tiempo():
+        return None
+
+    # Control de horario pico — SEGUNDA barrera (salida normal — exit 0)
+    if not esta_en_horario_pico():
+        return None
+
+    # Cargar historial
+    h = cargar_historial()
+    total_historial = len(h.get('urls', []))
+    log(f"📊 Historial: {total_historial} entradas | Permanentes: {len(h.get('hashes_permanentes', []))}")
+
+    # Control de límite diario — TERCERA barrera (salida normal — exit 0)
+    if limite_diario_alcanzado(h):
+        return None
+
+    # Recolectar noticias
+    noticias = []
+    if NEWS_API_KEY:
+        noticias.extend(obtener_newsapi())
+    if NEWSDATA_API_KEY:
+        noticias.extend(obtener_newsdata())
+    if GNEWS_API_KEY:
+        noticias.extend(obtener_gnews())
+    if len(noticias) < 15:
+        log("⚠️ Pocas noticias, complementando con RSS...", 'advertencia')
+        noticias.extend(obtener_rss())
+
+    if not noticias:
+        log("ERROR: Ninguna fuente devolvió noticias", 'error')
+        return False
+
+    # Deduplicar batch y ordenar
+    noticias = deduplicar_batch(noticias)
+    noticias.sort(key=lambda x: (x.get('puntaje', 0), x.get('fecha', '')), reverse=True)
+    log(f"📰 Candidatas ordenadas por puntaje: {len(noticias)}")
+
+    # Buscar noticia válida
+    seleccionada = None
+    contenido    = None
+    creditos     = None
+    intentos     = 0
+
+    for i, nt in enumerate(noticias):
+        if intentos >= 60:
+            log(f"⚠️ Límite de intentos alcanzado (60)", 'advertencia')
+            break
+
+        url    = nt.get('url', '')
+        titulo = nt.get('titulo', '')
+        desc   = nt.get('descripcion', '')
+
+        if not url or not titulo:
+            continue
+
+        intentos += 1
+
+        # Recargar historial cada 15 intentos (por si hay concurrencia)
+        if intentos % 15 == 0:
+            h = cargar_historial()
+
+        log(f"\n[{i+1}] Puntaje {nt.get('puntaje',0)} | {titulo[:55]}...", 'debug')
+
+        dup, razon = noticia_ya_publicada(h, url, titulo, desc)
+        if dup:
+            log(f"   ❌ {razon}", 'debug')
+            continue
+
+        if nt.get('puntaje', 0) < 3:
+            log(f"   ❌ Puntaje insuficiente ({nt.get('puntaje', 0)})", 'debug')
+            continue
+
+        log(f"   ✅ Candidata válida — extrayendo contenido...")
+
+        cont_web, cred_web = extraer_contenido(url)
+
+        if cont_web and len(cont_web) >= 200:
+            log(f"   ✅ Contenido web: {len(cont_web)} chars", 'exito')
+            contenido    = cont_web
+            creditos     = cred_web
+            seleccionada = nt
+            break
+        elif desc and len(desc) >= 150:
+            log(f"   ✅ Usando descripción: {len(desc)} chars", 'exito')
+            contenido    = desc
+            creditos     = None
+            seleccionada = nt
+            break
+        else:
+            log(f"   ❌ Contenido insuficiente ({len(cont_web or desc or '')} chars)", 'advertencia')
+
+    if not seleccionada:
+        log("ERROR: No se encontró ninguna noticia válida nueva", 'error')
+        return False
+
+    log(f"\n📝 PUBLICANDO: {seleccionada['titulo'][:70]}")
+    log(f"   Fuente: {seleccionada['fuente']} | Puntaje: {seleccionada.get('puntaje', 0)}")
+
+    # Construir texto
+    pub = construir_publicacion(seleccionada['titulo'], contenido, creditos, seleccionada['fuente'])
+    pub = agregar_cta(pub)  # V5: CTA para engagement
+    ht  = generar_hashtags(seleccionada['titulo'], contenido)
+
+    # Imagen (usada como fondo del video o fallback)
+    log("🖼️  Procesando imagen...")
+    img_path = None
+    if seleccionada.get('imagen'):
+        img_path = descargar_imagen(seleccionada['imagen'])
+    if not img_path:
+        img_url = extraer_imagen_web(seleccionada['url'])
+        if img_url:
+            img_path = descargar_imagen(img_url)
+    if not img_path:
+        img_path = crear_imagen_titulo(seleccionada['titulo'])
+    if not img_path:
+        log("ERROR: No se pudo obtener imagen", 'error')
+        return False
+
+    # ── Intentar publicar como VIDEO (mayor alcance) ──────
+    resumen_video = contenido[:300] if contenido else seleccionada.get('descripcion', '')
+    video_path = crear_video_noticia(
+        titulo=seleccionada['titulo'],
+        resumen=resumen_video,
+        fondo_path=img_path,
+    )
+
+    ok = False
+    if video_path:
+        log("📹 Publicando como VIDEO nativo...", 'info')
+        ok = publicar_facebook_video(seleccionada['titulo'], pub, video_path, ht)
+        try:
+            if video_path and os.path.exists(video_path):
+                os.remove(video_path)
+        except:
+            pass
+
+    # ── Fallback a IMAGEN si el video falló ───────────────
+    if not ok:
+        log("🖼️  Fallback: publicando como imagen...", 'advertencia')
+        ok = publicar_facebook(seleccionada['titulo'], pub, img_path, ht)
+
+    # Limpiar imagen temporal
+    try:
+        if img_path and os.path.exists(img_path):
+            os.remove(img_path)
+    except:
+        pass
+
+    if ok:
+        # Guardar historial Y estado SIEMPRE que la publicación sea exitosa
+        desc_completa = (seleccionada.get('descripcion', '') + ' ' + contenido[:400]).strip()
+        h = guardar_en_historial(h, seleccionada['url'], seleccionada['titulo'], desc_completa)
+        guardar_estado()
+        total = h.get('estadisticas', {}).get('total_publicadas', 0)
+        log(f"✅ ÉXITO — Total publicadas en historial: {total}", 'exito')
+        log(f"💡 IMPORTANTE: El workflow debe hacer git push de {HISTORIAL_PATH} y {ESTADO_PATH}", 'advertencia')
+        return True
+    else:
+        log("❌ Publicación fallida — historial NO actualizado", 'error')
+        return False
+
+if __name__ == "__main__":
+    try:
+        resultado = main()
+        # None = salida normal (tiempo, horario, límite diario) → exit 0
+        # True = publicación exitosa → exit 0
+        # False = error real → exit 1
+        exit(0 if resultado is not False else 1)
+    except Exception as e:
+        log(f"Error crítico: {e}", 'error')
+        import traceback
+        traceback.print_exc()
+        exit(1)
