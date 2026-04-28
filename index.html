@@ -585,7 +585,7 @@ body.is-fullscreen .fs-exit{display:block !important}
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 <script>
 // ════════════════════════════════════
 // VARIABLES GLOBALES
@@ -723,8 +723,17 @@ function autoplayLast() {
         hlsObj.attachMedia(v);
         hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
           g('ld').classList.remove('show');
-          v.play().catch(function(){ g('ld').classList.remove('show'); });
-          showToast('▶ ' + last.name);
+          v.play().then(function() {
+            showToast('▶ Retomando: ' + last.name);
+          }).catch(function() {
+            // Navegador bloqueó autoplay — mostrar botón de play
+            g('pp').classList.remove('hide');
+            g('pp').style.cursor = 'pointer';
+            g('pp').onclick = function() {
+              v.play().catch(function(){});
+              g('pp').classList.add('hide');
+            };
+          });
         });
         hlsObj.on(Hls.Events.ERROR, function(ev, d) {
           if (d.fatal) { g('ld').classList.remove('show'); g('er').classList.add('show'); }
@@ -748,7 +757,16 @@ function autoplayLast() {
 
 // Ejecutar tras window load para asegurar que Hls.js está disponible
 window.addEventListener('load', function() {
-  autoplayLast();
+  // Esperar a que Hls.js esté disponible antes de autoplay
+  function waitHlsAndPlay(intentos) {
+    intentos = intentos || 0;
+    if (typeof Hls !== 'undefined') {
+      autoplayLast();
+    } else if (intentos < 20) {
+      setTimeout(function(){ waitHlsAndPlay(intentos + 1); }, 200);
+    }
+  }
+  waitHlsAndPlay();
 });
 
 // ════════════════════════════════════
