@@ -696,7 +696,6 @@ function autoplayLast() {
     var last = JSON.parse(localStorage.getItem('cicLastChannel'));
     if (!last || !last.url) return;
 
-    // Mostrar nombre y estado de carga inmediatamente
     curCh      = last;
     sideActive = last;
     g('pname').textContent = last.name;
@@ -723,16 +722,27 @@ function autoplayLast() {
         hlsObj.attachMedia(v);
         hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
           g('ld').classList.remove('show');
+          // Intentar con sonido primero
+          v.muted = false;
           v.play().then(function() {
             showToast('▶ Retomando: ' + last.name);
           }).catch(function() {
-            // Navegador bloqueó autoplay — mostrar botón de play
-            g('pp').classList.remove('hide');
-            g('pp').style.cursor = 'pointer';
-            g('pp').onclick = function() {
-              v.play().catch(function(){});
-              g('pp').classList.add('hide');
-            };
+            // Bloqueado — intentar MUTEADO (siempre permitido por navegadores)
+            v.muted = true;
+            v.play().then(function() {
+              showToast('▶ ' + last.name + ' — 🔇 Clic para activar sonido');
+              // Mostrar botón de activar sonido
+              mostrarBtnSonido(v);
+            }).catch(function() {
+              // Ambos fallaron — mostrar placeholder con botón play
+              g('pp').innerHTML = '<div class="bi" style="cursor:pointer;font-size:48px;">▶️</div><p style="cursor:pointer;">Clic para retomar ' + last.name + '</p>';
+              g('pp').classList.remove('hide');
+              g('pp').style.cursor = 'pointer';
+              g('pp').onclick = function() {
+                g('pp').classList.add('hide');
+                playVideo(last);
+              };
+            });
           });
         });
         hlsObj.on(Hls.Events.ERROR, function(ev, d) {
@@ -768,6 +778,27 @@ window.addEventListener('load', function() {
   }
   waitHlsAndPlay();
 });
+
+// Botón flotante para activar sonido cuando autoplay está muteado
+function mostrarBtnSonido(v) {
+  var existing = document.getElementById('btn-sonido');
+  if (existing) existing.remove();
+  var btn = document.createElement('button');
+  btn.id = 'btn-sonido';
+  btn.textContent = '🔇 Clic para activar sonido';
+  btn.style.cssText = 'position:absolute;bottom:50px;left:50%;transform:translateX(-50%);'
+    + 'background:rgba(0,0,0,0.8);color:#fff;border:2px solid #e63f6e;'
+    + 'padding:10px 20px;border-radius:25px;cursor:pointer;z-index:999;'
+    + 'font-size:13px;font-weight:600;animation:pulse 2s infinite;';
+  btn.onclick = function() {
+    v.muted = false;
+    v.volume = 1;
+    btn.remove();
+    showToast('🔊 Sonido activado');
+  };
+  var vr = document.getElementById('vr');
+  if (vr) { vr.style.position = 'relative'; vr.appendChild(btn); }
+}
 
 // ════════════════════════════════════
 // FUNCIÓN CENTRAL: marcar canal activo en lista lateral
