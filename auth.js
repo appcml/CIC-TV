@@ -293,15 +293,8 @@ async function doRegister() {
     return;
   }
 
-  // Si Supabase aún exige confirmación
-  if (loginRes.error && loginRes.error.message && loginRes.error.message.includes('not confirmed')) {
-    mostrarAuthMsg('✅ Cuenta creada. Ya puedes iniciar sesión.', 'ok');
-    setTimeout(function(){ switchTab('login'); }, 1500);
-    return;
-  }
-
-  // Fallback
-  mostrarAuthMsg('✅ Cuenta creada. Inicia sesión.', 'ok');
+  // Cuenta creada — redirigir a login
+  mostrarAuthMsg('✅ ¡Cuenta creada! Ahora inicia sesión.', 'ok');
   setTimeout(function(){ switchTab('login'); }, 1500);
 }
 
