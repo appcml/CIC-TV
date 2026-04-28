@@ -741,65 +741,84 @@ window.addEventListener('load', function() {
   waitHlsAndPlay();
 });
 
-// Overlay transparente sobre el video — un clic activa sonido completo
+// Overlay inteligente — mínimamente invasivo
+// En escritorio: chip pequeño en esquina inferior
+// Al primer clic en cualquier parte → activa sonido
 function mostrarOverlayPlay(v, nombre) {
   var vr = document.getElementById('vr');
   if (!vr) return;
 
-  // Quitar overlay anterior
-  var old = document.getElementById('overlay-play');
-  if (old) old.remove();
+  var oldOv = document.getElementById('overlay-play');
+  if (oldOv) oldOv.remove();
 
-  // Reproducir muteado para que haya imagen
+  // Reproducir muteado — imagen ya está visible
   v.muted = true;
   v.play().catch(function(){});
 
-  // Crear overlay transparente sobre el video
+  var esMobile = window.innerWidth <= 600;
+
   var overlay = document.createElement('div');
   overlay.id = 'overlay-play';
-  overlay.style.cssText =
-    'position:absolute;inset:0;z-index:50;cursor:pointer;'
-    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-    + 'background:rgba(0,0,0,0.35);transition:background .2s;';
 
-  overlay.innerHTML =
-    '<div style="background:rgba(230,63,110,0.92);border-radius:50%;'
-    + 'width:70px;height:70px;display:flex;align-items:center;justify-content:center;'
-    + 'margin-bottom:12px;box-shadow:0 4px 24px rgba(230,63,110,0.5);">'
-    + '<span style="font-size:32px;margin-left:4px;">▶</span></div>'
-    + '<span style="color:#fff;font-size:14px;font-weight:600;'
-    + 'text-shadow:0 2px 8px rgba(0,0,0,0.8);background:rgba(0,0,0,0.4);'
-    + 'padding:6px 16px;border-radius:20px;">Clic para reproducir con sonido</span>';
+  if (esMobile) {
+    // Mobile: overlay completo (el usuario ya está acostumbrado)
+    overlay.style.cssText =
+      'position:absolute;inset:0;z-index:50;cursor:pointer;'
+      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
+      + 'background:rgba(0,0,0,0.3);';
+    overlay.innerHTML =
+      '<div style="background:rgba(230,63,110,0.92);border-radius:50%;'
+      + 'width:64px;height:64px;display:flex;align-items:center;justify-content:center;'
+      + 'box-shadow:0 4px 20px rgba(230,63,110,0.5);">'
+      + '<span style="font-size:28px;margin-left:3px;">▶</span></div>';
+  } else {
+    // Escritorio: chip pequeño NO invasivo en esquina inferior izquierda
+    // El video se ve completo, solo hay un pequeño indicador
+    overlay.style.cssText =
+      'position:absolute;bottom:48px;left:12px;z-index:50;cursor:pointer;'
+      + 'background:rgba(0,0,0,0.75);border:1px solid rgba(230,63,110,0.6);'
+      + 'border-radius:20px;padding:7px 14px;display:flex;align-items:center;gap:8px;'
+      + 'backdrop-filter:blur(4px);animation:pulse 2s infinite;';
+    overlay.innerHTML =
+      '<span style="font-size:16px;">🔇</span>'
+      + '<span style="color:#fff;font-size:12px;font-weight:600;">'
+      + 'Clic para activar sonido</span>';
+  }
 
-  // Un solo clic activa sonido y quita el overlay
-  overlay.onclick = function() {
-    v.muted  = false;
-    v.volume = 1;
-    overlay.remove();
-    audioDesbloqueado = true;
-    localStorage.setItem('cicAutoplayOk', '1');
-    v.play().catch(function(){});
+  // Activar sonido al hacer clic en el overlay
+  overlay.onclick = function(e) {
+    e.stopPropagation();
+    activarSonido(v, overlay);
   };
 
-  // Quitar overlay y reproducir cuando el audio se desbloquee
+  // También activar al hacer clic en cualquier parte del video
+  var onVideoClick = function() {
+    activarSonido(v, overlay);
+    vr.removeEventListener('click', onVideoClick);
+  };
+  setTimeout(function(){ vr.addEventListener('click', onVideoClick); }, 100);
+
+  // Activar automáticamente si el audio ya fue desbloqueado
   var checkAudio = setInterval(function() {
     if (audioDesbloqueado && overlay.parentNode) {
-      v.muted  = false;
-      v.volume = 1;
-      overlay.remove();
+      activarSonido(v, overlay);
       clearInterval(checkAudio);
-      v.play().catch(function(){});
     }
   }, 300);
-
-  overlay.onmouseenter = function(){ overlay.style.background = 'rgba(0,0,0,0.15)'; };
-  overlay.onmouseleave = function(){ overlay.style.background = 'rgba(0,0,0,0.35)'; };
 
   vr.style.position = 'relative';
   vr.appendChild(overlay);
 }
 
-// Mantener compatibilidad
+function activarSonido(v, overlay) {
+  v.muted  = false;
+  v.volume = 1;
+  if (overlay && overlay.parentNode) overlay.remove();
+  audioDesbloqueado = true;
+  localStorage.setItem('cicAutoplayOk', '1');
+  v.play().catch(function(){});
+}
+
 function mostrarBtnSonido(v) { mostrarOverlayPlay(v, ''); }
 
 // ════════════════════════════════════
@@ -1268,6 +1287,9 @@ function playFromSide(id) {
   // Resetear intentos de reemplazo al cambiar canal manualmente
   intentosReemplazo = 0;
   urlsIntentadas    = [];
+  // Marcar que el usuario interactuó — próximo autoplay con sonido
+  audioDesbloqueado = true;
+  localStorage.setItem('cicAutoplayOk', '1');
 
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
@@ -1350,7 +1372,28 @@ function playVideo(ch) {
     hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
       clearTimeout(errTimer);
       g('ld').classList.remove('show');
-      v.play().catch(function(){});
+      v.muted = false;
+      v.volume = 1;
+      var playPromise = v.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(function() {
+          // Solo mostrar overlay si fue llamado desde autoplay (no interacción)
+          // En escritorio Chrome bloquea el audio sin interacción previa
+          if (!audioDesbloqueado) {
+            mostrarOverlayPlay(v, ch.name);
+          } else {
+            // Ya hubo interacción — reintentar
+            v.muted = true;
+            v.play().then(function() {
+              // Arrancó muteado, desmutar inmediatamente
+              v.muted = false;
+              v.volume = 1;
+            }).catch(function() {
+              mostrarOverlayPlay(v, ch.name);
+            });
+          }
+        });
+      };
     });
     hlsObj.on(Hls.Events.ERROR, function(_, d){ if (d.fatal) tryNative(v, ch.url); });
   } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
