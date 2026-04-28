@@ -696,85 +696,22 @@ function autoplayLast() {
     var last = JSON.parse(localStorage.getItem('cicLastChannel'));
     if (!last || !last.url) return;
 
+    // Usar playVideo directamente — es la misma función que usa el usuario
+    // al hacer clic en un canal, funciona siempre correctamente
     curCh      = last;
     sideActive = last;
-    g('pname').textContent = last.name;
-    g('pp').classList.add('hide');
-    g('ld').classList.add('show');
-    g('er').classList.remove('show');
     intentosReemplazo = 0;
     urlsIntentadas    = [];
-    updatePlayerFavBtn();
+    g('er').classList.remove('show');
 
     if (last.type === 'radio') {
       setMode('radio');
-      g('aname').textContent = last.name;
-      var a = g('ap');
-      a.src = last.url;
-      a.play().catch(function(){});
-      g('ld').classList.remove('show');
-      showToast('📻 Retomando: ' + last.name);
+      playRadio(last);
     } else {
-      var v = g('vp');
-      if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
-      v.src = ''; v.load();
-      v.muted = false;
-      v.volume = 1;
-
-      if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-        hlsObj = new Hls({ enableWorker:true, lowLatencyMode:true, startLevel:-1 });
-        hlsObj.loadSource(last.url);
-        hlsObj.attachMedia(v);
-        hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
-          g('ld').classList.remove('show');
-          v.muted = false;
-          v.volume = 1;
-          v.play().then(function() {
-            showToast('▶ Retomando: ' + last.name);
-          }).catch(function() {
-            // Si ya desbloqueamos audio antes, reintentar después de 500ms
-            if (audioDesbloqueado) {
-              setTimeout(function() {
-                v.muted = false;
-                v.play().catch(function() {
-                  mostrarOverlayPlay(v, last.name);
-                });
-              }, 500);
-            } else {
-              mostrarOverlayPlay(v, last.name);
-            }
-          });
-        });
-        hlsObj.on(Hls.Events.ERROR, function(ev, d) {
-          if (d.fatal) {
-            g('ld').classList.remove('show');
-            if (d.type === Hls.ErrorTypes.NETWORK_ERROR) {
-              // Esperar 5 segundos y reintentar
-              setTimeout(function() {
-                if (curCh && curCh.url === last.url) {
-                  intentosReemplazo = 0;
-                  urlsIntentadas    = [];
-                  playVideo(last);
-                }
-              }, 5000);
-            } else {
-              g('er').classList.add('show');
-            }
-          }
-        });
-      } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
-        v.src = last.url; v.load();
-        v.play().catch(function(){});
-        g('ld').classList.remove('show');
-        showToast('▶ ' + last.name);
-      } else {
-        g('ld').classList.remove('show');
-        g('er').classList.add('show');
-      }
+      playVideo(last);
     }
 
-    // Marcar en lista lateral con delay para que el DOM esté pintado
-    setTimeout(function() { markSideActive(last); }, 400);
+    setTimeout(function() { markSideActive(last); }, 600);
 
   } catch(e) { console.warn('autoplayLast:', e); }
 }
