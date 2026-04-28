@@ -831,15 +831,17 @@ function mostrarOverlayPlay(v, nombre) {
     overlay.remove();
     audioDesbloqueado = true;
     localStorage.setItem('cicAutoplayOk', '1');
+    v.play().catch(function(){});
   };
 
-  // También quitar overlay automáticamente cuando el audio se desbloquee
+  // Quitar overlay y reproducir cuando el audio se desbloquee
   var checkAudio = setInterval(function() {
     if (audioDesbloqueado && overlay.parentNode) {
       v.muted  = false;
       v.volume = 1;
       overlay.remove();
       clearInterval(checkAudio);
+      v.play().catch(function(){});
     }
   }, 300);
 
@@ -1482,10 +1484,11 @@ function desbloquearAudio() {
     // Quitar overlay si hay uno activo y el video está muteado
     var overlay = document.getElementById('overlay-play');
     var vp = document.getElementById('vp');
-    if (overlay && vp && vp.muted) {
+    if (overlay && vp) {
       vp.muted  = false;
       vp.volume = 1;
       overlay.remove();
+      vp.play().catch(function(){});
     }
     document.removeEventListener(ev, onFirst);
   }, { once: true });
