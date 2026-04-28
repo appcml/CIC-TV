@@ -269,28 +269,40 @@ async function doRegister() {
     data: { nombre },
   });
 
-  setBtnLoading('btn-register', false);
-
   if (res.error) {
+    setBtnLoading('btn-register', false);
     var msg = res.error.message || 'Error al registrarse';
-    if (msg.includes('already registered')) msg = 'Este correo ya está registrado';
+    if (msg.includes('already registered')) msg = 'Este correo ya está registrado — intenta iniciar sesión';
     mostrarAuthMsg(msg, 'error');
     return;
   }
 
-  // Si necesita confirmar email
-  if (res.user && !res.session) {
-    mostrarAuthMsg('✅ Revisa tu correo para confirmar tu cuenta', 'ok');
+  // Intentar login inmediato (funcione o no la confirmación)
+  var loginRes = await sbFetch('/auth/v1/token?grant_type=password', {
+    email, password: pass,
+  });
+
+  setBtnLoading('btn-register', false);
+
+  if (loginRes.access_token || loginRes.session) {
+    var session = loginRes.access_token ? loginRes : loginRes.session;
+    guardarSesion(session);
+    onLogin(session.user || loginRes.user);
+    cerrarModal();
+    if (typeof showToast === 'function') showToast('¡Bienvenido a CIC TV, ' + nombre + '! 🎉');
     return;
   }
 
-  // Login inmediato
-  if (res.session) {
-    guardarSesion(res.session);
-    onLogin(res.user);
-    cerrarModal();
-    if (typeof showToast === 'function') showToast('¡Bienvenido a CIC TV, ' + nombre + '! 🎉');
+  // Si Supabase aún exige confirmación
+  if (loginRes.error && loginRes.error.message && loginRes.error.message.includes('not confirmed')) {
+    mostrarAuthMsg('✅ Cuenta creada. Ya puedes iniciar sesión.', 'ok');
+    setTimeout(function(){ switchTab('login'); }, 1500);
+    return;
   }
+
+  // Fallback
+  mostrarAuthMsg('✅ Cuenta creada. Inicia sesión.', 'ok');
+  setTimeout(function(){ switchTab('login'); }, 1500);
 }
 
 // ════════════════════════════════════
@@ -313,14 +325,29 @@ async function doLogin() {
 
   if (res.error) {
     var msg = res.error.message || 'Error al iniciar sesión';
-    if (msg.includes('Invalid login')) msg = 'Correo o contraseña incorrectos';
-    if (msg.includes('Email not confirmed')) msg = 'Confirma tu correo antes de iniciar sesión';
+    if (msg.includes('Invalid login') || msg.includes('invalid_credentials')) {
+      msg = 'Correo o contraseña incorrectos';
+    } else if (msg.includes('Email not confirmed')) {
+      // Intentar confirmar automáticamente via admin
+      msg = 'Debes confirmar tu correo. Ve a Supabase → Authentication → Users, clic en tu usuario y confirma el email manualmente, o desactiva "Confirm email" en Sign In/Providers.';
+    } else if (msg.includes('Too many requests')) {
+      msg = 'Demasiados intentos. Espera unos minutos.';
+    }
     mostrarAuthMsg(msg, 'error');
+    setBtnLoading('btn-login', false);
     return;
   }
 
-  guardarSesion(res);
-  onLogin(res.user);
+  // Verificar que tengamos sesión válida
+  if (!res.access_token && !res.session) {
+    mostrarAuthMsg('Error al iniciar sesión. Intenta de nuevo.', 'error');
+    setBtnLoading('btn-login', false);
+    return;
+  }
+
+  var session = res.access_token ? res : res.session;
+  guardarSesion(session);
+  onLogin(session.user || res.user);
   cerrarModal();
   if (typeof showToast === 'function') showToast('¡Bienvenido de vuelta! 👋');
 }
@@ -358,7 +385,8 @@ function abrirPerfil() {
   var old = document.getElementById('perfil-panel');
   if (old) { old.remove(); return; }
 
-  var nombre = sbUser?.user_metadata?.nombre || sbUser?.email?.split('@')[0] || 'Usuario';
+  var meta   = sbUser?.user_metadata || sbUser?.raw_user_meta_data || {};
+  var nombre = meta.nombre || meta.name || meta.full_name || sbUser?.email?.split('@')[0] || 'Usuario';
   var email  = sbUser?.email || '';
 
   var panel = document.createElement('div');
@@ -524,9 +552,10 @@ async function subirFavorito(ch, agregar) {
 // ════════════════════════════════════
 function onLogin(user) {
   sbUser = user;
+  console.log('[Auth] Login exitoso:', user?.email);
   renderAuthBtn();
   // Sincronizar favoritos al hacer login
-  setTimeout(sincronizarFavoritos, 1000);
+  setTimeout(sincronizarFavoritos, 2000);
 }
 
 function onLogout() {
