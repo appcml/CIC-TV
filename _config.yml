@@ -1,2 +1,21 @@
+# GitHub Pages config — CIC TV
+exclude:
+  - actualizar.py
+  - scraper.py
+  - supabase_setup.sql
+  - "*.py"
+  - "*.sql"
+  - requirements.txt
+  - README.md
+
 include:
-  - .well-known
+  - index.html
+  - auth.js
+  - monitor.js
+  - recomendados.js
+  - canales.json
+  - partidos.json
+  - manifest.json
+  - sw.js
+
+plugins: []
