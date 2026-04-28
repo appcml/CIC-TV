@@ -1212,6 +1212,8 @@ function playFromSide(id) {
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
   // Registrar vista para recomendaciones de frecuentes
   if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
+  // Subir historial a Supabase si hay sesión
+  if (typeof subirHistorial === 'function') subirHistorial(ch);
   // Resetear intentos de reemplazo al cambiar canal manualmente
   intentosReemplazo = 0;
   urlsIntentadas    = [];
@@ -1608,6 +1610,10 @@ function togglePlayerFav() {
   if (idx === -1) { favs.push(id); showToast('⭐ ' + curCh.name + ' guardado'); }
   else            { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
+  // Sincronizar con Supabase
+  var allSrc = allTV.concat(allRadio);
+  var ch = allSrc.find(function(c){ return c.id === id; });
+  if (typeof subirFavorito === 'function' && ch) subirFavorito(ch, i === -1);
   updateAll();
   updatePlayerFavBtn();
   // Sync botones en lista lateral y grid
@@ -1664,6 +1670,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.j
 
 <!-- MONITOR DE SALUD DE CANALES -->
 <script src="monitor.js"></script>
+
+<!-- SISTEMA DE AUTENTICACIÓN -->
+<script src="auth.js"></script>
 
 </body>
 </html>
