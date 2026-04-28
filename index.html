@@ -730,12 +730,19 @@ function autoplayLast() {
           v.muted = false;
           v.volume = 1;
           v.play().then(function() {
-            // ✅ Autoplay con sonido — perfecto
             showToast('▶ Retomando: ' + last.name);
           }).catch(function() {
-            // Navegador bloqueó — mostrar overlay grande para que el usuario
-            // haga UN solo clic y arranque con sonido completo
-            mostrarOverlayPlay(v, last.name);
+            // Si ya desbloqueamos audio antes, reintentar después de 500ms
+            if (audioDesbloqueado) {
+              setTimeout(function() {
+                v.muted = false;
+                v.play().catch(function() {
+                  mostrarOverlayPlay(v, last.name);
+                });
+              }, 500);
+            } else {
+              mostrarOverlayPlay(v, last.name);
+            }
           });
         });
         hlsObj.on(Hls.Events.ERROR, function(ev, d) {
@@ -822,9 +829,19 @@ function mostrarOverlayPlay(v, nombre) {
     v.muted  = false;
     v.volume = 1;
     overlay.remove();
-    // Guardar que el usuario ya interactuó — próxima vez autoplay directo
+    audioDesbloqueado = true;
     localStorage.setItem('cicAutoplayOk', '1');
   };
+
+  // También quitar overlay automáticamente cuando el audio se desbloquee
+  var checkAudio = setInterval(function() {
+    if (audioDesbloqueado && overlay.parentNode) {
+      v.muted  = false;
+      v.volume = 1;
+      overlay.remove();
+      clearInterval(checkAudio);
+    }
+  }, 300);
 
   overlay.onmouseenter = function(){ overlay.style.background = 'rgba(0,0,0,0.15)'; };
   overlay.onmouseleave = function(){ overlay.style.background = 'rgba(0,0,0,0.35)'; };
@@ -1437,6 +1454,42 @@ vp.addEventListener('error', function(e) {
 // ════════════════════════════════════
 var intentosReemplazo = 0;
 var urlsIntentadas    = [];
+var audioDesbloqueado = localStorage.getItem('cicAutoplayOk') === '1';
+
+// ── Desbloquear audio al primer clic en cualquier lugar ──
+// Chrome permite autoplay con sonido después de que el usuario interactúa
+function desbloquearAudio() {
+  if (audioDesbloqueado) return;
+  // Crear y reproducir audio silencioso para desbloquear el contexto
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var buf = ctx.createBuffer(1, 1, 22050);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume().then(function() {
+      audioDesbloqueado = true;
+      localStorage.setItem('cicAutoplayOk', '1');
+    });
+  } catch(e) {}
+}
+
+// Desbloquear en el primer clic/toque en cualquier parte
+['click','touchstart','keydown'].forEach(function(ev) {
+  document.addEventListener(ev, function onFirst() {
+    desbloquearAudio();
+    // Quitar overlay si hay uno activo y el video está muteado
+    var overlay = document.getElementById('overlay-play');
+    var vp = document.getElementById('vp');
+    if (overlay && vp && vp.muted) {
+      vp.muted  = false;
+      vp.volume = 1;
+      overlay.remove();
+    }
+    document.removeEventListener(ev, onFirst);
+  }, { once: true });
+});
 // URL del proxy Cloudflare Worker (dejar vacío si no está configurado)
 // Para configurarlo: ve a workers.cloudflare.com, crea un worker
 // y pega el contenido de worker.js. Luego pon aquí la URL.
