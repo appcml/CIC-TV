@@ -336,6 +336,21 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 :-ms-fullscreen .fs-exit{display:block !important}
 body.is-fullscreen .fs-exit{display:block !important}
 
+/* ════════════════════════════════════════════════════════════════
+   INDICADOR DE SONIDO SUTIL — aparece cuando video está muteado
+   ════════════════════════════════════════════════════════════════ */
+#indicador-sonido{
+  position:absolute;bottom:10px;right:10px;z-index:60;
+  background:rgba(230,63,110,0.9);color:#fff;
+  padding:6px 12px;border-radius:16px;font-size:11px;
+  font-weight:600;cursor:pointer;animation:pulse 2s infinite;
+  backdrop-filter:blur(4px);box-shadow:0 2px 8px rgba(0,0,0,0.3);
+  border:none;font-family:'DM Sans',sans-serif;
+}
+#indicador-sonido:hover{
+  background:rgba(230,63,110,1);transform:scale(1.05);
+}
+
 /* TABLET */
 @media(max-width:900px) and (min-width:601px){
   :root{--sidebar:0px}
@@ -597,9 +612,9 @@ body.is-fullscreen .fs-exit{display:block !important}
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
 <script>
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 let toastTimer       = null;
 let errTimer         = null;
 let hlsObj           = null;
@@ -616,10 +631,18 @@ let gridActive       = null;
 let sideActive       = null;
 let sideCatFilter    = 'all';
 let sideCountryFilter= 'all';
+let sideTotalReal    = 0;
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// AUTOPLAY INTELIGENTE — Variables de control de audio
+// ═══════════════════════════════════════════════════════════════════════
+let audioDesbloqueado = localStorage.getItem('cicAutoplayOk') === '1';
+let intentosReemplazo = 0;
+let urlsIntentadas    = [];
+
+// ═══════════════════════════════════════════════════════════════════════
 // CANALES BASE TV
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 let allTV = [
   {id:'n01',name:'DW Español',      cat:'Noticias',       co:'DE',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/DW_Logo_2012.svg/120px-DW_Logo_2012.svg.png',url:'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'},
   {id:'n02',name:'France 24 ES',    cat:'Noticias',       co:'FR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/France_24_logo.svg/120px-France_24_logo.svg.png',url:'https://stream.france24.com/hls/live/2037897/F24_ES_LO_HLS/master.m3u8'},
@@ -653,7 +676,6 @@ let allTV = [
   {id:'es2',name:'24h RTVE',        cat:'Noticias',       co:'ES',type:'tv',logo:'',url:'https://ztnr.rtve.es/ztnr/1694255.m3u8'},
 
   // ── Canales deportivos verificados (CDN estables) ──
-  // Los demás se cargan dinámicamente desde canales.json via monitor.js
   {id:'sp14',name:'Fox Sports News AU', cat:'Deportes',co:'AU',type:'tv',logo:'',url:'https://austchannel-live.akamaized.net/hls/live/2002736/austchannel-sport/master.m3u8'},
   {id:'sp50',name:'Eurosport 1',        cat:'Deportes',co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Eurosport_2016.svg/120px-Eurosport_2016.svg.png',url:'https://rakuten-eurosport-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'sp61',name:'beIN Sports xtra',   cat:'Deportes',co:'QA',type:'tv',logo:'',url:'https://d35j504z0x2vu2.cloudfront.net/v1/master/0bc8e8376bd8417a1b6761138aa41c26c7309312/bein-sports-xtra-en-espanol/playlist.m3u8'},
@@ -666,9 +688,9 @@ let allTV = [
   {id:'sp98',name:'DeporTV AR',         cat:'Deportes',co:'AR',type:'tv',logo:'',url:'https://538d0bde28ccf.streamlock.net/live-cont.ar/deportv/playlist.m3u8'},
 ];
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // RADIOS BASE
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 let allRadio = [
   {id:'rd1',name:'Cadena SER',       cat:'Noticias', co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SER.mp3'},
   {id:'rd2',name:'Los 40',           cat:'Música',   co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3'},
@@ -680,34 +702,33 @@ let allRadio = [
   {id:'rd8',name:'Radio Nacional ES',cat:'General',  co:'ES',type:'radio',logo:'',url:'https://rne.es/radionacional.ogg'},
 ];
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // DATOS PAÍSES
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 const COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
 const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
-const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',business:'Negocios',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
+const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // INIT
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 updateAll();
 applyFilter();
 renderSideList();
 showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 setTimeout(loadCountries, 800);
 
-// ════════════════ MEJORA 2 + 3 ════════════════
-// AUTOPLAY AL INICIAR + MARCA EN LISTA LATERAL
+// ═══════════════════════════════════════════════════════════════════════
+// AUTOPLAY AL INICIAR — Mejora 2 + 3
 // Espera a window.load para que Hls.js esté disponible
-// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function autoplayLast() {
   try {
     var last = JSON.parse(localStorage.getItem('cicLastChannel'));
     if (!last || !last.url) return;
 
-    // Usar playVideo directamente — es la misma función que usa el usuario
-    // al hacer clic en un canal, funciona siempre correctamente
+    // Usar playVideo directamente — misma función que usa el usuario
     curCh      = last;
     sideActive = last;
     intentosReemplazo = 0;
@@ -728,11 +749,9 @@ function autoplayLast() {
 
 // Ejecutar tras window load para asegurar que Hls.js está disponible
 window.addEventListener('load', function() {
-  // Esperar a que Hls.js esté disponible antes de autoplay
   function waitHlsAndPlay(intentos) {
     intentos = intentos || 0;
     if (typeof Hls !== 'undefined') {
-      // Si el usuario ya interactuó antes, el autoplay con sonido funcionará
       autoplayLast();
     } else if (intentos < 30) {
       setTimeout(function(){ waitHlsAndPlay(intentos + 1); }, 200);
@@ -741,90 +760,80 @@ window.addEventListener('load', function() {
   waitHlsAndPlay();
 });
 
-// Overlay inteligente — mínimamente invasivo
-// En escritorio: chip pequeño en esquina inferior
-// Al primer clic en cualquier parte → activa sonido
-function mostrarOverlayPlay(v, nombre) {
-  var vr = document.getElementById('vr');
-  if (!vr) return;
+// ═══════════════════════════════════════════════════════════════════════
+// DESBLOQUEAR AUDIO — Al primer clic/toque/tecla en cualquier lugar
+// Chrome permite autoplay con sonido después de interacción del usuario
+// ═══════════════════════════════════════════════════════════════════════
+function desbloquearAudio() {
+  if (audioDesbloqueado) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var buf = ctx.createBuffer(1, 1, 22050);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume().then(function() {
+      audioDesbloqueado = true;
+      localStorage.setItem('cicAutoplayOk', '1');
+    });
+  } catch(e) {}
+}
 
-  var oldOv = document.getElementById('overlay-play');
-  if (oldOv) oldOv.remove();
-
-  // Reproducir muteado — imagen ya está visible
-  v.muted = true;
-  v.play().catch(function(){});
-
-  var esMobile = window.innerWidth <= 600;
-
-  var overlay = document.createElement('div');
-  overlay.id = 'overlay-play';
-
-  if (esMobile) {
-    // Mobile: overlay completo (el usuario ya está acostumbrado)
-    overlay.style.cssText =
-      'position:absolute;inset:0;z-index:50;cursor:pointer;'
-      + 'display:flex;flex-direction:column;align-items:center;justify-content:center;'
-      + 'background:rgba(0,0,0,0.3);';
-    overlay.innerHTML =
-      '<div style="background:rgba(230,63,110,0.92);border-radius:50%;'
-      + 'width:64px;height:64px;display:flex;align-items:center;justify-content:center;'
-      + 'box-shadow:0 4px 20px rgba(230,63,110,0.5);">'
-      + '<span style="font-size:28px;margin-left:3px;">▶</span></div>';
-  } else {
-    // Escritorio: chip pequeño NO invasivo en esquina inferior izquierda
-    // El video se ve completo, solo hay un pequeño indicador
-    overlay.style.cssText =
-      'position:absolute;bottom:48px;left:12px;z-index:50;cursor:pointer;'
-      + 'background:rgba(0,0,0,0.75);border:1px solid rgba(230,63,110,0.6);'
-      + 'border-radius:20px;padding:7px 14px;display:flex;align-items:center;gap:8px;'
-      + 'backdrop-filter:blur(4px);animation:pulse 2s infinite;';
-    overlay.innerHTML =
-      '<span style="font-size:16px;">🔇</span>'
-      + '<span style="color:#fff;font-size:12px;font-weight:600;">'
-      + 'Clic para activar sonido</span>';
-  }
-
-  // Activar sonido al hacer clic en el overlay
-  overlay.onclick = function(e) {
-    e.stopPropagation();
-    activarSonido(v, overlay);
-  };
-
-  // También activar al hacer clic en cualquier parte del video
-  var onVideoClick = function() {
-    activarSonido(v, overlay);
-    vr.removeEventListener('click', onVideoClick);
-  };
-  setTimeout(function(){ vr.addEventListener('click', onVideoClick); }, 100);
-
-  // Activar automáticamente si el audio ya fue desbloqueado
-  var checkAudio = setInterval(function() {
-    if (audioDesbloqueado && overlay.parentNode) {
-      activarSonido(v, overlay);
-      clearInterval(checkAudio);
+// Desbloquear en el primer clic/toque/tecla en cualquier parte de la página
+['click','touchstart','keydown'].forEach(function(ev) {
+  document.addEventListener(ev, function onFirst() {
+    desbloquearAudio();
+    // Quitar indicador de sonido si hay uno activo y el video está muteado
+    var indicador = document.getElementById('indicador-sonido');
+    var vp = document.getElementById('vp');
+    if (indicador && vp) {
+      vp.muted  = false;
+      vp.volume = 1;
+      indicador.remove();
+      vp.play().catch(function(){});
     }
-  }, 300);
+    document.removeEventListener(ev, onFirst);
+  }, { once: true });
+});
 
-  vr.style.position = 'relative';
-  vr.appendChild(overlay);
+// ═══════════════════════════════════════════════════════════════════════
+// INDICADOR DE SONIDO SUTIL — aparece cuando video está muteado
+// No invasivo: chip pequeño en esquina inferior derecha
+// ═══════════════════════════════════════════════════════════════════════
+function mostrarIndicadorSonido(v) {
+  // Solo mostrar si realmente está muteado
+  if (!v.muted) return;
+  
+  var vr = document.getElementById('vr');
+  var existing = document.getElementById('indicador-sonido');
+  if (existing) return;
+  
+  var indicador = document.createElement('button');
+  indicador.id = 'indicador-sonido';
+  indicador.innerHTML = '🔇 Toca para sonido';
+  
+  indicador.onclick = function(e) {
+    e.stopPropagation();
+    v.muted = false;
+    v.volume = 1;
+    v.play().catch(function(){});
+    indicador.remove();
+    audioDesbloqueado = true;
+    localStorage.setItem('cicAutoplayOk', '1');
+  };
+  
+  vr.appendChild(indicador);
+  
+  // Auto-ocultar después de 5 segundos si el usuario no hace nada
+  setTimeout(function() {
+    if (indicador.parentNode) indicador.remove();
+  }, 5000);
 }
 
-function activarSonido(v, overlay) {
-  v.muted  = false;
-  v.volume = 1;
-  if (overlay && overlay.parentNode) overlay.remove();
-  audioDesbloqueado = true;
-  localStorage.setItem('cicAutoplayOk', '1');
-  v.play().catch(function(){});
-}
-
-function mostrarBtnSonido(v) { mostrarOverlayPlay(v, ''); }
-
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // FUNCIÓN CENTRAL: marcar canal activo en lista lateral
-// Elimina clases previas, aplica active, y hace scroll al elemento
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function markSideActive(ch) {
   if (!ch) return;
   // Quitar cualquier marca previa
@@ -839,14 +848,9 @@ function markSideActive(ch) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else {
     // Canal no visible en filtro actual — NO resetear filtro de países
-    // Solo marcar visualmente sin cambiar filtros
-    // Si el canal pertenece al país/categoría filtrada, simplemente
-    // está paginado — hacer scroll sin resetear nada
     if (sideCountryFilter === 'all' || (ch.co && ch.co === sideCountryFilter)) {
-      // Está en el filtro actual — solo renderizar y scrollear
       renderSideList();
     }
-    // Si el canal es de otro país, no forzar reset — el usuario eligió ese filtro
     setTimeout(function() {
       var el2 = g('si-' + ch.id);
       if (el2) {
@@ -857,9 +861,9 @@ function markSideActive(ch) {
   }
 }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // UTILIDADES
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function isSlowDevice() {
   var nav = navigator;
   var slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
@@ -878,9 +882,9 @@ function showToast(msg) {
 
 function g(id) { return document.getElementById(id); }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // CARGA DE PAÍSES
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 async function loadCountries() {
   const proxies = [
     'https://api.allorigins.win/raw?url=',
@@ -912,7 +916,6 @@ async function loadCountries() {
       allTV = [...allTV, ...newCh];
       updateAll();
       if (curMode === 'tv') { applyFilter(); renderSideList(); }
-      // Si hay canal activo, re-marcarlo tras re-renderizar la lista
       if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
     }
   }));
@@ -946,7 +949,6 @@ function parseM3U(txt, co, type) {
       const coM = l.match(/tvg-country="([^"]*)"/);
       const rawName  = nM ? nM[1] : l.split(',').pop().trim();
       const rawGroup = (cM ? cM[1] : '').toLowerCase();
-      // Categorizar por group-title primero, luego por nombre del canal
       let cat = CAT_MAP[rawGroup] || inferirCategoria(rawName, rawGroup) || 'General';
       cur = {
         name: rawName,
@@ -965,7 +967,6 @@ function parseM3U(txt, co, type) {
   return res;
 }
 
-// Inferir categoría desde el nombre o group-title del canal
 function inferirCategoria(nombre, group) {
   const n = (nombre + ' ' + group).toLowerCase();
   if (/news|noticias|24h|cnn|bbc\s|dw\s|france\s24|aljazeera|telesur|rtn|notici|inform/.test(n)) return 'Noticias';
@@ -981,10 +982,9 @@ function inferirCategoria(nombre, group) {
   return null;
 }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // CONTADORES + FILTROS PAÍS
-// ════════════════════════════════════
-// Fallback de imágenes rotas en el grid (llamado desde onerror en HTML)
+// ═══════════════════════════════════════════════════════════════════════
 function imgFallback(el, fc, fb) {
   var div = document.createElement('div');
   div.className = 'cfb' + fc;
@@ -1026,9 +1026,9 @@ function mkChip(text, active) {
   return b;
 }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // FILTROS Y NAVEGACIÓN
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function setMode(mode) {
   curMode    = mode;
   curCat     = 'all';
@@ -1097,12 +1097,10 @@ function doSearch() {
 }
 
 function showFavs() {
-  // Mostrar todos los favoritos en el grid
   filtered = [...allTV, ...allRadio].filter(function(c){ return favs.includes(c.id); });
   g('stitle').textContent = '⭐ Favoritos';
   g('scnt').textContent   = filtered.length + ' guardados';
   renderGrid();
-  // También mostrar solo favoritos en la lista lateral
   renderSideFromList(filtered);
 }
 
@@ -1132,9 +1130,9 @@ function applyFilter() {
   renderGrid();
 }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // RENDER GRID
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function renderGrid() {
   const grid = g('grid');
   const isR  = curMode === 'radio';
@@ -1150,7 +1148,6 @@ function renderGrid() {
     const dc     = isR ? ' rd' : '';
     const fc     = isR ? ' rfb' : '';
     const fb     = isR ? '📻' : ch.name.slice(0,3).toUpperCase();
-    // Logo: si falla la imagen, reemplazar con fallback via función global
     const logoHtml = ch.logo
       ? '<img class="clogo" src="'+ch.logo+'" alt="'+ch.name+'" loading="lazy" decoding="async" onerror="imgFallback(this,\''+fc+'\',\''+fb+'\')">'
       : '<div class="cfb'+fc+'">'+fb+'</div>';
@@ -1166,9 +1163,9 @@ function renderGrid() {
     grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda para filtrar</div>';
 }
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // RENDER LISTA LATERAL
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 function renderSideList() {
   var isR = curMode === 'radio';
   var src = (isR ? allRadio : allTV).slice();
@@ -1182,7 +1179,6 @@ function renderSideList() {
   renderSideFromList(src);
 }
 
-// Renderiza la lista lateral desde un array dado
 function renderSideFromList(src) {
   var list = g('chSideList');
   var isR  = curMode === 'radio';
@@ -1194,7 +1190,6 @@ function renderSideFromList(src) {
     return;
   }
 
-  // Si hay canal activo fuera de los primeros 300, subirlo al inicio
   var srcOrdered = src.slice();
   if (sideActive) {
     var activeIdx = srcOrdered.findIndex(function(c){ return c.id === sideActive.id; });
@@ -1204,9 +1199,8 @@ function renderSideFromList(src) {
     }
   }
 
-  // Mostrar total real en el header
   g('sideCount').textContent = totalReal + (isR ? ' radios' : ' canales');
-  sideTotalReal = totalReal; // guardar para updateSidePos
+  sideTotalReal = totalReal;
 
   var html = '';
   var max  = Math.min(srcOrdered.length, 300);
@@ -1231,7 +1225,6 @@ function renderSideFromList(src) {
   list.innerHTML = html;
   updateSidePos();
 
-  // ══ Scroll automático al canal activo después de renderizar ══
   if (sideActive) {
     setTimeout(function() {
       var el = g('si-' + sideActive.id);
@@ -1259,7 +1252,6 @@ function playFromGrid(id) {
   updatePlayerFavBtn();
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
 
-  // Marcar en lista lateral y hacer scroll
   markSideActive(ch);
 
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
@@ -1272,7 +1264,12 @@ function playFromSide(id) {
   if (!ch) return;
   sideActive = ch; curCh = ch; gridActive = ch;
 
-  // Marcar en lista lateral
+  // ═══════════════════════════════════════
+  // CLAVE: Marcar audio como desbloqueado al cambiar canal manualmente
+  // ═══════════════════════════════════════
+  audioDesbloqueado = true;
+  localStorage.setItem('cicAutoplayOk', '1');
+
   document.querySelectorAll('.side-item').forEach(function(c){ c.classList.remove('active','ractive'); });
   var si = g('si-'+id);
   if (si) { si.classList.add(ch.type==='radio'?'ractive':'active'); si.scrollIntoView({behavior:'smooth',block:'nearest'}); }
@@ -1280,16 +1277,10 @@ function playFromSide(id) {
   g('pname').textContent = ch.name;
   updatePlayerFavBtn();
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
-  // Registrar vista para recomendaciones de frecuentes
   if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
-  // Subir historial a Supabase si hay sesión
   if (typeof subirHistorial === 'function') subirHistorial(ch);
-  // Resetear intentos de reemplazo al cambiar canal manualmente
   intentosReemplazo = 0;
   urlsIntentadas    = [];
-  // Marcar que el usuario interactuó — próximo autoplay con sonido
-  audioDesbloqueado = true;
-  localStorage.setItem('cicAutoplayOk', '1');
 
   ch.type === 'radio' ? playRadio(ch) : playVideo(ch);
 }
@@ -1297,7 +1288,6 @@ function playFromSide(id) {
 // Filtro país lista lateral
 function setSideCountry(co, btn) {
   sideCountryFilter = co;
-  // Solo actualizar chips de la barra lateral (no los del grid principal)
   var bar = g('sideCountriesBar');
   if (bar) bar.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
   if (btn) btn.classList.add('active');
@@ -1315,13 +1305,11 @@ function updateSideCountriesBar(src) {
   var bar = g('sideCountriesBar');
   if (!bar) return;
   var countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
-  // Construir HTML directamente, más simple y sin problemas de closure
   var html = '<button class="sc-chip'+(sideCountryFilter==='all'?' active':'')+'" data-co="all">🌐 Todos</button>';
   countries.slice(0, 30).forEach(function(co) {
     html += '<button class="sc-chip'+(sideCountryFilter===co?' active':'')+'" data-co="'+co+'">'+(CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co)+'</button>';
   });
   bar.innerHTML = html;
-  // Event delegation: un solo listener persistente (se reasigna cada vez pero es correcto)
   bar.onclick = function(e) {
     var btn = e.target.closest('[data-co]');
     if (!btn) return;
@@ -1334,9 +1322,6 @@ function updateSideCountriesBar(src) {
   };
 }
 
-// Total real de canales en la lista actual (puede ser > 300)
-var sideTotalReal = 0;
-
 function updateSidePos() {
   var list  = g('chSideList');
   var items = list.querySelectorAll('.side-item');
@@ -1344,16 +1329,15 @@ function updateSidePos() {
   if (!rendered) return;
   var itemH = 56;
   var idx   = Math.round(list.scrollTop / itemH) + 1;
-  // Mostrar posición / total real (no solo los 300 renderizados)
   var total = sideTotalReal > 0 ? sideTotalReal : rendered;
   g('sidePos').textContent = Math.min(idx, rendered) + '/' + total;
 }
 
 document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
 
-// ════════════════════════════════════
-// PLAYER
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
+// PLAYER — REPRODUCCIÓN DE VIDEO CON AUTOPLAY INTELIGENTE
+// ═══════════════════════════════════════════════════════════════════════
 function playVideo(ch) {
   g('pp').classList.add('hide');
   g('er').classList.remove('show');
@@ -1366,34 +1350,48 @@ function playVideo(ch) {
   v.src = ''; v.load();
 
   if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-    hlsObj = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
+    hlsObj = new Hls({
+      enableWorker: true, 
+      lowLatencyMode: true, 
+      startLevel: -1,
+      autoStartLoad: true
+    });
     hlsObj.loadSource(ch.url);
     hlsObj.attachMedia(v);
     hlsObj.on(Hls.Events.MANIFEST_PARSED, function() {
       clearTimeout(errTimer);
       g('ld').classList.remove('show');
-      v.muted = false;
-      v.volume = 1;
+      
+      // ═══════════════════════════════════════
+      // ESTRATEGIA AUTOPLAY INTELIGENTE
+      // ═══════════════════════════════════════
+      // Si el usuario YA interactuó antes → sonido directo
+      // Si es primera vez → muteado + indicador sutil
+      // ═══════════════════════════════════════
+      if (audioDesbloqueado) {
+        v.muted = false;
+        v.volume = 1;
+      } else {
+        v.muted = true;
+      }
+      
       var playPromise = v.play();
       if (playPromise !== undefined) {
-        playPromise.catch(function() {
-          // Solo mostrar overlay si fue llamado desde autoplay (no interacción)
-          // En escritorio Chrome bloquea el audio sin interacción previa
+        playPromise.then(function() {
+          // Video reproduciéndose
           if (!audioDesbloqueado) {
-            mostrarOverlayPlay(v, ch.name);
-          } else {
-            // Ya hubo interacción — reintentar
-            v.muted = true;
-            v.play().then(function() {
-              // Arrancó muteado, desmutar inmediatamente
-              v.muted = false;
-              v.volume = 1;
-            }).catch(function() {
-              mostrarOverlayPlay(v, ch.name);
-            });
+            // Primera vez: mostrar indicador sutil
+            mostrarIndicadorSonido(v);
           }
+        }).catch(function(err) {
+          console.log('Autoplay bloqueado:', err);
+          // Intentar muteado como fallback
+          v.muted = true;
+          v.play().then(function() {
+            mostrarIndicadorSonido(v);
+          }).catch(function(){});
         });
-      };
+      }
     });
     hlsObj.on(Hls.Events.ERROR, function(_, d){ if (d.fatal) tryNative(v, ch.url); });
   } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
@@ -1426,10 +1424,8 @@ var vp = g('vp');
 vp.addEventListener('canplay',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
 vp.addEventListener('playing',  function(){ clearTimeout(errTimer); g('ld').classList.remove('show'); });
 vp.addEventListener('error', function(e) {
-  // Ignorar errores cuando src está vacío (estado inicial)
   if (!vp.src || vp.src === window.location.href) return;
   if (curCh) {
-    // Pequeño delay para no disparar en errores transitorios del autoplay
     setTimeout(function() {
       if (curCh && !vp.played.length && g('ld').classList.contains('show')) {
         showErr();
@@ -1440,54 +1436,10 @@ vp.addEventListener('error', function(e) {
   }
 });
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // SISTEMA DE AUTO-REEMPLAZO
-// Cuando un canal falla, busca alternativas automáticamente
-// ════════════════════════════════════
-var intentosReemplazo = 0;
-var urlsIntentadas    = [];
-var audioDesbloqueado = localStorage.getItem('cicAutoplayOk') === '1';
-
-// ── Desbloquear audio al primer clic en cualquier lugar ──
-// Chrome permite autoplay con sonido después de que el usuario interactúa
-function desbloquearAudio() {
-  if (audioDesbloqueado) return;
-  // Crear y reproducir audio silencioso para desbloquear el contexto
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var buf = ctx.createBuffer(1, 1, 22050);
-    var src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume().then(function() {
-      audioDesbloqueado = true;
-      localStorage.setItem('cicAutoplayOk', '1');
-    });
-  } catch(e) {}
-}
-
-// Desbloquear en el primer clic/toque en cualquier parte
-['click','touchstart','keydown'].forEach(function(ev) {
-  document.addEventListener(ev, function onFirst() {
-    desbloquearAudio();
-    // Quitar overlay si hay uno activo y el video está muteado
-    var overlay = document.getElementById('overlay-play');
-    var vp = document.getElementById('vp');
-    if (overlay && vp) {
-      vp.muted  = false;
-      vp.volume = 1;
-      overlay.remove();
-      vp.play().catch(function(){});
-    }
-    document.removeEventListener(ev, onFirst);
-  }, { once: true });
-});
-// URL del proxy Cloudflare Worker (dejar vacío si no está configurado)
-// Para configurarlo: ve a workers.cloudflare.com, crea un worker
-// y pega el contenido de worker.js. Luego pon aquí la URL.
-var PROXY_WORKER_URL  = ''; // ej: 'https://cic-tv-proxy.tuusuario.workers.dev'
-
+// ═══════════════════════════════════════════════════════════════════════
+var PROXY_WORKER_URL  = '';
 
 function showErr() {
   clearTimeout(errTimer);
@@ -1495,13 +1447,11 @@ function showErr() {
 
   if (!curCh) { g('er').classList.add('show'); return; }
 
-  // Registrar fallo en el monitor
   var key = curCh.id || curCh.url;
   if (typeof canalStatus !== 'undefined') {
     if (!canalStatus[key]) canalStatus[key] = { fallos: 0, vivo: true };
     canalStatus[key].fallos++;
     canalStatus[key].vivo = false;
-    // Si supera el umbral, ocultarlo del monitor
     if (typeof canalesOcultos !== 'undefined' && canalStatus[key].fallos >= 3) {
       canalesOcultos[key] = true;
       allTV = allTV.filter(function(c){ return (c.id||c.url) !== key; });
@@ -1509,7 +1459,6 @@ function showErr() {
     }
   }
 
-  // Intentar auto-reemplazo inmediato
   if (intentosReemplazo < 3) {
     intentosReemplazo++;
     showToast('🔄 Buscando alternativa... (' + intentosReemplazo + '/3)');
@@ -1525,7 +1474,6 @@ async function buscarAlternativa(ch) {
   g('ld').classList.add('show');
   urlsIntentadas.push(ch.url);
 
-  // ── Paso 1: canal con mismo nombre en allTV ──
   var candidatos = buscarEnLista(ch);
   if (candidatos.length) {
     log('Reemplazo local: ' + candidatos[0].url);
@@ -1533,7 +1481,6 @@ async function buscarAlternativa(ch) {
     return;
   }
 
-  // ── Paso 2: intentar con proxy Cloudflare Worker ──
   if (PROXY_WORKER_URL && ch.url) {
     var urlProxy = PROXY_WORKER_URL + '?url=' + encodeURIComponent(ch.url);
     log('Intentando via proxy: ' + urlProxy);
@@ -1541,7 +1488,6 @@ async function buscarAlternativa(ch) {
     return;
   }
 
-  // ── Paso 3: buscar en iptv-org ──
   var urlAlt = await buscarEnIptvOrg(ch);
   if (urlAlt) {
     log('Reemplazo iptv-org: ' + urlAlt);
@@ -1549,29 +1495,24 @@ async function buscarAlternativa(ch) {
     return;
   }
 
-  // ── Sin alternativas — mostrar error ──
   g('ld').classList.remove('show');
   g('er').classList.add('show');
   intentosReemplazo = 0;
   urlsIntentadas    = [];
 }
 
-// Buscar canales similares en allTV (misma cat + co, diferente URL)
 function buscarEnLista(ch) {
   var nombre = (ch.name || '').toLowerCase().replace(/\s*\(.*?\)\s*/g,'').trim();
   var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
 
   return allTV.filter(function(c) {
-    if (urlsIntentadas.indexOf(c.url) !== -1) return false; // ya intentada
-    if (c.url === ch.url) return false;                      // misma URL
+    if (urlsIntentadas.indexOf(c.url) !== -1) return false;
+    if (c.url === ch.url) return false;
     var cn = c.name.toLowerCase();
-    // Coincidencia exacta de nombre (sin calidad)
     var nombreBase = cn.replace(/\s*\(.*?\)\s*/g,'').trim();
     if (nombreBase === nombre) return true;
-    // Coincidencia parcial: todas las palabras principales están presentes
     return palabras.length > 0 && palabras.every(function(p){ return cn.indexOf(p) !== -1; });
   }).sort(function(a, b) {
-    // Priorizar misma categoría y país
     var score = function(c) {
       return (c.cat === ch.cat ? 2 : 0) + (c.co === ch.co ? 1 : 0);
     };
@@ -1579,7 +1520,6 @@ function buscarEnLista(ch) {
   });
 }
 
-// Buscar alternativa en iptv-org por país y categoría
 async function buscarEnIptvOrg(ch) {
   var catSlug = {
     'Deportes':       'sports',
@@ -1594,11 +1534,9 @@ async function buscarEnIptvOrg(ch) {
   };
 
   var urls = [];
-  // Por país primero
   if (ch.co) {
     urls.push('https://iptv-org.github.io/iptv/countries/' + ch.co.toLowerCase() + '.m3u');
   }
-  // Por categoría
   if (catSlug[ch.cat]) {
     urls.push('https://iptv-org.github.io/iptv/categories/' + catSlug[ch.cat] + '.m3u');
   }
@@ -1611,7 +1549,6 @@ async function buscarEnIptvOrg(ch) {
     if (!m3u) continue;
 
     var canales = parsearM3USimpleAlt(m3u);
-    // Buscar canal con nombre similar
     var match = canales.find(function(c) {
       if (urlsIntentadas.indexOf(c.url) !== -1) return false;
       var cn = c.name.toLowerCase();
@@ -1622,7 +1559,6 @@ async function buscarEnIptvOrg(ch) {
   return null;
 }
 
-// Parsear M3U simple para búsqueda de alternativas
 function parsearM3USimpleAlt(txt) {
   var canales = [], cur = {};
   txt.split('\n').forEach(function(l) {
@@ -1639,7 +1575,6 @@ function parsearM3USimpleAlt(txt) {
   return canales;
 }
 
-// Fetch M3U con proxy CORS
 async function fetchM3UConProxy(url) {
   var proxies = [
     'https://api.allorigins.win/raw?url=',
@@ -1721,16 +1656,12 @@ document.addEventListener('webkitfullscreenchange', function(){
   if (!document.webkitFullscreenElement) { document.body.classList.remove('is-fullscreen'); g('fsBtn') && (g('fsBtn').textContent='⛶'); }
 });
 
-// ════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════
 // FAVORITOS
-// ════════════════════════════════════
-
-// ── MEJORA 1: Actualizar AMBOS botones favoritos (barra + flotante) ──
+// ═══════════════════════════════════════════════════════════════════════
 function updatePlayerFavBtn() {
   if (!curCh) return;
   var isFav = favs.includes(curCh.id);
-
-  // Botón en barra inferior
   var btn = g('playerFavBtn');
   if (btn) {
     btn.textContent = isFav ? '⭐' : '☆';
@@ -1739,7 +1670,6 @@ function updatePlayerFavBtn() {
   }
 }
 
-// Toggle favorito (llamado por ambos botones)
 function togglePlayerFav() {
   if (!curCh) return;
   var id  = curCh.id;
@@ -1747,20 +1677,17 @@ function togglePlayerFav() {
   if (idx === -1) { favs.push(id); showToast('⭐ ' + curCh.name + ' guardado'); }
   else            { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
-  // Sincronizar con Supabase
   var allSrc = allTV.concat(allRadio);
   var ch = allSrc.find(function(c){ return c.id === id; });
-  if (typeof subirFavorito === 'function' && ch) subirFavorito(ch, i === -1);
+  if (typeof subirFavorito === 'function' && ch) subirFavorito(ch, idx === -1);
   updateAll();
   updatePlayerFavBtn();
-  // Sync botones en lista lateral y grid
   var sb = document.querySelector('#si-'+id+' .side-fav');
   if (sb) { sb.classList.toggle('on', favs.includes(id)); sb.textContent = favs.includes(id)?'⭐':'☆'; }
   var gb = document.querySelector('#cd-'+id+' .favbtn');
   if (gb) { gb.classList.toggle('on', favs.includes(id)); gb.textContent = favs.includes(id)?'⭐':'☆'; }
 }
 
-// Favorito desde lista lateral
 function toggleSideFav(e, id) {
   e.stopPropagation();
   var i = favs.indexOf(id);
@@ -1772,11 +1699,9 @@ function toggleSideFav(e, id) {
   if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
   var gbtn = document.querySelector('#cd-'+id+' .favbtn');
   if (gbtn) { gbtn.classList.toggle('on', favs.includes(id)); gbtn.textContent = favs.includes(id)?'⭐':'☆'; }
-  // Si el canal es el actual, sync botón player
   if (curCh && curCh.id === id) updatePlayerFavBtn();
 }
 
-// Favorito desde grid
 function toggleFav(e, id) {
   e.stopPropagation();
   var i = favs.indexOf(id);
