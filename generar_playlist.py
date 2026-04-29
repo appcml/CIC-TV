@@ -16,6 +16,61 @@ TIMEOUT_FETCH   = 15
 WORKERS_CHECK   = 40
 MAX_CANALES_M3U = 8000
 
+# URLs alternativas conocidas para canales que suelen caer
+URLS_ALTERNATIVAS = {
+    'DW Español': [
+        'https://dwamdstream102.akamaized.net/hls/live/2015530/dwstream102/index.m3u8',
+        'https://live.dw.com/d2a-live/dw-espanol.m3u8',
+    ],
+    'France 24 ES': [
+        'https://stream.france24.com/hls/live/2037226/F24_ES_LO_HLS/master.m3u8',
+        'https://stream.france24.com/hls/live/2037222/F24_ES_HI_HLS/master.m3u8',
+    ],
+    'Al Jazeera EN': [
+        'https://live-hls-web-aje.getaj.net/AJE/index.m3u8',
+        'https://aljazeera-eng-apple-live.mediaplex.com.au/hls/live/2015530/aljazeera-eng-apple/index.m3u8',
+    ],
+    'TRT World': [
+        'https://tv-trtworld.medya.trt.com.tr/master.m3u8',
+        'https://trtworld.live.trt.com.tr/hls/live/1058287/trtworld/master.m3u8',
+    ],
+    'NASA TV': [
+        'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-HLS/master.m3u8',
+        'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8',
+        'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV2-HLS/master.m3u8',
+    ],
+    'Sky News': [
+        'https://skynews1-plutolive.akamaized.net/cdhlsskynewsvod/ls/playlist.m3u8',
+        'https://linear-261.frequency.com/hls/live/linear-261/master.m3u8',
+    ],
+    'Bloomberg TV': [
+        'https://bloomberg-bloomberg-1-us.samsung.wurl.tv/manifest/playlist.m3u8',
+        'https://linear-96.frequency.com/hls/live/linear-96/master.m3u8',
+    ],
+    'Euronews EN': [
+        'https://rakuten-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8',
+        'https://euronews-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8',
+    ],
+    'La 1 RTVE': [
+        'https://rtvelive.rtve.es/live/stream/la1/la1_HD.m3u8',
+        'https://ztnr.rtve.es/ztnr/res/mZMkAw5Rt4rW5KQi_LLcbg/la1.m3u8',
+    ],
+    '24h RTVE': [
+        'https://rtvelive.rtve.es/live/stream/24h/24h_HD.m3u8',
+        'https://ztnr.rtve.es/ztnr/res/mZMkAw5Rt4rW5KQi_LLcbg/24h.m3u8',
+    ],
+    'Canal 13 CL': [
+        'https://13live.13.cl/hls/live/master.m3u8',
+        'https://mdstrm.com/live-stream/58dffde265e24e0600db4264.m3u8',
+    ],
+    'TVN CL': [
+        'https://mdstrm.com/live-stream/57f8040c65e24e0600b7b5a4.m3u8',
+    ],
+    'RT en Español': [
+        'https://rt-esp.rttv.com/live/rtesp/playlist.m3u8',
+    ],
+}
+
 CANALES_TV_BASE = [
     {'id':'n01','name':'DW Español',        'cat':'Noticias',    'co':'DE','logo':'','url':'https://dwamdstream102.akamaized.net/hls/live/2015530/dwstream102/index.m3u8'},
     {'id':'n02','name':'France 24 ES',      'cat':'Noticias',    'co':'FR','logo':'','url':'https://stream.france24.com/hls/live/2037226/F24_ES_LO_HLS/master.m3u8'},
@@ -150,6 +205,13 @@ def verificar_canal(url, timeout=TIMEOUT_CHECK):
         status, _ = http_get(url, timeout=timeout, method='GET')
     return 200 <= status < 400
 
+# Patrones de canales a excluir (geo-bloqueados, no 24/7, sin señal)
+EXCLUIR_PATRONES = [
+    r'\[Geo-blocked\]', r'\[Not 24/7\]', r'\[Offline\]',
+    r'\[Broken\]', r'\[No stream\]', r'test\s*card',
+]
+EXCLUIR_RE = re.compile('|'.join(EXCLUIR_PATRONES), re.IGNORECASE)
+
 def parsear_m3u(texto):
     canales, cur = [], {}
     for linea in texto.split('\n'):
@@ -159,15 +221,22 @@ def parsear_m3u(texto):
             lg = re.search(r'tvg-logo="([^"]*)"', linea)
             gr = re.search(r'group-title="([^"]*)"', linea)
             co = re.search(r'tvg-country="([^"]*)"', linea)
+            nombre = nm.group(1) if nm else linea.split(',')[-1].strip()
+            # Saltar canales geo-bloqueados, offline o no 24/7
+            if EXCLUIR_RE.search(nombre):
+                cur = {}
+                continue
             cur = {
-                'name': nm.group(1) if nm else linea.split(',')[-1].strip(),
+                'name': nombre,
                 'logo': lg.group(1) if lg else '',
                 'cat':  gr.group(1) if gr else 'General',
                 'co':   (co.group(1) if co else '').upper(),
             }
         elif linea and not linea.startswith('#') and cur.get('name'):
             cur['url'] = linea
-            canales.append(dict(cur))
+            # Saltar URLs obviamente inválidas
+            if not any(x in linea.lower() for x in ['test', 'offline', 'placeholder']):
+                canales.append(dict(cur))
             cur = {}
     return canales
 
@@ -263,7 +332,18 @@ def generar_m3u(canales_tv, radios):
     for cat in sorted(cats.keys(), key=lambda x: orden.index(x) if x in orden else 99):
         for ch in cats[cat]:
             if not ch.get('url'): continue
-            lineas += [f'#EXTINF:-1 tvg-name="{ch.get("name","")}" tvg-logo="{ch.get("logo","")}" tvg-country="{ch.get("co","")}" group-title="{cat}",{ch.get("name","")}', ch['url'], '']
+            nombre = ch.get('name','')
+            logo   = ch.get('logo','')
+            co     = ch.get('co','')
+            lineas.append(f'#EXTINF:-1 tvg-name="{nombre}" tvg-logo="{logo}" tvg-country="{co}" group-title="{cat}",{nombre}')
+            lineas.append(ch['url'])
+            lineas.append('')
+            # URL alternativa si existe
+            for alt in URLS_ALTERNATIVAS.get(nombre, [])[:1]:
+                if alt != ch['url']:
+                    lineas.append(f'#EXTINF:-1 tvg-name="{nombre} (Alt)" tvg-logo="{logo}" tvg-country="{co}" group-title="{cat}",{nombre} (Alt)')
+                    lineas.append(alt)
+                    lineas.append('')
     for rd in radios:
         if not rd.get('url'): continue
         grupo = f'Radio {rd.get("co","")}'.strip()
