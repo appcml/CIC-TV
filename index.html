@@ -459,7 +459,8 @@ body.is-fullscreen .fs-exit{display:block !important}
     <button class="hbt" onclick="showFavs()" title="Ver mis favoritos">⭐</button>
     <button class="hbt on" id="hbt-tv" onclick="setMode('tv')">📺 TV <span id="cnt-tv-hdr">0</span></button>
     <button class="hbt" id="hbt-radio" onclick="setMode('radio')">📻 Radio <span id="cnt-radio-hdr">0</span></button>
-    <button class="hbt" onclick="refreshAll()">↻</button>
+    <button class="hbt" onclick="refreshAll()" title="Actualizar canales">↻</button>
+    <button class="hbt" onclick="descargarM3U()" title="Descargar lista M3U para VLC/IPTV" style="font-size:14px;">⬇</button>
   </div>
 </header>
 
@@ -1169,6 +1170,17 @@ function showFavs() {
   renderSideFromList(filtered);
 }
 
+function descargarM3U() {
+  var a = document.createElement('a');
+  a.href = 'https://appcml.github.io/CIC-TV/playlist.m3u';
+  a.download = 'cic-tv.m3u';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast('📥 Descargando playlist M3U...');
+}
+
 function refreshAll() {
   allTV    = allTV.slice(0, 26);
   allRadio = allRadio.slice(0, 8);
@@ -1342,6 +1354,12 @@ function playFromSide(id) {
   g('pname').textContent = ch.name;
   updatePlayerFavBtn();
   localStorage.setItem('cicLastChannel', JSON.stringify({id:ch.id,type:ch.type,name:ch.name,url:ch.url,cat:ch.cat,co:ch.co,logo:ch.logo}));
+  // Historial local de vistas
+  try {
+    var vistas = JSON.parse(localStorage.getItem('cicVistas') || '{}');
+    vistas[ch.id] = (vistas[ch.id] || 0) + 1;
+    localStorage.setItem('cicVistas', JSON.stringify(vistas));
+  } catch(e2) {}
   if (typeof registrarVistaCanal === 'function') registrarVistaCanal(ch);
   if (typeof subirHistorial === 'function') subirHistorial(ch);
   intentosReemplazo = 0;
@@ -1770,10 +1788,17 @@ function toggleSideFav(e, id) {
 function toggleFav(e, id) {
   e.stopPropagation();
   var i = favs.indexOf(id);
-  if (i === -1) { favs.push(id); showToast('⭐ Guardado'); }
-  else          { favs.splice(i, 1); showToast('Eliminado'); }
+  if (i === -1) { favs.push(id); showToast('⭐ Favorito guardado'); }
+  else          { favs.splice(i, 1); showToast('✕ Favorito eliminado'); }
   localStorage.setItem('cicFavs3', JSON.stringify(favs));
+  // Sincronizar con Supabase
+  var allSrc2 = allTV.concat(allRadio);
+  var chFav = allSrc2.find(function(c){ return c.id === id; });
+  if (typeof subirFavorito === 'function' && chFav) subirFavorito(chFav, i === -1);
+  // Actualizar todos los layouts
   updateAll();
+  renderSideList();
+  if (typeof buildItems === 'function') { buildItems(); renderBar(); }
   var btn = document.querySelector('#cd-'+id+' .favbtn');
   if (btn) { btn.classList.toggle('on', favs.includes(id)); btn.textContent = favs.includes(id)?'⭐':'☆'; }
   if (curCh && curCh.id === id) updatePlayerFavBtn();
