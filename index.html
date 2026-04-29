@@ -692,14 +692,80 @@ let allTV = [
 // RADIOS BASE
 // ═══════════════════════════════════════════════════════════════════════
 let allRadio = [
-  {id:'rd1',name:'Cadena SER',       cat:'Noticias', co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SER.mp3'},
-  {id:'rd2',name:'Los 40',           cat:'Música',   co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3'},
-  {id:'rd3',name:'BBC World Service',cat:'Noticias', co:'GB',type:'radio',logo:'',url:'http://stream.live.vc.bbcmedia.co.uk/bbc_world_service'},
-  {id:'rd4',name:'Rock FM',          cat:'Música',   co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/ROCKFM.mp3'},
-  {id:'rd5',name:'Caracol Radio',    cat:'Noticias', co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/CARACOL_RADIO.mp3'},
-  {id:'rd6',name:'Radio Mitre AR',   cat:'Noticias', co:'AR',type:'radio',logo:'',url:'https://streaming.radiomitre.cienradios.com/radiomitre.mp3'},
-  {id:'rd7',name:'Radio Uno MX',     cat:'Música',   co:'MX',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHRCO_CO.mp3'},
-  {id:'rd8',name:'Radio Nacional ES',cat:'General',  co:'ES',type:'radio',logo:'',url:'https://rne.es/radionacional.ogg'},
+  {id:'rd1',name:'Radio Cooperativa CL',cat:'Noticias',co:'CL',type:'radio',logo:'',url:'https://streaming.cooperativa.cl/radio-cooperativa-128.mp3'},
+  {id:'rd2',name:'Radio Agricultura CL',cat:'General',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOAGRICULTURA.mp3'},
+  {id:'rd3',name:'ADN Radio CL',cat:'Noticias',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/ADNRADIO.mp3'},
+  {id:'rd4',name:'Bío Bío Radio CL',cat:'Noticias',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOBIOBIO.mp3'},
+  {id:'rd5',name:'Radio Duna CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIODUNA.mp3'},
+  {id:'rd6',name:'Radio Activa CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOACTIVA.mp3'},
+  {id:'rd7',name:'Radio Romántica CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOROM.mp3'},
+  {id:'rd8',name:'Pudahuel FM CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/PUDAHUEL.mp3'},
+  {id:'rd9',name:'Radio Universo CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/UNIVERSOFM.mp3'},
+  {id:'rd10',name:'Radio Play CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOPLAY.mp3'},
+  {id:'rd11',name:'Radio FM CL',cat:'Música',co:'CL',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/RADIOFM.mp3'},
+  {id:'rd12',name:'Radio Mitre AR',cat:'Noticias',co:'AR',type:'radio',logo:'',url:'https://streaming.radiomitre.cienradios.com/radiomitre.mp3'},
+  {id:'rd13',name:'La 100 AR',cat:'Música',co:'AR',type:'radio',logo:'',url:'https://streaming.la100.cienradios.com/la100.mp3'},
+  {id:'rd14',name:'Radio Disney AR',cat:'Música',co:'AR',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/DISNEYRADIOAAC.mp3'},
+  {id:'rd15',name:'FM 2 AR',cat:'Música',co:'AR',type:'radio',logo:'',url:'https://streaming.radiomitre.cienradios.com/fm2.mp3'},
+  {id:'rd16',name:'Radio Continental AR',cat:'Noticias',co:'AR',type:'radio',logo:'',url:'https://streaming.continental.cienradios.com/continental.mp3'},
+  {id:'rd17',name:'Mega 98.3 AR',cat:'Música',co:'AR',type:'radio',logo:'',url:'https://streaming.mega.cienradios.com/mega983.mp3'},
+  {id:'rd18',name:'Radio Con Vos AR',cat:'General',co:'AR',type:'radio',logo:'',url:'https://streaming.convosar.cienradios.com/convosar.mp3'},
+  {id:'rd19',name:'Cadena 3 AR',cat:'Noticias',co:'AR',type:'radio',logo:'',url:'https://cadena3.com/stream/cadena3.aac'},
+  {id:'rd20',name:'Caracol Radio CO',cat:'Noticias',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/CARACOL_RADIO.mp3'},
+  {id:'rd21',name:'W Radio Colombia',cat:'Noticias',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/WRADIO_CO.mp3'},
+  {id:'rd22',name:'Olímpica Stereo CO',cat:'Música',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/OLIMPICA.mp3'},
+  {id:'rd23',name:'Los 40 Colombia',cat:'Música',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40CO.mp3'},
+  {id:'rd24',name:'La FM CO',cat:'Música',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LAFM.mp3'},
+  {id:'rd25',name:'Blu Radio CO',cat:'Noticias',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/BLU_RADIO.mp3'},
+  {id:'rd26',name:'Tropicana CO',cat:'Música',co:'CO',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/TROPICANA.mp3'},
+  {id:'rd27',name:'Imagen Radio MX',cat:'Noticias',co:'MX',type:'radio',logo:'',url:'https://wwwlive3.mvs.com.mx/play/900.mp3'},
+  {id:'rd28',name:'Los 40 México',cat:'Música',co:'MX',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHPLAY_CO.mp3'},
+  {id:'rd29',name:'Exa FM MX',cat:'Música',co:'MX',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/XHEX_CO.mp3'},
+  {id:'rd30',name:'Radio Fórmula MX',cat:'Noticias',co:'MX',type:'radio',logo:'',url:'https://live.xstre.am/xstre/radioformula1/icecast.audio/stream.mp3'},
+  {id:'rd31',name:'RPP Radio PE',cat:'Noticias',co:'PE',type:'radio',logo:'',url:'https://rpp-radio.streaming.com.pe/rpp-radio'},
+  {id:'rd32',name:'Studio 92 PE',cat:'Música',co:'PE',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/STUDIO92.mp3'},
+  {id:'rd33',name:'Unión Radio VE',cat:'Noticias',co:'VE',type:'radio',logo:'',url:'http://199.195.194.94:8152/stream'},
+  {id:'rd34',name:'La Mega 107.3 VE',cat:'Música',co:'VE',type:'radio',logo:'',url:'http://streaming.laradio.com.ve:8000/lamega.mp3'},
+  {id:'rd35',name:'Cadena SER ES',cat:'Noticias',co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/SER.mp3'},
+  {id:'rd36',name:'Los 40 ES',cat:'Música',co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3'},
+  {id:'rd37',name:'Cadena COPE ES',cat:'Noticias',co:'ES',type:'radio',logo:'',url:'https://cope.stream.flumotion.com/cope/cope-main.mp3'},
+  {id:'rd38',name:'Onda Cero ES',cat:'Noticias',co:'ES',type:'radio',logo:'',url:'https://streaming.ondacero.es/oc_live/live.aac'},
+  {id:'rd39',name:'Europa FM ES',cat:'Música',co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/EUROPA_FM.mp3'},
+  {id:'rd40',name:'M80 Radio ES',cat:'Música',co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/M80RADIO.mp3'},
+  {id:'rd41',name:'Rock FM ES',cat:'Música',co:'ES',type:'radio',logo:'',url:'https://playerservices.streamtheworld.com/api/livestream-redirect/ROCKFM.mp3'},
+  {id:'rd42',name:'Radio Nacional ES',cat:'General',co:'ES',type:'radio',logo:'',url:'https://rtvelive.rtve.es/live/stream/rne1/rne1_HD.m3u8'},
+  {id:'rd43',name:'RNE Radio 5 ES',cat:'Noticias',co:'ES',type:'radio',logo:'',url:'https://rtvelive.rtve.es/live/stream/rne5/rne5_HD.m3u8'},
+  {id:'rd44',name:'BBC World Service',cat:'Noticias',co:'GB',type:'radio',logo:'',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service'},
+  {id:'rd45',name:'BBC Radio 1',cat:'Música',co:'GB',type:'radio',logo:'',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_one'},
+  {id:'rd46',name:'BBC Radio 2',cat:'Música',co:'GB',type:'radio',logo:'',url:'https://stream.live.vc.bbcmedia.co.uk/bbc_radio_two'},
+  {id:'rd47',name:'NPR News US',cat:'Noticias',co:'US',type:'radio',logo:'',url:'https://npr-ice.streamguys1.com/live.mp3'},
+  {id:'rd48',name:'CNN Radio US',cat:'Noticias',co:'US',type:'radio',logo:'',url:'https://tunein.com/radio/CNN-Radio-s33376/'},
+  {id:'rd49',name:'RFI Español',cat:'Noticias',co:'FR',type:'radio',logo:'',url:'https://rfifr-04.ice.infomaniak.ch/rfifr-04.aac'},
+  {id:'rd50',name:'France 24 Radio',cat:'Noticias',co:'FR',type:'radio',logo:'',url:'https://stream.france24.com/hls/live/2037226/F24_FR_LO_HLS/master.m3u8'},
+  {id:'rd51',name:'DW Radio Español',cat:'Noticias',co:'DE',type:'radio',logo:'',url:'https://dwaudiode.akamaized.net/hls/live/2017965/dwstream_esp/index.m3u8'},
+  {id:'rd52',name:'Al Jazeera Radio',cat:'Noticias',co:'QA',type:'radio',logo:'',url:'https://live.aljazeera.com/audio/aljazeera_radio_arabic.m3u8'},
+  {id:'rd53',name:'euronews Radio ES',cat:'Noticias',co:'EU',type:'radio',logo:'',url:'https://euronews-04.ice.infomaniak.ch/euronews-04.aac'},
+  {id:'rd54',name:'Radio ONU',cat:'Noticias',co:'INT',type:'radio',logo:'',url:'https://www.unmultimedia.org/radio/spanish/assets/audio/radio-onu.mp3'},
+  {id:'rd55',name:'Tropical 102.9',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://radiotropical.streaming-pro.com:8016/'},
+  {id:'rd56',name:'Salsa Dura',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://142.4.200.58:7260/'},
+  {id:'rd57',name:'EuropaLatina FM',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://listen64.radionomy.com/EuropaLatinaFM'},
+  {id:'rd58',name:'Son Vallenato',cat:'Música',co:'CO',type:'radio',logo:'',url:'http://listen64.radionomy.com/Son-Vallenato'},
+  {id:'rd59',name:'La Ranchera MX',cat:'Música',co:'MX',type:'radio',logo:'',url:'http://stream.zenolive.com/cqkqta30974tv'},
+  {id:'rd60',name:'Puro Exitos',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://streaming.capasiete.com:9704'},
+  {id:'rd61',name:'Venezuela Acción',cat:'Noticias',co:'VE',type:'radio',logo:'',url:'http://venezuela.accion.streaming-pro.com:8000/'},
+  {id:'rd62',name:'Bolivariana 94.1 VE',cat:'General',co:'VE',type:'radio',logo:'',url:'http://185.24.248.86:9000/bolivariana.aac'},
+  {id:'rd63',name:'Urban Mix Latino',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://plus.rstreaming.net:9302/'},
+  {id:'rd64',name:'La Campeonisima',cat:'Deportes',co:'LA',type:'radio',logo:'',url:'http://78.129.224.11:36638'},
+  {id:'rd65',name:'TODO Noticias Lat',cat:'Noticias',co:'LA',type:'radio',logo:'',url:'http://stream.servergroup.info:9910/'},
+  {id:'rd66',name:'Gala Stereo CO',cat:'Música',co:'CO',type:'radio',logo:'',url:'http://streaming.admediasystem.net:9640'},
+  {id:'rd67',name:'Salsabor Radio',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://78.129.224.21:39649/'},
+  {id:'rd68',name:'Radio Licanten CL',cat:'General',co:'CL',type:'radio',logo:'',url:'http://s3.medionline.cl:8122'},
+  {id:'rd69',name:'Todelar Bogotá CO',cat:'Noticias',co:'CO',type:'radio',logo:'',url:'http://99.198.110.162:7062'},
+  {id:'rd70',name:'Radio Ciudadana',cat:'General',co:'LA',type:'radio',logo:'',url:'http://radio.uncuartocomunicacion.com:8255/RadioCiudadana_mp3'},
+  {id:'rd71',name:'La Nueva Super',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://190.4.47.58:8510'},
+  {id:'rd72',name:'Maxima Latina FM',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://87.98.229.193:8024'},
+  {id:'rd73',name:'Radio Mitre AR2',cat:'Noticias',co:'AR',type:'radio',logo:'',url:'http://buecrplb01.cienradios.com.ar/Mitre790.aac'},
+  {id:'rd74',name:'Salsarumbayson',cat:'Música',co:'LA',type:'radio',logo:'',url:'http://87.98.227.84:7998'},
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -780,22 +846,21 @@ function desbloquearAudio() {
   } catch(e) {}
 }
 
-// Desbloquear en el primer clic/toque/tecla en cualquier parte de la página
-['click','touchstart','keydown'].forEach(function(ev) {
-  document.addEventListener(ev, function onFirst() {
-    desbloquearAudio();
-    // Quitar indicador de sonido si hay uno activo y el video está muteado
-    var indicador = document.getElementById('indicador-sonido');
-    var vp = document.getElementById('vp');
-    if (indicador && vp) {
-      vp.muted  = false;
-      vp.volume = 1;
-      indicador.remove();
-      vp.play().catch(function(){});
-    }
-    document.removeEventListener(ev, onFirst);
-  }, { once: true });
-});
+// Activar sonido al hacer clic en CUALQUIER parte de la pantalla
+function activarSonidoGlobal() {
+  desbloquearAudio();
+  var indicador = document.getElementById('indicador-sonido');
+  var vp = document.getElementById('vp');
+  if (indicador && vp && vp.muted) {
+    vp.muted  = false;
+    vp.volume = 1;
+    indicador.remove();
+    vp.play().catch(function(){});
+  }
+}
+document.addEventListener('click',      activarSonidoGlobal);
+document.addEventListener('touchstart', activarSonidoGlobal, { passive: true });
+document.addEventListener('keydown',    activarSonidoGlobal);
 
 // ═══════════════════════════════════════════════════════════════════════
 // INDICADOR DE SONIDO SUTIL — aparece cuando video está muteado
