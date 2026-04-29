@@ -51,7 +51,7 @@ function buildItems() {
       sub:    '⭐ Favorito · ' + ch.cat,
       emoji:  '⭐',
       logo:   ch.logo || '',
-      accion: function(){ playFromSide(ch); },
+      accion: function(closure_ch){ return function(){ if(closure_ch.type==='radio'){setMode('radio');} else {if(typeof setMode==='function')setMode('tv');} playFromSide(closure_ch.id); }; }(ch),
       ch:     ch,
     });
   });
@@ -71,7 +71,7 @@ function buildItems() {
       sub:    '📺 ' + n + ' vistas · ' + ch.cat,
       emoji:  '🔥',
       logo:   ch.logo || '',
-      accion: function(){ playFromSide(ch); },
+      accion: function(closure_ch){ return function(){ if(closure_ch.type==='radio'){setMode('radio');} else {if(typeof setMode==='function')setMode('tv');} playFromSide(closure_ch.id); }; }(ch),
       ch:     ch,
     });
   });
@@ -86,7 +86,7 @@ function buildItems() {
       sub:    '⚽ Deportes · ' + (ch.co || ''),
       emoji:  '⚽',
       logo:   ch.logo || '',
-      accion: function(){ playFromSide(ch); },
+      accion: function(closure_ch){ return function(){ if(closure_ch.type==='radio'){setMode('radio');} else {if(typeof setMode==='function')setMode('tv');} playFromSide(closure_ch.id); }; }(ch),
       ch:     ch,
     });
   });
@@ -101,7 +101,7 @@ function buildItems() {
       sub:    '📰 Noticias · ' + (ch.co || ''),
       emoji:  '📰',
       logo:   ch.logo || '',
-      accion: function(){ playFromSide(ch); },
+      accion: function(closure_ch){ return function(){ if(closure_ch.type==='radio'){setMode('radio');} else {if(typeof setMode==='function')setMode('tv');} playFromSide(closure_ch.id); }; }(ch),
       ch:     ch,
     });
   });
@@ -116,7 +116,7 @@ function buildItems() {
         sub:    ch.cat + ' · ' + (ch.co || ''),
         emoji:  '📺',
         logo:   ch.logo || '',
-        accion: function(){ playFromSide(ch); },
+        accion: function(closure_ch){ return function(){ if(closure_ch.type==='radio'){setMode('radio');} else {if(typeof setMode==='function')setMode('tv');} playFromSide(closure_ch.id); }; }(ch),
         ch:     ch,
       });
     });
