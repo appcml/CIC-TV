@@ -1841,7 +1841,25 @@ function toggleFav(e, id) {
   bar.addEventListener('mousemove', function(e){ if(!isDown)return; e.preventDefault(); bar.scrollLeft=scrollLeft-(e.pageX-bar.offsetLeft-startX); });
 })();
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/CIC-TV/sw.js').catch(function(){});
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/CIC-TV/sw.js', { scope: '/CIC-TV/' })
+        .then(function(reg) {
+          console.log('[PWA] Service Worker registrado:', reg.scope);
+          // Verificar actualizaciones
+          reg.addEventListener('updatefound', function() {
+            var newSW = reg.installing;
+            newSW.addEventListener('statechange', function() {
+              if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+                if (typeof showToast === 'function') showToast('🔄 Actualización disponible — recarga para aplicar');
+              }
+            });
+          });
+        }).catch(function(e) {
+          console.log('[PWA] SW error:', e);
+        });
+    });
+  };
 </script>
 
 <!-- SISTEMA DE RECOMENDACIONES -->
