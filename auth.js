@@ -487,7 +487,7 @@ async function sincronizarFavoritos() {
       canal_cat:  ch.cat,
       canal_co:   ch.co,
       canal_logo: ch.logo || '',
-    });
+    }, 'user_id,canal_id');
   }
 
   // 2. Descargar favoritos de la nube
@@ -534,7 +534,7 @@ async function subirFavorito(ch, agregar) {
       canal_cat:  ch.cat,
       canal_co:   ch.co,
       canal_logo: ch.logo || '',
-    });
+    }, 'user_id,canal_id');
   } else {
     await sbDelete('/rest/v1/favoritos?canal_id=eq.' + ch.id + '&user_id=eq.' + sbUser.id);
   }
