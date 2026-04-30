@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 var REC = {
-  tickerMs:    6000,   // avance automático cada 6s
+  tickerMs:    8000,   // avance automático cada 8s
   visibles:    6,      // ítems visibles simultáneamente
 };
 
@@ -247,19 +247,27 @@ function renderBar() {
   scrollToActive();
 }
 
+  setTimeout(calibrarAncho, 150);
+// Ancho estimado por ítem (evita forced reflow)
+var REC_ITEM_W = 185;
+
 function scrollToActive() {
   var track = document.getElementById('rec-track');
   if (!track) return;
-  var items = track.querySelectorAll('.rec-item');
-  if (!items.length) return;
+  // Usar requestAnimationFrame para no bloquear el hilo principal
+  requestAnimationFrame(function() {
+    var offset = recIdx * REC_ITEM_W;
+    track.style.transform   = 'translateX(-' + offset + 'px)';
+    track.style.transition  = 'transform 0.35s ease';
+  });
+}
 
-  // Calcular offset basado en recIdx
-  var offset = 0;
-  for (var i = 0; i < recIdx && i < items.length; i++) {
-    offset += items[i].offsetWidth;
-  }
-  track.style.transform = 'translateX(-' + offset + 'px)';
-  track.style.transition = 'transform 0.4s ease';
+// Calibrar ancho real al renderizar por primera vez
+function calibrarAncho() {
+  var track = document.getElementById('rec-track');
+  if (!track) return;
+  var item = track.querySelector('.rec-item');
+  if (item) REC_ITEM_W = item.getBoundingClientRect().width || 185;
 }
 
 // ════════════════════════════════════
