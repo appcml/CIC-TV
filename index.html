@@ -14,6 +14,17 @@
 <meta name="google-adsense-account" content="ca-pub-6387207876125603">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603" crossorigin="anonymous"></script>
 <meta name="apple-touch-fullscreen" content="yes">
+<script>
+// Suprimir errores de imagen en consola — no son errores críticos
+window.addEventListener('error', function(e) {
+  if (e.target && e.target.tagName === 'IMG') {
+    e.preventDefault();
+    e.stopPropagation();
+    e.target.style.display = 'none';
+    return false;
+  }
+}, true);
+</script>
 <style>
   :root { --app-height: 100%; }
   html { height: var(--app-height); }
@@ -1289,10 +1300,9 @@ function renderSideFromList(src) {
     var ac     = isPlay ? (ch.type === 'radio' ? ' ractive' : ' active') : '';
     var fc     = ch.type === 'radio' ? ' rfb' : '';
     var flag   = ch.co ? ' &middot; '+(CFLAGS[ch.co]||'')+ch.co : '';
-    var logo   = ch.logo
-      ? '<img class="side-logo" src="'+ch.logo+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';
-    var fav = '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
+    var logo   = (ch.logo && i < 80)
+      ? '<img class="side-logo" src="'+ch.logo+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';" referrerpolicy="no-referrer">'
+      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';    var fav = '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
     html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
           + logo
           + '<div class="side-info"><div class="side-name">'+ch.name+'</div>'
@@ -1416,7 +1426,7 @@ function updateSidePos() {
   g('sidePos').textContent = Math.min(idx, rendered) + '/' + total;
 }
 
-document.getElementById('chSideList').addEventListener('scroll', updateSidePos);
+document.getElementById('chSideList').addEventListener('scroll', updateSidePos, { passive: true });
 
 // ═══════════════════════════════════════════════════════════════════════
 // PLAYER — REPRODUCCIÓN DE VIDEO CON AUTOPLAY INTELIGENTE
