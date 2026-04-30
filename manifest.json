@@ -1,48 +1,99 @@
 {
   "name": "CIC TV — Canales en Vivo",
   "short_name": "CIC TV",
-  "description": "TV en vivo gratis. Miles de canales clasificados por categoría. Una app de CIC.",
-  "id": "com.cic.tv",
+  "description": "Más de 10,000 canales de TV y radio en vivo. Gratis, sin registro.",
   "start_url": "/CIC-TV/",
   "scope": "/CIC-TV/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
   "orientation": "any",
+  "background_color": "#0a0a0f",
+  "theme_color": "#e63f6e",
   "lang": "es",
-  "dir": "ltr",
   "categories": ["entertainment", "news"],
-  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "web-app-manifest-192x192.png",
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "web-app-manifest-512x512.png",
+      "src": "icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "shortcuts": [
+  "screenshots": [
     {
-      "name": "Noticias",
-      "url": "/CIC-TV/?cat=Noticias",
-      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+      "src": "screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "CIC TV en escritorio"
     },
     {
-      "name": "Deportes",
-      "url": "/CIC-TV/?cat=Deportes",
-      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+      "src": "screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "CIC TV en móvil"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "TV en Vivo",
+      "short_name": "TV",
+      "url": "/CIC-TV/?mode=tv",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Radio",
+      "short_name": "Radio",
+      "url": "/CIC-TV/?mode=radio",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "Favoritos",
-      "url": "/CIC-TV/?cat=favoritos",
-      "icons": [{ "src": "web-app-manifest-192x192.png", "sizes": "192x192" }]
+      "short_name": "Favs",
+      "url": "/CIC-TV/?mode=favs",
+      "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     }
   ]
 }
