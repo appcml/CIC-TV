@@ -140,7 +140,13 @@ async function verificarLote(lote) {
         delete canalesOcultos[key];
         if (!allTV.find(function(c){ return (c.id||c.url) === key; })) allTV.push(ch);
         monLog('Recuperado: ' + ch.name);
-        if (typeof renderSideList === 'function') setTimeout(renderSideList, 100);
+        if (!window._monRecPending) {
+          window._monRecPending = true;
+          setTimeout(function() {
+            window._monRecPending = false;
+            if (typeof renderSideList === 'function') renderSideList();
+          }, 500);
+        }
       }
     } else {
       canalStatus[key].fallos = (canalStatus[key].fallos || 0) + 1;
@@ -149,8 +155,15 @@ async function verificarLote(lote) {
         canalesOcultos[key] = true;
         allTV = allTV.filter(function(c){ return (c.id||c.url) !== key; });
         monLog('Ocultado (' + canalStatus[key].fallos + ' fallos): ' + ch.name);
-        if (typeof renderSideList === 'function') setTimeout(renderSideList, 100);
-        if (typeof updateAll      === 'function') setTimeout(updateAll,      150);
+        // Debounce el render para no llamarlo miles de veces seguidas
+        if (!window._monRenderPending) {
+          window._monRenderPending = true;
+          setTimeout(function() {
+            window._monRenderPending = false;
+            if (typeof renderSideList === 'function') renderSideList();
+            if (typeof updateAll      === 'function') updateAll();
+          }, 500);
+        }
         buscarAlternativaFondo(ch);
       }
     }
