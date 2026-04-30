@@ -590,18 +590,25 @@ async function sbGet(path, count) {
 
 async function sbUpsert(path, data, onConflict) {
   try {
+    // Supabase v2: on_conflict va en query param Y en el Prefer header
     var url = SB.url + path;
-    if (onConflict) url += '?on_conflict=' + onConflict;
-    await fetch(url, {
+    var prefer = 'resolution=merge-duplicates,return=minimal';
+    if (onConflict) {
+      url += '?on_conflict=' + onConflict;
+    }
+    var res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type':  'application/json',
         'apikey':        SB.key,
         'Authorization': 'Bearer ' + (sbSession?.access_token || SB.key),
-        'Prefer':        'resolution=merge-duplicates',
+        'Prefer':        prefer,
       },
       body: JSON.stringify(data),
     });
+    // 409 = conflicto — ignorar (el registro ya existe)
+    // 403 = sin permisos — ignorar silenciosamente
+    if (res.status === 409 || res.status === 403) return;
   } catch(e) {}
 }
 
