@@ -961,24 +961,12 @@ function g(id) { return document.getElementById(id); }
 // CARGA DE PAÍSES
 // ═══════════════════════════════════════════════════════════════════════
 async function loadCountries() {
-  const proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url=',
-    'https://proxy.cors.sh/',
-    'https://thingproxy.freeboard.io/fetch/',
-  ];
-
+  // iptv-org tiene CORS habilitado — fetch directo sin proxies
   async function fetchM3U(url) {
     try {
-      const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
       if (r.ok) return await r.text();
     } catch(e) {}
-    for (const px of proxies) {
-      try {
-        const r = await fetch(px + encodeURIComponent(url), {signal: AbortSignal.timeout(8000)});
-        if (r.ok) return await r.text();
-      } catch(e) { continue; }
-    }
     return null;
   }
 
@@ -1581,9 +1569,14 @@ async function buscarAlternativa(ch) {
 
   var urlAlt = await buscarEnIptvOrg(ch);
   if (urlAlt) {
-    log('Reemplazo iptv-org: ' + urlAlt);
-    playVideo(Object.assign({}, curCh, { url: urlAlt, name: ch.name }));
-    return;
+    // Filtrar URLs HTTP con IP pura — bloqueadas por Mixed Content en HTTPS
+    if (/^http:\/\/\d+\.\d+\.\d+\.\d+/.test(urlAlt) || /^http:\/\/[^/]+:\d+\//.test(urlAlt)) {
+      log('URL HTTP bloqueada (Mixed Content): ' + urlAlt.slice(0, 50));
+    } else {
+      log('Reemplazo iptv-org: ' + urlAlt);
+      playVideo(Object.assign({}, curCh, { url: urlAlt, name: ch.name }));
+      return;
+    }
   }
 
   g('ld').classList.remove('show');
