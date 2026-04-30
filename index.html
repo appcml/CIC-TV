@@ -656,14 +656,14 @@ let urlsIntentadas    = [];
 // CANALES BASE TV
 // ═══════════════════════════════════════════════════════════════════════
 let allTV = [
-  {id:'n01',name:'DW Español',      cat:'Noticias',       co:'DE',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/DW_Logo_2012.svg/120px-DW_Logo_2012.svg.png',url:'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'},
+  {id:'n01',name:'DW Español',      cat:'Noticias',       co:'DE',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/DW_Logo_2012.svg/120px-DW_Logo_2012.svg.png',url:'https://www.youtube.com/channel/UCT4Jg8h03dD0iN3Pb5L0PMA/live'},
   {id:'n02',name:'France 24 ES',    cat:'Noticias',       co:'FR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/France_24_logo.svg/120px-France_24_logo.svg.png',url:'https://stream.france24.com/hls/live/2037897/F24_ES_LO_HLS/master.m3u8'},
-  {id:'n03',name:'Al Jazeera EN',   cat:'Noticias',       co:'QA',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/120px-Aljazeera_eng.svg.png',url:'https://live-hls-web-aje.getaj.net/AJE/index.m3u8'},
+  {id:'n03',name:'Al Jazeera EN',   cat:'Noticias',       co:'QA',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/en/thumb/f/f2/Aljazeera_eng.svg/120px-Aljazeera_eng.svg.png',url:'https://www.youtube.com/channel/UCNye-wNBqNL5ZzHSJdrlvxA/live'},
   {id:'n04',name:'TRT World',       cat:'Noticias',       co:'TR',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/TRT_World_logo.svg/120px-TRT_World_logo.svg.png',url:'https://tv-trtworld.live.trt.com.tr/master.m3u8'},
-  {id:'n05',name:'NASA TV',         cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://nasa-i.akamaihd.net/hls/live/253565/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n05b',name:'NASA TV (Alt)',    cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n05c',name:'NASA TV Live',     cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8'},
-  {id:'n06',name:'Euronews EN',     cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://rakuten-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
+  {id:'n05',name:'NASA TV',         cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://www.youtube.com/channel/UCNwkvBoDag92nHiZBzbYicA/live'},
+  {id:'n05b',name:'NASA TV (Alt)',    cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://www.youtube.com/channel/UCNwkvBoDag92nHiZBzbYicA/live'},
+  {id:'n05c',name:'NASA TV Live',     cat:'Noticias',       co:'US',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/NASA_logo.svg/120px-NASA_logo.svg.png',url:'https://www.youtube.com/channel/UCNwkvBoDag92nHiZBzbYicA/live'},
+  {id:'n06',name:'Euronews EN',     cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://www.youtube.com/channel/UCPTUIlNF1NNPaFSVKZbYhqA/live'},
   {id:'n06b',name:'Euronews EN (Alt)',cat:'Noticias',       co:'EU',type:'tv',logo:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Euronews_2022.svg/120px-Euronews_2022.svg.png',url:'https://euronews-euronews-1-eu.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'n07',name:'Bloomberg TV',    cat:'Negocios',       co:'US',type:'tv',logo:'',url:'https://bloomenglish.akamaized.net/hls/live/571329/bloombergenglish/master.m3u8'},
   {id:'n08',name:'Sky News',        cat:'Noticias',       co:'GB',type:'tv',logo:'',url:'https://skynews-iphone-hls.akamaized.net/hls/live/622358/skynewsiphone/master.m3u8'},
@@ -671,7 +671,7 @@ let allTV = [
   {id:'d01',name:'Outside TV',      cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-outsidetv-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'d02',name:'Fight Sports',    cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-fightsports-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'d03',name:'Motor Trend',     cat:'Deportes',       co:'US',type:'tv',logo:'',url:'https://rakuten-motortrend-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
-  {id:'d04',name:'Red Bull TV',     cat:'Deportes',       co:'AT',type:'tv',logo:'',url:'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'},
+  {id:'d04',name:'Red Bull TV',     cat:'Deportes',       co:'AT',type:'tv',logo:'',url:'https://www.youtube.com/channel/UCblfuW_4rakIf2h6aqANefA/live'},
   {id:'e01',name:'Tastemade',       cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-tastemade-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'e02',name:'Dove Channel',    cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-dovechannel-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
   {id:'e03',name:'Comedy Dynamics', cat:'Entretenimiento',co:'US',type:'tv',logo:'',url:'https://rakuten-comedydynamics-1-us.samsung.wurl.tv/manifest/playlist.m3u8'},
@@ -1472,7 +1472,33 @@ function playVideo(ch) {
         });
       }
     });
-    hlsObj.on(Hls.Events.ERROR, function(_, d){ if (d.fatal) tryNative(v, ch.url); });
+    hlsObj.on(Hls.Events.ERROR, function(_, d) {
+      if (d.fatal) {
+        // Intentar URL alternativa si existe
+        var urlsAlt = ch.urls || [];
+        var urlActual = ch._urlActual || ch.url;
+        var idxAlt = urlsAlt.indexOf(urlActual);
+        var siguienteUrl = urlsAlt[idxAlt + 1];
+        if (siguienteUrl && siguienteUrl !== urlActual) {
+          monLog && monLog('Probando URL alternativa: ' + siguienteUrl.slice(0, 50));
+          ch._urlActual = siguienteUrl;
+          if (hlsObj) { hlsObj.destroy(); hlsObj = null; }
+          var vAlt = g('vp');
+          var hAlt = new Hls({enableWorker:true, lowLatencyMode:true, startLevel:-1});
+          hlsObj = hAlt;
+          hAlt.loadSource(siguienteUrl);
+          hAlt.attachMedia(vAlt);
+          hAlt.on(Hls.Events.MANIFEST_PARSED, function() {
+            clearTimeout(errTimer);
+            g('ld').classList.remove('show');
+            vAlt.play().catch(function(){});
+          });
+          hAlt.on(Hls.Events.ERROR, function(_, d2) { if (d2.fatal) tryNative(vAlt, siguienteUrl); });
+        } else {
+          tryNative(v, ch.url);
+        }
+      }
+    });
   } else if (v.canPlayType('application/vnd.apple.mpegurl')) {
     tryNative(v, ch.url);
   } else {
