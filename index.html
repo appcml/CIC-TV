@@ -913,29 +913,27 @@ function mostrarIndicadorSonido(v) {
 // ═══════════════════════════════════════════════════════════════════════
 function markSideActive(ch) {
   if (!ch) return;
-  // Quitar cualquier marca previa
-  document.querySelectorAll('.side-item').forEach(function(el) {
-    el.classList.remove('active', 'ractive');
-  });
-  // Buscar el elemento en la lista lateral
-  var el = g('si-' + ch.id);
-  if (el) {
-    el.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
-    // Scroll suave hacia el canal activo
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } else {
-    // Canal no visible en filtro actual — NO resetear filtro de países
-    if (sideCountryFilter === 'all' || (ch.co && ch.co === sideCountryFilter)) {
-      renderSideList();
-    }
-    setTimeout(function() {
-      var el2 = g('si-' + ch.id);
-      if (el2) {
-        el2.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
-        el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  requestAnimationFrame(function() {
+    document.querySelectorAll('.side-item').forEach(function(el) {
+      el.classList.remove('active', 'ractive');
+    });
+    var el = g('si-' + ch.id);
+    if (el) {
+      el.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      if (sideCountryFilter === 'all' || (ch.co && ch.co === sideCountryFilter)) {
+        renderSideList();
       }
-    }, 200);
-  }
+      setTimeout(function() {
+        var el2 = g('si-' + ch.id);
+        if (el2) {
+          el2.classList.add(ch.type === 'radio' ? 'ractive' : 'active');
+          el2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 200);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════
