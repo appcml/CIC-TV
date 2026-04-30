@@ -79,6 +79,8 @@ async function cargarCanalesJSON() {
       if (!ch.url || !ch.name) return;
       if (canalesOcultos[ch.id || ch.url]) return;
       if (urls.has(ch.url)) return;
+      // Filtrar URLs HTTP con IP pura (Mixed Content bloqueado en HTTPS)
+      if (ch.url && /^http:\/\/(\d+\.\d+\.\d+\.\d+|[^/]+:\d{4,5}\/)/.test(ch.url)) return;
       ch.type = ch.type || 'tv';
       allTV.push(ch);
       urls.add(ch.url);
@@ -196,6 +198,12 @@ async function buscarAlternativaFondo(ch) {
       return palabras.some(function(p){ return cn.indexOf(p) !== -1; });
     });
     if (match) {
+      // Filtrar URLs HTTP con IP/puerto (Mixed Content en HTTPS)
+      var urlOk = match.url;
+      if (/^http:\/\/(\d+\.\d+\.\d+\.\d+|[^/]+:\d+)/.test(urlOk)) {
+        monLog('URL HTTP bloqueada: ' + urlOk.slice(0, 50));
+        return;
+      }
       var chNuevo = {
         id:   (ch.id || 'x') + '_alt',
         name: ch.name,
@@ -203,7 +211,7 @@ async function buscarAlternativaFondo(ch) {
         co:   ch.co,
         type: ch.type || 'tv',
         logo: ch.logo || match.logo || '',
-        url:  match.url,
+        url:  urlOk,
       };
       allTV.push(chNuevo);
       monLog('Reemplazo encontrado para ' + ch.name);
