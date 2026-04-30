@@ -1,21 +1,27 @@
 // ═══════════════════════════════════════════════════════════════
-// monitor.js — CIC TV v4
-// Auto-detección, ocultamiento, reparación y descubrimiento
+// monitor.js — CIC TV v5
+// Sistema LIVIANO de gestión de canales
+// 
+// PRINCIPIO: No verificar canales desde el browser (genera cientos
+// de errores en consola). La verificación masiva es trabajo del
+// GitHub Actions (generar_playlist.py).
+//
+// El monitor solo:
+// 1. Carga canales nuevos desde canales.json y radios.json
+// 2. Oculta canales cuando el USUARIO los reporta como caídos
+//    (al reproducir y dar error)
+// 3. Busca alternativa SOLO cuando un canal falla al reproducir
 // ═══════════════════════════════════════════════════════════════
 
 var MON = {
-  checkMs:   30 * 60 * 1000,
-  batchSize: 15,
-  timeoutMs: 8000,
-  maxFallos: 3,
-  statusKey: 'cicCanalStatus',
-  ocultosKey:'cicCanalesOcultos',
+  checkMs:   30 * 60 * 1000,  // recargar JSON cada 30 min
+  ocultosKey: 'cicCanalesOcultos',
+  statusKey:  'cicCanalStatus',
 };
 
-var canalStatus   = {};
 var canalesOcultos = {};
-var monActivo     = false;
-var monJsonUrl    = '';
+var canalStatus    = {};
+var monJsonUrl     = '';
 
 // ════════════════════════════════════
 // ARRANQUE
@@ -24,20 +30,19 @@ window.addEventListener('load', function() {
   var base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
   monJsonUrl = base;
 
-  try { canalStatus    = JSON.parse(localStorage.getItem(MON.statusKey)   || '{}'); } catch(e) { canalStatus = {}; }
-  try { canalesOcultos = JSON.parse(localStorage.getItem(MON.ocultosKey)  || '{}'); } catch(e) { canalesOcultos = {}; }
+  try { canalesOcultos = JSON.parse(localStorage.getItem(MON.ocultosKey) || '{}'); } catch(e) { canalesOcultos = {}; }
+  try { canalStatus    = JSON.parse(localStorage.getItem(MON.statusKey)  || '{}'); } catch(e) { canalStatus = {}; }
 
   setTimeout(function() {
+    // 1. Aplicar canales ocultos del localStorage
     aplicarOcultos();
-    cargarCanalesJSON();    // cargar TV desde canales.json
-    cargarRadiosJSON();     // cargar radios desde radios.json
-    setTimeout(iniciarVerificacion, 12000);
+    // 2. Cargar canales nuevos desde JSON
+    cargarCanalesJSON();
+    cargarRadiosJSON();
+    // 3. Recargar cada 30 min
     setInterval(function() {
-      iniciarVerificacion();
-      setTimeout(reverificarOcultos, 5000);
-      // Recargar JSON periódicamente para nuevos canales
-      setTimeout(cargarCanalesJSON, 10000);
-      setTimeout(cargarRadiosJSON,  15000);
+      cargarCanalesJSON();
+      cargarRadiosJSON();
     }, MON.checkMs);
   }, 3000);
 });
@@ -46,17 +51,21 @@ window.addEventListener('load', function() {
 // APLICAR OCULTOS AL INICIO
 // ════════════════════════════════════
 function aplicarOcultos() {
+  var ids = Object.keys(canalesOcultos);
+  if (!ids.length) return;
   var antes = allTV.length;
-  allTV = allTV.filter(function(c) { return !canalesOcultos[c.id || c.url]; });
-  var ocultados = antes - allTV.length;
-  if (ocultados > 0) {
-    monLog('Ocultados ' + ocultados + ' canales caidos del inicio');
+  allTV = allTV.filter(function(c) {
+    return !canalesOcultos[c.id || c.url];
+  });
+  var n = antes - allTV.length;
+  if (n > 0) {
+    monLog('Ocultados ' + n + ' canales caidos del inicio');
     if (typeof renderSideList === 'function') renderSideList();
   }
 }
 
 // ════════════════════════════════════
-// CARGAR canales.json (TV)
+// CARGAR canales.json
 // ════════════════════════════════════
 async function cargarCanalesJSON() {
   try {
@@ -64,8 +73,8 @@ async function cargarCanalesJSON() {
     if (!res.ok) return;
     var data = await res.json();
     if (!data.canales || !data.canales.length) return;
-    var antes = allTV.length;
     var urls  = new Set(allTV.map(function(c){ return c.url; }));
+    var antes = allTV.length;
     data.canales.forEach(function(ch) {
       if (!ch.url || !ch.name) return;
       if (canalesOcultos[ch.id || ch.url]) return;
@@ -93,8 +102,8 @@ async function cargarRadiosJSON() {
     if (!res.ok) return;
     var data = await res.json();
     if (!data.radios || !data.radios.length) return;
-    var antes = allRadio.length;
     var urls  = new Set(allRadio.map(function(r){ return r.url; }));
+    var antes = allRadio.length;
     data.radios.forEach(function(rd) {
       if (!rd.url || !rd.name) return;
       if (urls.has(rd.url)) return;
@@ -112,151 +121,97 @@ async function cargarRadiosJSON() {
 }
 
 // ════════════════════════════════════
-// VERIFICACIÓN EN SEGUNDO PLANO
+// REGISTRAR FALLO (llamado desde showErr)
+// Solo cuando el usuario intenta reproducir un canal
 // ════════════════════════════════════
-async function iniciarVerificacion() {
-  if (monActivo) return;
-  monActivo = true;
-  monLog('Verificando ' + allTV.length + ' canales...');
-  var canales = allTV.slice();
-  for (var i = 0; i < canales.length; i += MON.batchSize) {
-    await verificarLote(canales.slice(i, i + MON.batchSize));
-    await esperar(400);
-  }
-  guardarStatus();
-  monActivo = false;
-  monLog('Verificacion completa');
-}
+function registrarFallo(ch) {
+  if (!ch) return;
+  var key = ch.id || ch.url;
+  if (!canalStatus[key]) canalStatus[key] = { fallos: 0 };
+  canalStatus[key].fallos++;
+  canalStatus[key].ts = Date.now();
 
-async function verificarLote(lote) {
-  await Promise.allSettled(lote.map(async function(ch) {
-    var key  = ch.id || ch.url;
-    var vivo = await pingCanal(ch.url);
-    if (!canalStatus[key]) canalStatus[key] = { fallos: 0, vivo: true };
-    if (vivo) {
-      canalStatus[key].fallos = 0;
-      canalStatus[key].vivo   = true;
-      if (canalesOcultos[key]) {
-        delete canalesOcultos[key];
-        if (!allTV.find(function(c){ return (c.id||c.url) === key; })) allTV.push(ch);
-        monLog('Recuperado: ' + ch.name);
-        if (!window._monRecPending) {
-          window._monRecPending = true;
-          setTimeout(function() {
-            window._monRecPending = false;
-            if (typeof renderSideList === 'function') renderSideList();
-          }, 500);
-        }
-      }
-    } else {
-      canalStatus[key].fallos = (canalStatus[key].fallos || 0) + 1;
-      canalStatus[key].vivo   = false;
-      if (canalStatus[key].fallos >= MON.maxFallos && !canalesOcultos[key]) {
-        canalesOcultos[key] = true;
-        allTV = allTV.filter(function(c){ return (c.id||c.url) !== key; });
-        monLog('Ocultado (' + canalStatus[key].fallos + ' fallos): ' + ch.name);
-        // Debounce el render para no llamarlo miles de veces seguidas
-        if (!window._monRenderPending) {
-          window._monRenderPending = true;
-          setTimeout(function() {
-            window._monRenderPending = false;
-            if (typeof renderSideList === 'function') renderSideList();
-            if (typeof updateAll      === 'function') updateAll();
-          }, 500);
-        }
-        buscarAlternativaFondo(ch);
-      }
+  monLog('Fallo ' + canalStatus[key].fallos + '/3: ' + ch.name);
+
+  if (canalStatus[key].fallos >= 3) {
+    // Ocultar canal
+    canalesOcultos[key] = true;
+    allTV = allTV.filter(function(c){ return (c.id || c.url) !== key; });
+    monLog('Canal ocultado: ' + ch.name);
+    guardarStatus();
+    // Buscar alternativa en segundo plano
+    buscarAlternativaFondo(ch);
+    if (!window._monRenderPending) {
+      window._monRenderPending = true;
+      setTimeout(function() {
+        window._monRenderPending = false;
+        if (typeof renderSideList === 'function') renderSideList();
+        if (typeof updateAll      === 'function') updateAll();
+      }, 500);
     }
-  }));
-}
-
-// ════════════════════════════════════
-// PING
-// ════════════════════════════════════
-async function pingCanal(url) {
-  if (!url) return false;
-  if (url.includes('youtube') || url.includes('twitch')) return true;
-  try {
-    var controller = new AbortController();
-    var timer      = setTimeout(function(){ controller.abort(); }, MON.timeoutMs);
-    await fetch(url, { method:'HEAD', signal:controller.signal, cache:'no-store', mode:'no-cors' });
-    clearTimeout(timer);
-    return true;
-  } catch(e) {
-    if (e.name === 'AbortError') return false;
-    if (e.message && e.message.includes('CORS')) return true;
-    return false;
+  } else {
+    guardarStatus();
   }
-}
-
-// ════════════════════════════════════
-// REVERIFICAR OCULTOS
-// ════════════════════════════════════
-async function reverificarOcultos() {
-  var ids = Object.keys(canalesOcultos);
-  if (!ids.length) return;
-  monLog('Reverificando ' + ids.length + ' ocultos...');
-  for (var i = 0; i < ids.length; i++) {
-    var key = ids[i];
-    if (key.startsWith('http')) {
-      var vivo = await pingCanal(key);
-      if (vivo) {
-        delete canalesOcultos[key];
-        if (canalStatus[key]) { canalStatus[key].fallos = 0; canalStatus[key].vivo = true; }
-        monLog('Oculto recuperado: ' + key.slice(0, 40));
-      }
-    }
-    await esperar(200);
-  }
-  guardarStatus();
 }
 
 // ════════════════════════════════════
 // BUSCAR ALTERNATIVA EN FONDO
-// Cuando un canal se oculta, busca reemplazo
+// Solo cuando un canal es ocultado por fallos repetidos
+// Usa SOLO fuentes con CORS permitido
 // ════════════════════════════════════
 async function buscarAlternativaFondo(ch) {
-  var catSlug = {
-    'Deportes':'sports','Noticias':'news','Peliculas':'movies','Películas':'movies',
-    'Series':'series','Infantil':'kids','Musica':'music','Música':'music',
-    'Documentales':'documentary','Entretenimiento':'entertainment',
+  // Fuentes con CORS permitido desde browser
+  var FUENTES_OK = {
+    'Noticias':      'https://iptv-org.github.io/iptv/categories/news.m3u',
+    'Deportes':      'https://iptv-org.github.io/iptv/categories/sports.m3u',
+    'Peliculas':     'https://iptv-org.github.io/iptv/categories/movies.m3u',
+    'Películas':     'https://iptv-org.github.io/iptv/categories/movies.m3u',
+    'Musica':        'https://iptv-org.github.io/iptv/categories/music.m3u',
+    'Música':        'https://iptv-org.github.io/iptv/categories/music.m3u',
+    'Infantil':      'https://iptv-org.github.io/iptv/categories/kids.m3u',
+    'Documentales':  'https://iptv-org.github.io/iptv/categories/documentary.m3u',
+    'Entretenimiento':'https://iptv-org.github.io/iptv/categories/entertainment.m3u',
   };
-  var nombre   = (ch.name || '').toLowerCase().replace(/\s*\([^)]*\)/g,'').trim();
-  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
-  var urls     = [];
-  if (ch.co) urls.push('https://iptv-org.github.io/iptv/countries/' + ch.co.toLowerCase() + '.m3u');
-  if (catSlug[ch.cat]) urls.push('https://iptv-org.github.io/iptv/categories/' + catSlug[ch.cat] + '.m3u');
-  // Repos extra
-  urls.push('https://i.mjh.nz/SamsungTVPlus/all.m3u8');
-  urls.push('https://i.mjh.nz/PlutoTV/all.m3u8');
 
-  for (var i = 0; i < urls.length; i++) {
-    try {
-      var r = await fetch(urls[i], { signal: AbortSignal.timeout(12000) });
-      if (!r.ok) continue;
-      var txt        = await r.text();
-      var candidatos = parsearM3URapido(txt);
-      var match = candidatos.find(function(c) {
-        if (!c.url || c.url === ch.url) return false;
-        if (allTV.find(function(x){ return x.url === c.url; })) return false;
-        var cn = c.name.toLowerCase();
-        return palabras.some(function(p){ return cn.indexOf(p) !== -1; });
-      });
-      if (match) {
-        var vivo = await pingCanal(match.url);
-        if (vivo) {
-          var chNuevo = { id: (ch.id||'x') + '_alt', name: ch.name, cat: ch.cat, co: ch.co, type: ch.type || 'tv', logo: ch.logo || match.logo || '', url: match.url };
-          allTV.push(chNuevo);
-          monLog('Reemplazo encontrado para ' + ch.name);
-          if (typeof renderSideList === 'function') setTimeout(renderSideList, 200);
-          if (typeof updateAll      === 'function') setTimeout(updateAll,      250);
-          if (typeof showToast      === 'function') showToast('✅ Canal actualizado: ' + ch.name);
-          return;
-        }
-      }
-    } catch(e) { continue; }
+  var nombre   = (ch.name || '').toLowerCase().replace(/\s*\([^)]*\)/g, '').trim();
+  var palabras = nombre.split(/\s+/).filter(function(p){ return p.length > 2; });
+  if (!palabras.length) return;
+
+  // Intentar por categoría primero (más relevante)
+  var urlFuente = FUENTES_OK[ch.cat];
+  if (!urlFuente && ch.co) {
+    urlFuente = 'https://iptv-org.github.io/iptv/countries/' + ch.co.toLowerCase() + '.m3u';
   }
-  monLog('Sin reemplazo para: ' + ch.name);
+  if (!urlFuente) return;
+
+  try {
+    var r = await fetch(urlFuente, { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return;
+    var txt        = await r.text();
+    var candidatos = parsearM3URapido(txt);
+    var match = candidatos.find(function(c) {
+      if (!c.url || c.url === ch.url) return false;
+      if (allTV.find(function(x){ return x.url === c.url; })) return false;
+      var cn = c.name.toLowerCase();
+      return palabras.some(function(p){ return cn.indexOf(p) !== -1; });
+    });
+    if (match) {
+      var chNuevo = {
+        id:   (ch.id || 'x') + '_alt',
+        name: ch.name,
+        cat:  ch.cat,
+        co:   ch.co,
+        type: ch.type || 'tv',
+        logo: ch.logo || match.logo || '',
+        url:  match.url,
+      };
+      allTV.push(chNuevo);
+      monLog('Reemplazo encontrado para ' + ch.name);
+      if (typeof renderSideList === 'function') setTimeout(renderSideList, 200);
+      if (typeof updateAll      === 'function') setTimeout(updateAll,      250);
+      if (typeof showToast      === 'function') showToast('✅ Canal actualizado: ' + ch.name);
+    }
+  } catch(e) { monLog('Sin reemplazo para: ' + ch.name); }
 }
 
 // ════════════════════════════════════
@@ -284,15 +239,20 @@ function parsearM3URapido(txt) {
 // ════════════════════════════════════
 function guardarStatus() {
   try {
-    localStorage.setItem(MON.statusKey,  JSON.stringify(canalStatus));
     localStorage.setItem(MON.ocultosKey, JSON.stringify(canalesOcultos));
+    localStorage.setItem(MON.statusKey,  JSON.stringify(canalStatus));
   } catch(e) {}
 }
-function esperar(ms) { return new Promise(function(r){ setTimeout(r, ms); }); }
+
 function monLog(msg) { console.log('[Monitor] ' + msg); }
 
-// Debug desde consola
-window.cicVerificarSalud  = function() { iniciarVerificacion(); };
-window.cicMostrarOcultos  = function() { console.log('Ocultos:', Object.keys(canalesOcultos).length, canalesOcultos); };
-window.cicResetearOcultos = function() { canalesOcultos = {}; canalStatus = {}; localStorage.removeItem(MON.statusKey); localStorage.removeItem(MON.ocultosKey); console.log('Reset OK — recarga la pagina'); };
+// ── Comandos de debug ──
+window.cicVerificarSalud  = function() { monLog('Canales activos: ' + allTV.length + ' | Radios: ' + allRadio.length); };
+window.cicMostrarOcultos  = function() { console.log('[Monitor] Ocultos:', Object.keys(canalesOcultos).length, canalesOcultos); };
+window.cicResetearOcultos = function() {
+  canalesOcultos = {}; canalStatus = {};
+  localStorage.removeItem(MON.ocultosKey);
+  localStorage.removeItem(MON.statusKey);
+  console.log('[Monitor] Reset OK — recarga la página');
+};
 window.cicRecargarCanales = function() { cargarCanalesJSON(); cargarRadiosJSON(); };
