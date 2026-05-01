@@ -783,7 +783,27 @@ let allRadio = [
 // ═══════════════════════════════════════════════════════════════════════
 // DATOS PAÍSES
 // ═══════════════════════════════════════════════════════════════════════
-const COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
+// Países base (hardcodeados como respaldo) — NO se eliminan
+let COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr','DO':'do','EC':'ec','GT':'gt','HN':'hn','MX':'mx','PA':'pa','PE':'pe','UY':'uy','VE':'ve','ES':'es','US':'us','CA':'ca','FR':'fr','DE':'de','IT':'it','PT':'pt','GB':'gb','NL':'nl'};
+
+// Carga todos los países disponibles en iptv-org y los añade sin eliminar los existentes
+async function cargarPaisesDisponibles() {
+  try {
+    const r = await fetch('https://iptv-org.github.io/api/countries.json', { signal: AbortSignal.timeout(10000) });
+    if (!r.ok) return;
+    const paises = await r.json();
+    let nuevos = 0;
+    paises.forEach(p => {
+      if (p.code && !COUNTRY_URLS[p.code.toUpperCase()]) {
+        COUNTRY_URLS[p.code.toUpperCase()] = p.code.toLowerCase();
+        nuevos++;
+      }
+    });
+    console.log('[países] +' + nuevos + ' nuevos. Total: ' + Object.keys(COUNTRY_URLS).length);
+  } catch(e) {
+    console.warn('[países] Usando lista base:', e.message);
+  }
+}
 const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
 const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
@@ -961,6 +981,9 @@ function g(id) { return document.getElementById(id); }
 // CARGA DE PAÍSES
 // ═══════════════════════════════════════════════════════════════════════
 async function loadCountries() {
+  // Primero carga todos los países disponibles en iptv-org (añade sin eliminar los base)
+  await cargarPaisesDisponibles();
+
   // iptv-org tiene CORS habilitado — fetch directo sin proxies
   async function fetchM3U(url) {
     try {
