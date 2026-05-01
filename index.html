@@ -2,6 +2,48 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script>
+// ── POLYFILLS para box TV con WebView antiguo (Android 5-7) ──────────
+// AbortSignal.timeout — no existe en WebView < Chrome 103
+if (typeof AbortSignal !== 'undefined' && !AbortSignal.timeout) {
+  AbortSignal.timeout = function(ms) {
+    var ctrl = new AbortController();
+    setTimeout(function(){ ctrl.abort(); }, ms);
+    return ctrl.signal;
+  };
+}
+// Promise.allSettled — no existe en WebView < Chrome 76
+if (typeof Promise !== 'undefined' && !Promise.allSettled) {
+  Promise.allSettled = function(promises) {
+    return Promise.all(promises.map(function(p) {
+      return Promise.resolve(p).then(
+        function(v){ return { status: 'fulfilled', value: v }; },
+        function(e){ return { status: 'rejected', reason: e }; }
+      );
+    }));
+  };
+}
+// fetch con timeout manual como fallback si AbortSignal falla
+window._fetchTimeout = function(url, ms, opts) {
+  return new Promise(function(resolve, reject) {
+    var timer = setTimeout(function(){ reject(new Error('timeout')); }, ms || 8000);
+    var fetchOpts = opts || {};
+    // Quitar signal si el browser no lo soporta bien
+    try {
+      if (typeof AbortSignal !== 'undefined') {
+        var ctrl = new AbortController();
+        setTimeout(function(){ ctrl.abort(); }, ms || 8000);
+        fetchOpts.signal = ctrl.signal;
+      }
+    } catch(e) {}
+    fetch(url, fetchOpts).then(function(r){
+      clearTimeout(timer); resolve(r);
+    }).catch(function(e){
+      clearTimeout(timer); reject(e);
+    });
+  });
+};
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -789,7 +831,7 @@ let COUNTRY_URLS = {'AR':'ar','BO':'bo','BR':'br','CL':'cl','CO':'co','CR':'cr',
 // Carga todos los países disponibles en iptv-org y los añade sin eliminar los existentes
 async function cargarPaisesDisponibles() {
   try {
-    const r = await fetch('https://iptv-org.github.io/api/countries.json', { signal: AbortSignal.timeout(10000) });
+    const r = await window._fetchTimeout('https://iptv-org.github.io/api/countries.json', 10000);
     if (!r.ok) return;
     const paises = await r.json();
     let nuevos = 0;
@@ -987,30 +1029,63 @@ async function loadCountries() {
   // iptv-org tiene CORS habilitado — fetch directo sin proxies
   async function fetchM3U(url) {
     try {
-      const r = await fetch(url, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
+      const r = await window._fetchTimeout(url, 6000, { cache: 'no-store' });
       if (r.ok) return await r.text();
     } catch(e) {}
     return null;
   }
 
-  await Promise.allSettled(Object.entries(COUNTRY_URLS).map(async ([code, slug]) => {
-    const txt = await fetchM3U(`https://iptv-org.github.io/iptv/countries/${slug}.m3u`);
-    if (!txt) return;
-    const parsed = parseM3U(txt, code, 'tv');
-    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
-    if (newCh.length) {
-      allTV = [...allTV, ...newCh];
-      updateAll();
-      if (curMode === 'tv') { applyFilter(); renderSideList(); }
-      if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
+  // En dispositivos lentos: carga secuencial de a 1 país, máx 8 países para no colapsar RAM
+  // En dispositivos normales: carga paralela completa
+  var paisEntries = Object.entries(COUNTRY_URLS);
+  var esLento = isSlowDevice() || (navigator.deviceMemory && navigator.deviceMemory <= 1) || paisEntries.length > 50;
+  var MAX_TV = 2000; // límite de canales en RAM para dispositivos lentos
+
+  if (esLento) {
+    // Carga secuencial: de a 1, máx 6 países prioritarios, con pausa entre cada uno
+    var prioritarios = ['CL','AR','MX','CO','ES','US','PE','VE','BR','EC'];
+    var paisesACargar = paisEntries.filter(function(e){ return prioritarios.indexOf(e[0]) >= 0; });
+    for (var pi = 0; pi < paisesACargar.length; pi++) {
+      var code = paisesACargar[pi][0];
+      var slug = paisesACargar[pi][1];
+      if (allTV.length >= MAX_TV) break; // no cargar más si ya hay suficientes
+      var txt = await fetchM3U('https://iptv-org.github.io/iptv/countries/' + slug + '.m3u');
+      if (txt) {
+        var parsed = parseM3U(txt, code, 'tv');
+        var urlsExistentes = {};
+        allTV.forEach(function(x){ urlsExistentes[x.url] = true; });
+        var newCh = parsed.filter(function(ch){ return !urlsExistentes[ch.url]; });
+        if (newCh.length) {
+          allTV = allTV.concat(newCh.slice(0, MAX_TV - allTV.length));
+          updateAll();
+          if (curMode === 'tv') { applyFilter(); renderSideList(); }
+        }
+      }
+      // Pausa entre países para no saturar CPU/RAM
+      await new Promise(function(r){ setTimeout(r, 800); });
     }
-  }));
+  } else {
+    // Dispositivo normal: carga paralela completa
+    await Promise.allSettled(paisEntries.map(async ([code, slug]) => {
+      const txt = await fetchM3U('https://iptv-org.github.io/iptv/countries/' + slug + '.m3u');
+      if (!txt) return;
+      const parsed = parseM3U(txt, code, 'tv');
+      const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
+      if (newCh.length) {
+        allTV = [...allTV, ...newCh];
+        updateAll();
+        if (curMode === 'tv') { applyFilter(); renderSideList(); }
+        if (sideActive) setTimeout(function(){ markSideActive(sideActive); }, 400);
+      }
+    }));
+  }
 
   const txtSpa = await fetchM3U('https://iptv-org.github.io/iptv/languages/spa.m3u');
   if (txtSpa) {
     const parsed = parseM3U(txtSpa, 'INT', 'tv');
-    const newCh  = parsed.filter(ch => !allTV.find(x => x.url === ch.url));
-    if (newCh.length) {
+    const urlsExSpa = {}; allTV.forEach(function(x){ urlsExSpa[x.url]=true; });
+    const newCh  = parsed.filter(ch => !urlsExSpa[ch.url]);
+    if (newCh.length && (!isSlowDevice() || allTV.length < 2000)) {
       allTV = [...allTV, ...newCh];
       updateAll();
       if (curMode === 'tv') { applyFilter(); renderSideList(); }
@@ -1715,12 +1790,12 @@ async function fetchM3UConProxy(url) {
     'https://thingproxy.freeboard.io/fetch/',
   ];
   try {
-    var r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    var r = await window._fetchTimeout(url, 5000);
     if (r.ok) return await r.text();
   } catch(e) {}
   for (var i = 0; i < proxies.length; i++) {
     try {
-      var r2 = await fetch(proxies[i] + encodeURIComponent(url), { signal: AbortSignal.timeout(8000) });
+      var r2 = await window._fetchTimeout(proxies[i] + encodeURIComponent(url), 7000);
       if (r2.ok) return await r2.text();
     } catch(e) { continue; }
   }
