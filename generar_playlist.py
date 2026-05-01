@@ -8,6 +8,47 @@ import json, os, re, ssl, time, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+def _cargar_todos_paises():
+    """Descarga la lista completa de países desde la API de iptv-org y devuelve un dict code->url."""
+    base = {
+        'CL':'https://iptv-org.github.io/iptv/countries/cl.m3u',
+        'AR':'https://iptv-org.github.io/iptv/countries/ar.m3u',
+        'CO':'https://iptv-org.github.io/iptv/countries/co.m3u',
+        'MX':'https://iptv-org.github.io/iptv/countries/mx.m3u',
+        'PE':'https://iptv-org.github.io/iptv/countries/pe.m3u',
+        'VE':'https://iptv-org.github.io/iptv/countries/ve.m3u',
+        'ES':'https://iptv-org.github.io/iptv/countries/es.m3u',
+        'US':'https://iptv-org.github.io/iptv/countries/us.m3u',
+        'GB':'https://iptv-org.github.io/iptv/countries/gb.m3u',
+        'DE':'https://iptv-org.github.io/iptv/countries/de.m3u',
+        'FR':'https://iptv-org.github.io/iptv/countries/fr.m3u',
+        'BR':'https://iptv-org.github.io/iptv/countries/br.m3u',
+        'EC':'https://iptv-org.github.io/iptv/countries/ec.m3u',
+        'BO':'https://iptv-org.github.io/iptv/countries/bo.m3u',
+        'GT':'https://iptv-org.github.io/iptv/countries/gt.m3u',
+        'UY':'https://iptv-org.github.io/iptv/countries/uy.m3u',
+    }
+    try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(
+            'https://iptv-org.github.io/api/countries.json',
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as r:
+            paises = json.loads(r.read())
+        nuevos = 0
+        for p in paises:
+            code = p.get('code', '').upper()
+            if code and code not in base:
+                base[code] = f"https://iptv-org.github.io/iptv/countries/{p['code'].lower()}.m3u"
+                nuevos += 1
+        print(f'[países] +{nuevos} nuevos desde API. Total: {len(base)} países')
+    except Exception as e:
+        print(f'[países] API no disponible, usando lista base ({len(base)} países): {e}')
+    return base
+
 OUTPUT_M3U      = 'playlist.m3u'
 RADIOS_JSON     = 'radios.json'
 CANALES_JSON    = 'canales.json'
@@ -142,24 +183,7 @@ RADIOS_BASE = [
     {'id':'rd35','name':'Cadena Continental AR', 'cat':'Noticias','co':'AR','url':'https://streaming.continental.cienradios.com/continental.mp3'},
 ]
 
-FUENTES_PAISES = {
-    'CL':'https://iptv-org.github.io/iptv/countries/cl.m3u',
-    'AR':'https://iptv-org.github.io/iptv/countries/ar.m3u',
-    'CO':'https://iptv-org.github.io/iptv/countries/co.m3u',
-    'MX':'https://iptv-org.github.io/iptv/countries/mx.m3u',
-    'PE':'https://iptv-org.github.io/iptv/countries/pe.m3u',
-    'VE':'https://iptv-org.github.io/iptv/countries/ve.m3u',
-    'ES':'https://iptv-org.github.io/iptv/countries/es.m3u',
-    'US':'https://iptv-org.github.io/iptv/countries/us.m3u',
-    'GB':'https://iptv-org.github.io/iptv/countries/gb.m3u',
-    'DE':'https://iptv-org.github.io/iptv/countries/de.m3u',
-    'FR':'https://iptv-org.github.io/iptv/countries/fr.m3u',
-    'BR':'https://iptv-org.github.io/iptv/countries/br.m3u',
-    'EC':'https://iptv-org.github.io/iptv/countries/ec.m3u',
-    'BO':'https://iptv-org.github.io/iptv/countries/bo.m3u',
-    'GT':'https://iptv-org.github.io/iptv/countries/gt.m3u',
-    'UY':'https://iptv-org.github.io/iptv/countries/uy.m3u',
-}
+FUENTES_PAISES = _cargar_todos_paises()  # Carga dinámica: todos los países de iptv-org + base hardcodeada
 
 FUENTES_CATEGORIAS = {
     'Noticias':      'https://iptv-org.github.io/iptv/categories/news.m3u',
@@ -295,7 +319,7 @@ def descubrir_nuevos(tv_existente, radio_existente, pool_pais, pool_repos):
     urls_tv    = {c['url'] for c in tv_existente}
     urls_radio = {r['url'] for r in radio_existente}
     nuevos_tv, nuevas_radio = [], []
-    paises = ['CL','AR','CO','MX','PE','VE','EC','BO','GT','UY','ES','BR']
+    paises = list(FUENTES_PAISES.keys())  # Todos los países disponibles, no solo los hardcodeados
     for co in paises:
         for ch in pool_pais.get(co, []):
             if not ch.get('url') or not ch.get('name'): continue
