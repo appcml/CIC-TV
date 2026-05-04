@@ -1,6 +1,6 @@
 {
-  "generado": "2026-05-03T19:32:46.242595+00:00",
-  "total": 165,
+  "generado": "2026-05-04T04:15:39.885387+00:00",
+  "total": 167,
   "radios": [
     {
       "id": "rd01",
@@ -1415,6 +1415,24 @@
       "co": "PY",
       "logo": "https://i.imgur.com/ksh20I5.png",
       "url": "https://stream.paraguaytv.gov.py/memfs/ea8a90e9-10f7-4b00-8e88-42f4a838d74b.m3u8",
+      "type": "radio"
+    },
+    {
+      "id": "rdn0",
+      "name": "TikTok Radio Brasil (1080p)",
+      "cat": "Music",
+      "co": "BR",
+      "logo": "https://static.wikia.nocookie.net/logopedia/images/f/f4/TikTok_Radio.svg",
+      "url": "https://d1bl6tskrpq9ze.cloudfront.net/hls/master.m3u8?ads.xumo_channelId=99992529",
+      "type": "radio"
+    },
+    {
+      "id": "rdn1",
+      "name": "Radio Capital TiVu (720p)",
+      "cat": "Music;News",
+      "co": "IT",
+      "logo": "https://www.lyngsat.com/logo/tv/rr/radio-capital-tivu-it.png",
+      "url": "https://4c4b867c89244861ac216426883d1ad0.msvdn.net/live/S35394734/Z6U2wGoDYANk/playlist.m3u8",
       "type": "radio"
     }
   ]
