@@ -48,6 +48,45 @@ FUENTES_EXTRA = [
     'https://www.apsattv.com/vizio.m3u',
     # m3u.cl — canales Chile verificados
     'https://m3u.cl/lista.m3u',
+    # m3u.cl LATAM — canales latinoamericanos
+    'https://m3u.cl/lista/LATAM.m3u',
+    # Plex TV — canales oficiales gratuitos
+    'https://i.mjh.nz/Plex/all.m3u8',
+    # PBS — canales públicos USA
+    'https://i.mjh.nz/PBS/all.m3u8',
+    # Stirr — canales gratuitos
+    'https://i.mjh.nz/Stirr/all.m3u8',
+    # Redbox — canales gratuitos
+    'https://www.apsattv.com/redbox.m3u',
+    # Tubi TV Live
+    'https://www.apsattv.com/tubi.m3u',
+    # Rakuten TV
+    'https://www.apsattv.com/rakuten.m3u',
+    # Klowd TV
+    'https://www.apsattv.com/klowd.m3u',
+    # TCL TV
+    'https://www.apsattv.com/tcl.m3u',
+    # Radio pervii.com — por géneros musicales
+    'http://radio.pervii.com/top_radio_latin.m3u',
+    'http://radio.pervii.com/top_radio_pop.m3u',
+    'http://radio.pervii.com/top_radio_rock.m3u',
+    'http://radio.pervii.com/top_radio_jazz.m3u',
+    'http://radio.pervii.com/top_radio_top_40.m3u',
+    'http://radio.pervii.com/top_radio_salsa.m3u',
+    'http://radio.pervii.com/top_radio_reggae.m3u',
+    'http://radio.pervii.com/top_radio_electronic.m3u',
+    'http://radio.pervii.com/top_radio_hip_hop.m3u',
+    'http://radio.pervii.com/top_radio_classical.m3u',
+    'http://radio.pervii.com/top_radio_blues.m3u',
+    'http://radio.pervii.com/top_radio_country.m3u',
+    'http://radio.pervii.com/top_radio_80s.m3u',
+    'http://radio.pervii.com/top_radio_90s.m3u',
+    'http://radio.pervii.com/top_radio_soul.m3u',
+    'http://radio.pervii.com/top_radio_metal.m3u',
+    'http://radio.pervii.com/top_radio_indie.m3u',
+    'http://radio.pervii.com/top_radio_alternative.m3u',
+    'http://radio.pervii.com/top_radio_dance.m3u',
+    'http://radio.pervii.com/top_radio_lounge.m3u',
 ]
 
 FUENTES = [
