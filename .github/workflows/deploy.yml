@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./
-          server-dir: /home/verdadho/tvenvivograis.oo.gd/
+          server-dir: /tvenvivograis.oo.gd/
           exclude: |
             **/.git*
             **/.git*/**
