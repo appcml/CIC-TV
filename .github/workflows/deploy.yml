@@ -25,3 +25,6 @@ jobs:
             README.md
             .github/**
             *.yml
+            *.py
+            canales.json
+            radios.json
