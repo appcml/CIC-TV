@@ -597,18 +597,57 @@ body.is-fullscreen .fs-exit{display:block !important}
 
   </div><!-- /player-zone -->
 
-  <!-- PUBLICIDAD DESKTOP — siempre visible debajo del player -->
-  <div id="ad-desktop" style="flex-shrink:0;height:50px;min-height:50px;max-height:50px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;box-sizing:border-box;">
-    <ins class="adsbygoogle" style="display:block;width:100%;height:50px"
-      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <!-- ═══════════════════════════════════════════════════
+       PUBLICIDAD DESKTOP — banner horizontal bajo el player
+       IMPORTANTE: Reemplaza XXXXXXXXXX con tu Ad Slot real
+       de Google AdSense → Anuncios → Por unidad → ID numérico
+       ═══════════════════════════════════════════════════ -->
+  <div id="ad-desktop" style="
+    flex-shrink:0;
+    background:var(--bg2);
+    border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    min-height:60px;overflow:hidden;box-sizing:border-box;
+    padding:4px 0;
+  ">
+    <!-- Etiqueta "Publicidad" discreta —  mejora aprobación de AdSense -->
+    <div style="position:relative;width:100%;text-align:center;">
+      <span style="
+        position:absolute;top:-2px;left:8px;
+        font-size:8px;color:var(--text2);opacity:0.5;
+        font-family:'DM Sans',sans-serif;letter-spacing:0.5px;
+        text-transform:uppercase;
+      ">Publicidad</span>
+      <ins class="adsbygoogle"
+           style="display:block;width:100%;min-height:50px;"
+           data-ad-client="ca-pub-6387207876125603"
+           data-ad-slot="XXXXXXXXXX"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
   </div>
 
-  <div class="ad-bottom-mobile">
-    <ins class="adsbygoogle" style="display:block;width:100%;height:44px"
-      data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-      data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+  <!-- ═══════════════════════════════════════════════════
+       PUBLICIDAD MÓVIL — banner pegado al fondo en mobile
+       Reemplaza YYYYYYYYYY con tu segundo Ad Slot
+       ═══════════════════════════════════════════════════ -->
+  <div class="ad-bottom-mobile" style="
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--bg);
+    border-top:1px solid var(--border);
+    z-index:150;
+    min-height:50px;
+    display:none;
+    align-items:center;justify-content:center;
+    box-shadow:0 -2px 10px rgba(0,0,0,0.4);
+  " id="ad-mobile-fixed">
+    <ins class="adsbygoogle"
+         style="display:block;width:100%;min-height:50px;"
+         data-ad-client="ca-pub-6387207876125603"
+         data-ad-slot="YYYYYYYYYY"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
 
@@ -630,10 +669,16 @@ body.is-fullscreen .fs-exit{display:block !important}
       </div>
       <div class="ch-load show" id="chload">⏳ Cargando canales...</div>
       <div class="grid" id="grid"></div>
-      <div class="ad">
-        <ins class="adsbygoogle" style="display:block;width:100%;height:90px"
-          data-ad-client="ca-pub-6387207876125603" data-ad-slot="auto"
-          data-ad-format="horizontal" data-full-width-responsive="true"></ins>
+      <!-- Anuncio dentro del grid (visible al hacer scroll en móvil) -->
+      <!-- Reemplaza ZZZZZZZZZ con tu tercer Ad Slot de AdSense -->
+      <div class="ad" style="padding:8px;min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <span style="font-size:8px;color:var(--text2);opacity:0.4;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Publicidad</span>
+        <ins class="adsbygoogle"
+             style="display:block;width:100%;min-height:90px;"
+             data-ad-client="ca-pub-6387207876125603"
+             data-ad-slot="ZZZZZZZZZ"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
     </div>
@@ -1958,6 +2003,36 @@ function toggleFav(e, id) {
   bar.addEventListener('mousedown', function(e){ isDown=true; startX=e.pageX-bar.offsetLeft; scrollLeft=bar.scrollLeft; });
   document.addEventListener('mouseup', function(){ isDown=false; });
   bar.addEventListener('mousemove', function(e){ if(!isDown)return; e.preventDefault(); bar.scrollLeft=scrollLeft-(e.pageX-bar.offsetLeft-startX); });
+})();
+
+// ═══════════════════════════════════════════════════════════════════════
+// ANUNCIOS — Lógica de visibilidad adaptativa
+// ═══════════════════════════════════════════════════════════════════════
+(function initAds() {
+  var isMobile = window.innerWidth <= 600;
+
+  // En móvil: mostrar banner fijo inferior y compensar el grid con padding
+  if (isMobile) {
+    var adMobile = document.getElementById('ad-mobile-fixed');
+    if (adMobile) {
+      adMobile.style.display = 'flex';
+      // Agregar padding al fondo del grid para que el banner no tape canales
+      var grid = document.getElementById('grid');
+      if (grid) grid.style.paddingBottom = '70px';
+    }
+    // Ocultar el banner desktop en móvil
+    var adDesktop = document.getElementById('ad-desktop');
+    if (adDesktop) adDesktop.style.display = 'none';
+  }
+
+  // Escuchar cambios de tamaño
+  window.addEventListener('resize', function() {
+    var mobile = window.innerWidth <= 600;
+    var adM = document.getElementById('ad-mobile-fixed');
+    var adD = document.getElementById('ad-desktop');
+    if (adM) adM.style.display = mobile ? 'flex' : 'none';
+    if (adD) adD.style.display = mobile ? 'none' : 'flex';
+  });
 })();
 
 if ('serviceWorker' in navigator) {
