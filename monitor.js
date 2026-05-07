@@ -27,8 +27,9 @@ var monJsonUrl     = '';
 // ARRANQUE
 // ════════════════════════════════════
 window.addEventListener('load', function() {
-  var base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-  monJsonUrl = base;
+  // Lee canales.json y radios.json directo desde GitHub raw
+  // El bot los actualiza en GitHub cada 6h y la app los obtiene sin FTP
+  monJsonUrl = 'https://raw.githubusercontent.com/appcml/CIC-TV/main/';
 
   try { canalesOcultos = JSON.parse(localStorage.getItem(MON.ocultosKey) || '{}'); } catch(e) { canalesOcultos = {}; }
   try { canalStatus    = JSON.parse(localStorage.getItem(MON.statusKey)  || '{}'); } catch(e) { canalStatus = {}; }
