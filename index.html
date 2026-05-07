@@ -1969,5 +1969,35 @@ if ('serviceWorker' in navigator) {
 <!-- SISTEMA DE AUTENTICACIÓN -->
 <script src="auth.js"></script>
 
+<!-- FOOTER LEGAL -->
+<footer style="
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(10,10,15,0.92);
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding:5px 14px;
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  z-index:200;pointer-events:none;
+">
+  <span style="font-size:10px;color:rgba(144,144,176,0.5);font-family:'DM Sans',sans-serif;">
+    © 2025 CIC TV
+  </span>
+  <a href="privacy.html" target="_blank" style="
+    font-size:10px;color:rgba(230,63,110,0.6);
+    font-family:'DM Sans',sans-serif;
+    text-decoration:none;pointer-events:all;
+    transition:color .15s;
+  " onmouseover="this.style.color='#e63f6e'" onmouseout="this.style.color='rgba(230,63,110,0.6)'">
+    Política de Privacidad
+  </a>
+  <a href="mailto:omusicbycic@gmail.com" style="
+    font-size:10px;color:rgba(144,144,176,0.4);
+    font-family:'DM Sans',sans-serif;
+    text-decoration:none;pointer-events:all;
+    transition:color .15s;
+  " onmouseover="this.style.color='#9090b0'" onmouseout="this.style.color='rgba(144,144,176,0.4)'">
+    Contacto
+  </a>
+</footer>
+
 </body>
 </html>
