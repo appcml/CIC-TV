@@ -602,6 +602,35 @@ body.is-fullscreen .fs-exit{display:block !important}
 </style>
 </head>
 <body>
+<!-- Splash mínimo: visible mientras el JS carga. Se oculta automáticamente. -->
+<!-- En TV Box lento esto es lo primero que ve el usuario en lugar de pantalla blanca -->
+<div id="splash" style="
+  position:fixed;inset:0;background:#0a0a0f;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:16px;
+">
+  <div style="font-family:Arial,sans-serif;font-size:28px;font-weight:800;color:#fff;">
+    CIC<span style="color:#e63f6e"> TV</span>
+  </div>
+  <div style="width:40px;height:40px;border-radius:50%;border:3px solid #222;border-top-color:#e63f6e;animation:spin .8s linear infinite;"></div>
+  <div style="font-family:Arial,sans-serif;font-size:12px;color:#666;" id="splashMsg">Iniciando...</div>
+</div>
+<script>
+// Ocultar splash en cuanto el DOM esté listo y el JS haya corrido
+// En TV Box lento puede tardar 2-4 segundos — el splash los cubre
+function _hideSplash() {
+  var s = document.getElementById('splash');
+  if (s) s.style.display = 'none';
+}
+// Ocultar tras DOMContentLoaded + pequeño delay para que el UI esté renderizado
+document.addEventListener('DOMContentLoaded', function() {
+  var msg = document.getElementById('splashMsg');
+  if (msg) msg.textContent = 'Cargando canales...';
+  setTimeout(_hideSplash, 800);
+});
+// Fallback: ocultar siempre a los 5 segundos aunque algo falle
+setTimeout(_hideSplash, 5000);
+</script>
 
 <!-- HEADER -->
 <header>
@@ -813,7 +842,9 @@ body.is-fullscreen .fs-exit{display:block !important}
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.light.min.js" defer></script>
+<!-- hls.js: SIN defer — debe estar disponible antes que el código del player -->
+<!-- En TV Box con WebView antiguo, defer no funciona bien y deja pantalla blanca -->
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.light.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
@@ -1009,33 +1040,35 @@ const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'De
   requestAnimationFrame(function() {
     var ms = performance.now() - t0;
     if (ms > 100 && !window._ULTRA_LITE) {
-      // Frame > 100ms → ultra-lite
       window._ULTRA_LITE = true;
       window._LITE_MODE  = true;
       document.documentElement.classList.add('lite', 'ultra-lite');
     } else if (ms > 50 && !window._LITE_MODE) {
-      // Frame > 50ms → lite
       window._LITE_MODE = true;
       document.documentElement.classList.add('lite');
     }
   });
 })();
 
-updateAll();
-applyFilter();
-renderSideList();
-showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
+// Envolver el init en try/catch — si hay error JS no queda pantalla blanca
+try {
+  updateAll();
+  applyFilter();
+  renderSideList();
+  showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
+} catch(e) {
+  console.error('[CIC TV] Error en init:', e);
+  // Mostrar mensaje básico en lugar de pantalla blanca
+  var chload = document.getElementById('chload');
+  if (chload) { chload.style.display = 'block'; chload.textContent = '⏳ Cargando...'; }
+}
 
 // Delays escalonados según modo:
-// ULTRA_LITE: espera 5s (deja cargar el player primero)
-// LITE:       espera 3s
-// NORMAL:     espera 800ms (comportamiento original)
 var _initDelay = window._ULTRA_LITE ? 5000 : (window._LITE_MODE ? 3000 : 800);
-setTimeout(loadCountries, _initDelay);
+setTimeout(function(){ try { loadCountries(); } catch(e){ console.error(e); } }, _initDelay);
 
-// Cargar radios externas siempre — fetch mínimo de texto, no afecta rendimiento
-// Se ejecuta después de que el player esté listo
-setTimeout(loadRadiosExternas, window._ULTRA_LITE ? 8000 : (window._LITE_MODE ? 6000 : 3000));
+// Cargar radios externas siempre
+setTimeout(function(){ try { loadRadiosExternas(); } catch(e){ console.error(e); } }, window._ULTRA_LITE ? 8000 : (window._LITE_MODE ? 6000 : 3000));
 
 // ═══════════════════════════════════════════════════════════════════════
 // AUTOPLAY AL INICIAR — Mejora 2 + 3
