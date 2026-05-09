@@ -421,6 +421,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .favbtn{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.7);border:none;width:18px;height:18px;border-radius:3px;color:var(--text2);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;transition:all .15s}
 .card:hover .favbtn,.favbtn.on{opacity:1}
 .favbtn.on{color:#ffcc00}
+/* Canal activo (playing): mostrar favbtn siempre visible */
+.card.playing .favbtn, .card.rplaying .favbtn{opacity:1}
 .empty{text-align:center;padding:24px;color:var(--text2);grid-column:1/-1;font-size:12px}
 
 /* TOAST */
@@ -1491,14 +1493,31 @@ function doSearch() {
 }
 
 function showFavs() {
+  // Buscar favoritos en TODAS las fuentes — TV + Radio sin filtrar por curMode
   var allSrc = allTV.concat(allRadio);
-  filtered = allSrc.filter(function(c){ return favs.includes(c.id); });
+  var favItems = allSrc.filter(function(c){ return favs.includes(c.id); });
+
+  // Mostrar en el grid
+  filtered = favItems;
   g('stitle').textContent = '⭐ Favoritos';
-  g('scnt').textContent   = filtered.length + ' guardados';
+  g('scnt').textContent   = favItems.length + ' guardados';
   renderGrid();
-  renderSideFromList(filtered);
-  // Actualizar contador en sidebar
-  var e = g('cn-fav'); if(e) e.textContent = filtered.length;
+
+  // Mostrar en lista lateral — ignorar filtros de categoría y país activos
+  // La lista lateral debe mostrar TODOS los favoritos, no solo los del modo actual
+  var sideCountryFilterBak = sideCountryFilter;
+  var sideCatFilterBak     = sideCatFilter;
+  sideCountryFilter = 'all';
+  sideCatFilter     = 'all';
+  renderSideFromList(favItems);
+  sideCountryFilter = sideCountryFilterBak;
+  sideCatFilter     = sideCatFilterBak;
+
+  // Actualizar contador sidebar
+  var e = g('cn-fav'); if(e) e.textContent = favItems.length;
+
+  // Si hay un canal activo y es favorito, asegurarse de que aparezca marcado
+  if (curCh) updatePlayerFavBtn();
 }
 
 function descargarM3U() {
@@ -1633,10 +1652,13 @@ function renderSideFromList(src) {
   var totalReal = src.length;
 
   if (!src.length) {
-    g('sideCount').textContent = '0 canales';
+    g('sideCount').textContent = '0';
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">Sin canales</div>';
     return;
   }
+
+  // Si la lista viene de showFavs, puede mezclar TV y radio — detectar
+  var tieneMixto = src.some(function(c){ return c.type === 'radio'; }) && src.some(function(c){ return c.type !== 'radio'; });
 
   var srcOrdered = src.slice();
   if (sideActive) {
@@ -1647,7 +1669,7 @@ function renderSideFromList(src) {
     }
   }
 
-  g('sideCount').textContent = totalReal + (isR ? ' radios' : ' canales');
+  g('sideCount').textContent = totalReal + (tieneMixto ? ' items' : isR ? ' radios' : ' canales');
   sideTotalReal = totalReal;
 
   var html = '';
@@ -1662,7 +1684,10 @@ function renderSideFromList(src) {
     var flag   = ch.co ? ' &middot; '+(CFLAGS[ch.co]||'')+ch.co : '';
     var logo   = (ch.logo && i < 80)
       ? '<img class="side-logo" src="'+ch.logo+'" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';" referrerpolicy="no-referrer">'
-      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';    var fav = '<button class="side-fav'+(isFav?' on':'')+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
+      : '<div class="side-fb'+fc+'">'+(ch.type==='radio'?'📻':ch.name.slice(0,2).toUpperCase())+'</div>';
+    // Icono de favorito: siempre visible (no solo en hover) cuando está marcado
+    var favVisible = isFav ? ' on' : '';
+    var fav = '<button class="side-fav'+favVisible+'" onclick="toggleSideFav(event,\''+ch.id+'\')">'+(isFav?'⭐':'☆')+'</button>';
     html += '<div class="side-item'+ac+'" onclick="playFromSide(\''+ch.id+'\')" id="si-'+ch.id+'">'
           + logo
           + '<div class="side-info"><div class="side-name">'+ch.name+'</div>'
@@ -1706,8 +1731,15 @@ function playFromGrid(id) {
 
 // Clic en LISTA LATERAL
 function playFromSide(id) {
-  const allSrc = curMode === 'tv' ? allTV : allRadio;
-  const ch     = allSrc.find(function(c){ return c.id === id; });
+  // Buscar primero en la fuente del modo actual, luego en la otra
+  // (necesario cuando la lista lateral muestra favoritos mixtos TV+Radio)
+  var allSrc = curMode === 'tv' ? allTV : allRadio;
+  var ch = allSrc.find(function(c){ return c.id === id; });
+  if (!ch) {
+    // Fallback: buscar en el otro tipo (favoritos mixtos)
+    var altSrc = curMode === 'tv' ? allRadio : allTV;
+    ch = altSrc.find(function(c){ return c.id === id; });
+  }
   if (!ch) return;
   sideActive = ch; curCh = ch; gridActive = ch;
 
