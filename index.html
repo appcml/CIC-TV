@@ -54,7 +54,56 @@ window._fetchTimeout = function(url, ms, opts) {
 <title>CIC TV — Canales en Vivo</title>
 <link rel="manifest" href="manifest.json">
 <meta name="google-adsense-account" content="ca-pub-6387207876125603">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603" crossorigin="anonymous"></script>
+<script>
+// ── DETECCIÓN DE MODO: NORMAL / LITE / ULTRA_LITE ───────────────────────
+// Corre sincrónicamente — bloquea recursos innecesarios desde el primer ms
+(function(){
+  var nav = navigator;
+  var cores = nav.hardwareConcurrency || 4;
+  var ram   = nav.deviceMemory || 4;  // GB (undefined en iOS/Firefox → asumir normal)
+  var ua    = nav.userAgent;
+
+  // UserAgent de TV Box / dispositivo embebido
+  var isTVBox = /AFTM|AFTT|AFTS|AFTN|FireTV|Chromecast|CrKey|AndroidTV|HbbTV|Tizen|WebOS|SmartTV|BRAVIA|Philips.*TV|Vestel|Netrange|SMART-TV/i.test(ua);
+
+  // Android Box: UA contiene "Android" + "Box" o similar, pero NO es teléfono/tablet normal
+  var isAndroidBox = /Android/i.test(ua) && /Box|STB|OTT|TV/i.test(ua) && !/Mobile|Tablet/i.test(ua);
+
+  // ULTRA_LITE: RAM ≤ 0.5GB, o TV Box con ≤ 1GB, o ≤ 2 cores Y ≤ 1GB RAM
+  var isUltraLite = ram <= 0.5
+    || (isTVBox && ram <= 1)
+    || (isAndroidBox && ram <= 1)
+    || (cores <= 2 && ram <= 1);
+
+  // LITE: TV Box cualquiera, o RAM ≤ 1GB, o (2 cores Y RAM ≤ 2GB — ej. celular gama baja)
+  // NOTA: PC con 2 cores pero 4GB+ RAM → NO entra en lite (fix del bug anterior)
+  var isLite = isUltraLite
+    || isTVBox
+    || isAndroidBox
+    || ram <= 1
+    || (cores <= 2 && ram <= 2);
+
+  window._ULTRA_LITE = isUltraLite;
+  window._LITE_MODE  = isLite;
+
+  if (isUltraLite) {
+    document.documentElement.classList.add('lite', 'ultra-lite');
+  } else if (isLite) {
+    document.documentElement.classList.add('lite');
+  }
+})();
+// AdSense: solo carga en dispositivos normales, diferido tras primer render
+if (!window._LITE_MODE) {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+      var s = document.createElement('script');
+      s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603';
+      s.async = true; s.crossOrigin = 'anonymous';
+      document.head.appendChild(s);
+    }, 2000); // esperar 2s tras DOMContentLoaded para no competir con el player
+  });
+}
+</script>
 <meta name="apple-touch-fullscreen" content="yes">
 <script>
 // Suprimir errores de imagen en consola — no son errores críticos
@@ -78,7 +127,15 @@ window.addEventListener('error', function(e) {
   window.addEventListener('resize', setAppHeight);
   setAppHeight();
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script>
+// Fuentes Google: solo en dispositivos normales, diferido para no bloquear render
+if (!window._LITE_MODE) {
+  var _fl = document.createElement('link');
+  _fl.rel = 'stylesheet';
+  _fl.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap';
+  document.head.appendChild(_fl);
+}
+</script>
 <style>
 :root{
   --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22223a;
@@ -86,6 +143,50 @@ window.addEventListener('error', function(e) {
   --text:#f0f0f8;--text2:#9090b0;
   --border:rgba(255,255,255,0.07);--radius:12px;--sidebar:190px;
 }
+
+/* ── MODO LIGERO (lite): TV Box, RAM ≤ 1GB, celular gama baja ── */
+html.lite {
+  --bg:#0d0d0d;--bg2:#141414;--bg3:#1a1a1a;--bg4:#202020;
+  --border:#222;--radius:6px;
+}
+html.lite body, html.lite * { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important; }
+html.lite .logo { letter-spacing: 0 !important; }
+html.lite *, html.lite *::before, html.lite *::after { transition: none !important; animation: none !important; }
+html.lite header { background: #0d0d0d !important; backdrop-filter: none !important; }
+html.lite .fs-exit { backdrop-filter: none !important; }
+html.lite ::-webkit-scrollbar { display: none !important; }
+html.lite .card:hover { transform: none !important; box-shadow: none !important; }
+html.lite .card.playing { box-shadow: none !important; }
+html.lite #ad-desktop, html.lite #ad-mobile-fixed, html.lite .ad { display: none !important; }
+html.lite #rec-bar { display: none !important; }
+html.lite .ldot, html.lite .side-dot { animation: none !important; opacity: 1; }
+html.lite .sp { border-top-color: var(--accent); animation: spin .9s linear infinite !important; }
+html.lite .grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important; gap: 4px !important; }
+html.lite .clogo, html.lite .cfb { height: 48px !important; }
+html.lite .ch-side { display: none !important; }
+html.lite .fbar-wrap { display: none !important; }
+
+/* ── MODO ULTRA-LITE: RAM ≤ 512MB, TV Box de gama muy baja ── */
+/* Elimina todo lo no esencial — máxima prioridad al player y a los canales */
+html.ultra-lite aside { display: none !important; }
+html.ultra-lite .pbar .pbts { display: none !important; }
+html.ultra-lite .side-countries { display: none !important; }
+html.ultra-lite #rec-bar { display: none !important; }
+/* Header ultra compacto */
+html.ultra-lite header { height: 40px !important; padding: 0 8px !important; }
+html.ultra-lite .logo { font-size: 15px !important; }
+html.ultra-lite #search { display: none !important; }
+html.ultra-lite .sw { display: none !important; }
+/* Player más alto para compensar el espacio ganado */
+html.ultra-lite .player-zone { height: calc(75vh - 40px) !important; }
+/* Grid ultra compacto: solo nombre, sin logo, sin categoría */
+html.ultra-lite .clogo, html.ultra-lite .cfb { height: 36px !important; }
+html.ultra-lite .ccat { display: none !important; }
+html.ultra-lite .ldot { display: none !important; }
+html.ultra-lite .favbtn { display: none !important; }
+/* Sin barra de modo tabs (mobile) */
+html.ultra-lite .mode-tabs { display: none !important; }
+
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
 ::-webkit-scrollbar{width:4px;height:4px}
@@ -710,7 +811,7 @@ body.is-fullscreen .fs-exit{display:block !important}
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.10/dist/hls.light.min.js" defer></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 // VARIABLES GLOBALES
@@ -899,11 +1000,40 @@ const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'De
 // ═══════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
+
+// ── Benchmark real de rendimiento — puede subir a ultra-lite si el frame es muy lento ──
+(function() {
+  var t0 = performance.now();
+  requestAnimationFrame(function() {
+    var ms = performance.now() - t0;
+    if (ms > 100 && !window._ULTRA_LITE) {
+      // Frame > 100ms → ultra-lite
+      window._ULTRA_LITE = true;
+      window._LITE_MODE  = true;
+      document.documentElement.classList.add('lite', 'ultra-lite');
+    } else if (ms > 50 && !window._LITE_MODE) {
+      // Frame > 50ms → lite
+      window._LITE_MODE = true;
+      document.documentElement.classList.add('lite');
+    }
+  });
+})();
+
 updateAll();
 applyFilter();
 renderSideList();
 showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
-setTimeout(loadCountries, 800);
+
+// Delays escalonados según modo:
+// ULTRA_LITE: espera 5s (deja cargar el player primero)
+// LITE:       espera 3s
+// NORMAL:     espera 800ms (comportamiento original)
+var _initDelay = window._ULTRA_LITE ? 5000 : (window._LITE_MODE ? 3000 : 800);
+setTimeout(loadCountries, _initDelay);
+
+// Cargar radios externas siempre — fetch mínimo de texto, no afecta rendimiento
+// Se ejecuta después de que el player esté listo
+setTimeout(loadRadiosExternas, window._ULTRA_LITE ? 8000 : (window._LITE_MODE ? 6000 : 3000));
 
 // ═══════════════════════════════════════════════════════════════════════
 // AUTOPLAY AL INICIAR — Mejora 2 + 3
@@ -1048,11 +1178,12 @@ function markSideActive(ch) {
 // UTILIDADES
 // ═══════════════════════════════════════════════════════════════════════
 function isSlowDevice() {
+  if (typeof window._LITE_MODE !== 'undefined') return window._LITE_MODE;
   var nav = navigator;
-  var slowCPU = nav.hardwareConcurrency && nav.hardwareConcurrency <= 2;
-  var slowRAM = nav.deviceMemory && nav.deviceMemory <= 2;
-  var isTVBox = /TV|Android.*Box|AFTM|AFTT|FireTV|Chromecast/i.test(nav.userAgent);
-  return slowCPU || slowRAM || isTVBox;
+  var cores = nav.hardwareConcurrency || 4;
+  var ram   = nav.deviceMemory || 4;
+  var isTVBox = /AFTM|AFTT|AFTS|FireTV|Chromecast|AndroidTV|SmartTV|Tizen|WebOS/i.test(nav.userAgent);
+  return isTVBox || ram <= 1 || (cores <= 2 && ram <= 2);
 }
 
 function showToast(msg) {
@@ -1141,6 +1272,51 @@ async function loadCountries() {
 
   g('chload').classList.remove('show');
   showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
+
+  // ── Fuentes adicionales de TV (modo normal y lite con RAM suficiente) ──
+  // Solo si el dispositivo no es ultra-lite y quedan recursos
+  if (!window._ULTRA_LITE) {
+    var fuentesTV = [
+      { url: 'https://www.apsattv.com/tubi.m3u',    co: 'US', label: 'Tubi TV' },
+      { url: 'https://www.apsattv.com/rakuten.m3u', co: 'US', label: 'Rakuten' },
+      { url: 'https://www.apsattv.com/redbox.m3u',  co: 'US', label: 'Redbox' },
+      { url: 'https://www.apsattv.com/lg.m3u',      co: 'US', label: 'LG Ch.' },
+      { url: 'https://www.apsattv.com/vizio.m3u',   co: 'US', label: 'Vizio' },
+      { url: 'https://www.apsattv.com/klowd.m3u',   co: 'US', label: 'Klowd' },
+      { url: 'https://i.mjh.nz/PBS/all.m3u8',       co: 'US', label: 'PBS' },
+      { url: 'https://i.mjh.nz/Plex/all.m3u8',      co: 'US', label: 'Plex' },
+      { url: 'https://i.mjh.nz/PlutoTV/all.m3u8',   co: 'US', label: 'Pluto' },
+      { url: 'https://i.mjh.nz/SamsungTVPlus/all.m3u8', co: 'US', label: 'Samsung+' },
+      { url: 'https://i.mjh.nz/Stirr/all.m3u8',     co: 'US', label: 'Stirr' },
+    ];
+    // En modo lite: solo las 3 primeras fuentes (las más variadas)
+    var fuentesACargar = window._LITE_MODE ? fuentesTV.slice(0, 3) : fuentesTV;
+    var MAX_EXTRA = window._LITE_MODE ? 500 : 99999;
+    var totalExtra = 0;
+
+    for (var fi = 0; fi < fuentesACargar.length; fi++) {
+      if (totalExtra >= MAX_EXTRA) break;
+      var fuente = fuentesACargar[fi];
+      try {
+        var txtExtra = await fetchM3U(fuente.url);
+        if (txtExtra) {
+          var parsedExtra = parseM3U(txtExtra, fuente.co, 'tv');
+          var urlsEx = {}; allTV.forEach(function(x){ urlsEx[x.url] = true; });
+          var newExtra = parsedExtra.filter(function(ch){ return !urlsEx[ch.url]; });
+          if (newExtra.length) {
+            var toAdd = newExtra.slice(0, MAX_EXTRA - totalExtra);
+            allTV = allTV.concat(toAdd);
+            totalExtra += toAdd.length;
+            updateAll();
+            if (curMode === 'tv') { applyFilter(); renderSideList(); }
+          }
+        }
+      } catch(e) {}
+      // Pausa entre fuentes en modo lite
+      if (window._LITE_MODE) await new Promise(function(r){ setTimeout(r, 1000); });
+    }
+    if (totalExtra > 0) showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
+  }
 }
 
 // Genera un ID estable a partir de la URL del canal (no cambia entre recargas)
@@ -1366,33 +1542,73 @@ function applyFilter() {
 // RENDER GRID
 // ═══════════════════════════════════════════════════════════════════════
 function renderGrid() {
-  const grid = g('grid');
-  const isR  = curMode === 'radio';
+  var grid = g('grid');
+  var isR  = curMode === 'radio';
   if (!filtered.length) {
     grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
     return;
   }
-  const MAX = isSlowDevice() ? 50 : 300;
-  grid.innerHTML = filtered.slice(0, MAX).map(function(ch) {
-    const isFav  = favs.includes(ch.id);
-    const isPlay = gridActive && gridActive.id === ch.id;
-    const pc     = isPlay ? (isR ? ' rplaying' : ' playing') : '';
-    const dc     = isR ? ' rd' : '';
-    const fc     = isR ? ' rfb' : '';
-    const fb     = isR ? '📻' : ch.name.slice(0,3).toUpperCase();
-    const logoHtml = ch.logo
+  var liteMode = isSlowDevice();
+  // Modo lite: máx 30 canales. Modo normal: 300 como antes.
+  var MAX = liteMode ? 30 : 300;
+  var list = filtered.slice(0, MAX);
+
+  function buildCardHTML(ch) {
+    var isFav  = favs.includes(ch.id);
+    var isPlay = gridActive && gridActive.id === ch.id;
+    var pc = isPlay ? (isR ? ' rplaying' : ' playing') : '';
+    var dc = isR ? ' rd' : '';
+    var fc = isR ? ' rfb' : '';
+    var fb = isR ? '📻' : ch.name.slice(0,3).toUpperCase();
+    var logoHtml = ch.logo
       ? '<img class="clogo" src="'+ch.logo+'" alt="'+ch.name+'" loading="lazy" decoding="async" onerror="imgFallback(this,\''+fc+'\',\''+fb+'\')">'
       : '<div class="cfb'+fc+'">'+fb+'</div>';
+    // Modo lite: sin botón favorito en la card (menos DOM)
+    var favHTML = liteMode ? '' : '<button class="favbtn'+(isFav?' on':'')+'" onclick="toggleFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>';
     return '<div class="card'+pc+'" onclick="playFromGrid(\''+ch.id+'\')" id="cd-'+ch.id+'">'
       + logoHtml
       + '<div class="ldot'+dc+'"></div>'
       + '<div class="cinfo"><div class="cname" title="'+ch.name+'">'+ch.name+'</div>'
-      + '<div class="ccat">'+ch.cat+(ch.co?' &middot; '+(CFLAGS[ch.co]||'')+ch.co:'')+'</div></div>'
-      + '<button class="favbtn'+(isFav?' on':'')+'" onclick="toggleFav(event,\''+ch.id+'\')">'+( isFav?'⭐':'☆')+'</button>'
-      + '</div>';
-  }).join('');
-  if (filtered.length > MAX)
-    grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda para filtrar</div>';
+      + '<div class="ccat">'+ch.cat+((!liteMode && ch.co)?' &middot; '+(CFLAGS[ch.co]||'')+ch.co:'')+'</div></div>'
+      + favHTML + '</div>';
+  }
+
+  // Modo normal: render completo en un solo innerHTML (comportamiento original)
+  if (!liteMode) {
+    grid.innerHTML = list.map(buildCardHTML).join('');
+    if (filtered.length > MAX)
+      grid.innerHTML += '<div style="grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px">Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda para filtrar</div>';
+    return;
+  }
+
+  // Modo lite: render en lotes de 10 usando requestIdleCallback para no bloquear CPU
+  grid.innerHTML = '';
+  var idx = 0;
+  var BATCH = 10;
+  function renderBatch() {
+    var frag = document.createDocumentFragment();
+    var end = Math.min(idx + BATCH, list.length);
+    for (var i = idx; i < end; i++) {
+      var tmp = document.createElement('div');
+      tmp.innerHTML = buildCardHTML(list[i]);
+      frag.appendChild(tmp.firstChild);
+    }
+    grid.appendChild(frag);
+    idx += BATCH;
+    if (idx < list.length) {
+      if (typeof requestIdleCallback !== 'undefined') {
+        requestIdleCallback(renderBatch, { timeout: 400 });
+      } else {
+        setTimeout(renderBatch, 30);
+      }
+    } else if (filtered.length > MAX) {
+      var info = document.createElement('div');
+      info.style.cssText = 'grid-column:1/-1;text-align:center;padding:8px;color:var(--text2);font-size:10px';
+      info.textContent = 'Mostrando '+MAX+' de '+filtered.length+' · Usa la búsqueda';
+      grid.appendChild(info);
+    }
+  }
+  renderBatch();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2036,6 +2252,176 @@ function toggleFav(e, id) {
   });
 })();
 
+// ═══════════════════════════════════════════════════════════════════════
+// CARGA DE RADIOS EXTERNAS — funciona en TODOS los modos incluido ultra-lite
+// Fetch liviano de texto plano. No afecta CPU ni RAM significativamente.
+// ═══════════════════════════════════════════════════════════════════════
+async function loadRadiosExternas() {
+  // Mapa de géneros pervii.com → categoría CIC TV
+  var PERVII_GENRES = [
+    ['latin',        'Música',         'LA'],
+    ['salsa',        'Música',         'LA'],
+    ['reggae',       'Música',         'LA'],
+    ['pop',          'Música',         'INT'],
+    ['rock',         'Música',         'INT'],
+    ['80s',          'Música',         'INT'],
+    ['90s',          'Música',         'INT'],
+    ['70s',          'Música',         'INT'],
+    ['60s',          'Música',         'INT'],
+    ['jazz',         'Música',         'INT'],
+    ['smooth_jazz',  'Música',         'INT'],
+    ['blues',        'Música',         'INT'],
+    ['soul',         'Música',         'INT'],
+    ['funk',         'Música',         'INT'],
+    ['hip_hop',      'Música',         'INT'],
+    ['rnb',          'Música',         'INT'],
+    ['dance',        'Música',         'INT'],
+    ['electronic',   'Música',         'INT'],
+    ['house',        'Música',         'INT'],
+    ['trance',       'Música',         'INT'],
+    ['techno',       'Música',         'INT'],
+    ['classical',    'Música',         'INT'],
+    ['opera',        'Música',         'INT'],
+    ['instrumental', 'Música',         'INT'],
+    ['country',      'Música',         'US'],
+    ['alternative',  'Música',         'INT'],
+    ['indie',        'Música',         'INT'],
+    ['metal',        'Música',         'INT'],
+    ['hardrock',     'Música',         'INT'],
+    ['punk',         'Música',         'INT'],
+    ['reggae',       'Música',         'INT'],
+    ['chillout',     'Música',         'INT'],
+    ['lounge',       'Música',         'INT'],
+    ['ambient',      'Música',         'INT'],
+    ['oldies',       'Música',         'INT'],
+    ['gospel',       'Religiosos',     'US'],
+    ['christian',    'Religiosos',     'US'],
+    ['spiritual',    'Religiosos',     'INT'],
+    ['talk',         'General',        'INT'],
+    ['sport',        'Deportes',       'INT'],
+    ['comedy',       'Entretenimiento','INT'],
+    ['soundtrack',   'Entretenimiento','INT'],
+    ['top_40',       'Música',         'INT'],
+    ['disco',        'Música',         'INT'],
+    ['swing',        'Música',         'INT'],
+    ['big_band',     'Música',         'INT'],
+    ['africa',       'Música',         'INT'],
+    ['world',        'Música',         'INT'],
+  ];
+
+  // En ultra-lite: solo los 8 géneros más populares
+  // En lite: solo los primeros 20
+  // En normal: todos
+  var generosACargar = window._ULTRA_LITE
+    ? PERVII_GENRES.slice(0, 8)
+    : window._LITE_MODE
+      ? PERVII_GENRES.slice(0, 20)
+      : PERVII_GENRES;
+
+  async function fetchM3URadio(url) {
+    try {
+      var r = await window._fetchTimeout(url, 8000, { cache: 'no-store' });
+      if (r && r.ok) return await r.text();
+    } catch(e) {}
+    return null;
+  }
+
+  function parseM3URadio(txt, defaultCo, defaultCat) {
+    var lines = txt.split('\n');
+    var res = [], cur = {};
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i].trim();
+      if (l.startsWith('#EXTINF')) {
+        var nM = l.match(/tvg-name="([^"]*)"/);
+        var cM = l.match(/group-title="([^"]*)"/);
+        var coM = l.match(/tvg-country="([^"]*)"/);
+        cur = {
+          name: nM ? nM[1] : l.split(',').pop().trim(),
+          cat:  defaultCat,
+          co:   coM ? coM[1].toUpperCase() : defaultCo,
+          type: 'radio',
+          logo: ''
+        };
+      } else if (l && !l.startsWith('#') && cur.name) {
+        cur.url = l;
+        cur.id  = 'r' + stableId(l);
+        res.push(Object.assign({}, cur));
+        cur = {};
+      }
+    }
+    return res;
+  }
+
+  var urlsExistentes = new Set(allRadio.map(function(r){ return r.url; }));
+  var totalAgregadas = 0;
+
+  // 1. Cargar radios.json propio (siempre primero — son las curadas por el usuario)
+  try {
+    var base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+    var rj = await fetchM3URadio(base + 'radios.json?t=' + Date.now());
+    if (rj) {
+      var data = JSON.parse(rj);
+      var radiosJSON = data.radios || data;
+      if (Array.isArray(radiosJSON)) {
+        radiosJSON.forEach(function(rd) {
+          if (!rd.url || !rd.name || urlsExistentes.has(rd.url)) return;
+          rd.type = 'radio';
+          allRadio.push(rd);
+          urlsExistentes.add(rd.url);
+          totalAgregadas++;
+        });
+        if (totalAgregadas > 0) { updateAll(); showToast('📻 +' + totalAgregadas + ' radios'); }
+      }
+    }
+  } catch(e) {}
+
+  // 2. Cargar lista LATAM (m3u.cl)
+  if (!window._ULTRA_LITE) {
+    var txtLatam = await fetchM3URadio('https://m3u.cl/lista/LATAM.m3u');
+    if (txtLatam) {
+      var radiosLatam = parseM3URadio(txtLatam, 'LA', 'Música');
+      var nuevasLatam = 0;
+      radiosLatam.forEach(function(rd) {
+        if (urlsExistentes.has(rd.url)) return;
+        allRadio.push(rd);
+        urlsExistentes.add(rd.url);
+        totalAgregadas++;
+        nuevasLatam++;
+      });
+      if (nuevasLatam > 0) updateAll();
+    }
+  }
+
+  // 3. Cargar géneros de pervii.com — secuencial con pausa para no saturar
+  var pausaMs = window._ULTRA_LITE ? 1500 : window._LITE_MODE ? 800 : 200;
+  for (var gi = 0; gi < generosACargar.length; gi++) {
+    var genero = generosACargar[gi][0];
+    var cat    = generosACargar[gi][1];
+    var co     = generosACargar[gi][2];
+    var url    = 'http://radio.pervii.com/top_radio_' + genero + '.m3u';
+    var txt    = await fetchM3URadio(url);
+    if (txt) {
+      var parsed = parseM3URadio(txt, co, cat);
+      var nuevas = 0;
+      parsed.forEach(function(rd) {
+        if (urlsExistentes.has(rd.url)) return;
+        allRadio.push(rd);
+        urlsExistentes.add(rd.url);
+        totalAgregadas++;
+        nuevas++;
+      });
+      if (nuevas > 0) updateAll();
+    }
+    await new Promise(function(r){ setTimeout(r, pausaMs); });
+  }
+
+  if (totalAgregadas > 0) {
+    updateAll();
+    showToast('📻 ' + allRadio.length + ' radios disponibles');
+  }
+  g('chload') && g('chload').classList.remove('show');
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('/CIC-TV/sw.js', { scope: '/CIC-TV/' })
@@ -2057,14 +2443,26 @@ if ('serviceWorker' in navigator) {
   };
 </script>
 
-<!-- SISTEMA DE RECOMENDACIONES -->
-<script src="recomendados.js"></script>
+<!-- SISTEMA DE RECOMENDACIONES: solo en dispositivos normales -->
+<script>
+if (!window._LITE_MODE) {
+  var _sr = document.createElement('script');
+  _sr.src = 'recomendados.js'; _sr.defer = true;
+  document.body.appendChild(_sr);
+}
+</script>
 
-<!-- MONITOR DE SALUD DE CANALES -->
-<script src="monitor.js"></script>
+<!-- MONITOR DE SALUD: solo en dispositivos normales -->
+<script>
+if (!window._LITE_MODE) {
+  var _sm = document.createElement('script');
+  _sm.src = 'monitor.js'; _sm.defer = true;
+  document.body.appendChild(_sm);
+}
+</script>
 
-<!-- SISTEMA DE AUTENTICACIÓN -->
-<script src="auth.js"></script>
+<!-- SISTEMA DE AUTENTICACIÓN: siempre, pero diferido -->
+<script src="auth.js" defer></script>
 
 <!-- FOOTER LEGAL -->
 <footer style="
