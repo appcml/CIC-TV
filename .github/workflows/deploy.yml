@@ -28,3 +28,4 @@ jobs:
             *.py
             canales.json
             radios.json
+            app-lite/**
