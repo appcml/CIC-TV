@@ -2,7 +2,6 @@ package com.cictv.lite
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,9 +29,11 @@ class MainActivity : AppCompatActivity() {
         recycler = findViewById(R.id.recycler)
         spinner  = findViewById(R.id.spinnerCat)
         loading  = findViewById(R.id.txtLoading)
+        val layoutLoading: View = findViewById(R.id.layoutLoading)
         tabs     = findViewById(R.id.tabs)
 
         recycler.layoutManager = LinearLayoutManager(this)
+        recycler.setHasFixedSize(true)
 
         tabs.setOnCheckedChangeListener { _, id ->
             modoActual = if (id == R.id.tabTV) "tv" else "radio"
@@ -43,16 +44,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cargarTodo() {
-        loading.visibility = View.VISIBLE
+        loading.visibility  = View.VISIBLE
+        loading.text        = "Cargando canales..."
         recycler.visibility = View.GONE
+        spinner.visibility  = View.GONE
 
         CoroutineScope(Dispatchers.IO).launch {
-            todosCanales = JsonLoader.cargarCanales()
-            todasRadios  = JsonLoader.cargarRadios()
+            // Cargar TV rápido — solo 300 canales primero
+            withContext(Dispatchers.Main) {
+                loading.text = "Descargando canales TV..."
+            }
+            todosCanales = JsonLoader.cargarCanalesRapido(300)
 
             withContext(Dispatchers.Main) {
-                loading.visibility = View.GONE
+                loading.text = "Descargando radios..."
+            }
+            todasRadios = JsonLoader.cargarRadios()
+
+            withContext(Dispatchers.Main) {
+                loading.visibility  = View.GONE
                 recycler.visibility = View.VISIBLE
+                spinner.visibility  = View.VISIBLE
                 filtrarYMostrar()
             }
         }
@@ -60,37 +72,38 @@ class MainActivity : AppCompatActivity() {
 
     private fun filtrarYMostrar() {
         val lista = if (modoActual == "tv") todosCanales else todasRadios
-        val cats  = listOf("Todas") + lista.map { it.cat }.distinct().sorted()
 
+        if (lista.isEmpty()) {
+            loading.visibility = View.VISIBLE
+            loading.text = "Sin canales. Verifica tu conexión."
+            recycler.visibility = View.GONE
+            return
+        }
+
+        val cats = listOf("Todas") + lista.map { it.cat }.distinct().sorted()
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, cats)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
 
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                val cat = cats[pos]
+                val cat      = cats[pos]
                 val filtrada = if (cat == "Todas") lista else lista.filter { it.cat == cat }
-                recycler.adapter = CanalAdapter(filtrada) { canal ->
-                    abrirReproductor(canal)
-                }
+                recycler.adapter = CanalAdapter(filtrada) { canal -> abrirReproductor(canal) }
             }
             override fun onNothingSelected(p: AdapterView<*>?) {}
         }
 
-        // Mostrar todos al inicio
         recycler.adapter = CanalAdapter(lista) { canal -> abrirReproductor(canal) }
     }
 
     private fun abrirReproductor(canal: Canal) {
-        val intent = Intent(this, PlayerActivity::class.java).apply {
+        startActivity(Intent(this, PlayerActivity::class.java).apply {
             putExtra("url",  canal.url)
             putExtra("name", canal.name)
-        }
-        startActivity(intent)
+        })
     }
 }
-
-// ── Adapter ──────────────────────────────────────────────────────────────────
 
 class CanalAdapter(
     private val items: List<Canal>,
@@ -98,8 +111,8 @@ class CanalAdapter(
 ) : RecyclerView.Adapter<CanalAdapter.VH>() {
 
     inner class VH(view: View) : RecyclerView.ViewHolder(view) {
-        val nombre: TextView  = view.findViewById(R.id.txtNombre)
-        val cat:    TextView  = view.findViewById(R.id.txtCat)
+        val nombre: TextView = view.findViewById(R.id.txtNombre)
+        val cat:    TextView = view.findViewById(R.id.txtCat)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -111,7 +124,7 @@ class CanalAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val c = items[position]
         holder.nombre.text = c.name
-        holder.cat.text    = "${c.cat}  ${c.co}"
+        holder.cat.text    = "${c.cat}  ${c.co}".trim()
         holder.itemView.setOnClickListener { onClick(c) }
         holder.itemView.isFocusable = true
     }
