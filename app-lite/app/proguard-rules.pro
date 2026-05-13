@@ -1,0 +1,3 @@
+-keep class com.google.android.exoplayer2.** { *; }
+-keep class com.cictv.lite.Canal { *; }
+-dontwarn com.google.android.exoplayer2.**
