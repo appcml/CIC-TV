@@ -4,8 +4,8 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'app-lite/**'        # Solo compila si hay cambios en la app
-  workflow_dispatch:         # También se puede correr manualmente
+      - 'app-lite/**'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,8 +24,17 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Make gradlew executable
-        run: chmod +x app-lite/gradlew
+      - name: Generar gradlew si no existe
+        run: |
+          if [ ! -f "app-lite/gradlew" ]; then
+            echo "gradlew no encontrado, generando..."
+            cd app-lite
+            gradle wrapper --gradle-version 8.6
+            chmod +x gradlew
+            cd ..
+          else
+            chmod +x app-lite/gradlew
+          fi
 
       - name: Build Release APK
         run: |
