@@ -8,10 +8,11 @@ import java.net.URL
 
 object JsonLoader {
 
+    // GitHub Pages — mismo dominio que la app web, siempre accesible
     private const val URL_CANALES =
-        "https://raw.githubusercontent.com/appcml/CIC-TV/main/canales.json"
+        "https://appcml.github.io/CIC-TV/canales.json"
     private const val URL_RADIOS =
-        "https://raw.githubusercontent.com/appcml/CIC-TV/main/radios.json"
+        "https://appcml.github.io/CIC-TV/radios.json"
     private const val TAG = "CICLite"
 
     fun cargarCanalesRapido(max: Int = 300): List<Canal> = cargarDesde(URL_CANALES, max)
