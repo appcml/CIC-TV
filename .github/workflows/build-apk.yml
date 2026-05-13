@@ -1,0 +1,47 @@
+name: Build CIC TV Lite APK
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'app-lite/**'        # Solo compila si hay cambios en la app
+  workflow_dispatch:         # También se puede correr manualmente
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make gradlew executable
+        run: chmod +x app-lite/gradlew
+
+      - name: Build Release APK
+        run: |
+          cd app-lite
+          ./gradlew assembleRelease
+
+      - name: Upload APK como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CIC-TV-Lite
+          path: app-lite/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+      - name: Crear Release en GitHub
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: app-lite/app/build/outputs/apk/release/app-release.apk
+          name: CIC TV Lite ${{ github.ref_name }}
