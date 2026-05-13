@@ -2,6 +2,7 @@ package com.cictv.lite
 
 import android.util.Log
 import org.json.JSONArray
+import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -13,26 +14,23 @@ object JsonLoader {
         "https://raw.githubusercontent.com/appcml/CIC-TV/main/radios.json"
     private const val TAG = "CICLite"
 
-    fun cargarCanales(): List<Canal> = cargarDesde(URL_CANALES)
-    fun cargarRadios(): List<Canal>  = cargarDesde(URL_RADIOS)
+    fun cargarCanalesRapido(max: Int = 300): List<Canal> = cargarDesde(URL_CANALES, max)
+    fun cargarRadios(): List<Canal> = cargarDesde(URL_RADIOS, 500)
 
-    private fun cargarDesde(urlStr: String): List<Canal> {
+    private fun cargarDesde(urlStr: String, maxItems: Int = 500): List<Canal> {
         return try {
             val url  = URL(urlStr)
             val conn = url.openConnection() as HttpURLConnection
             conn.apply {
-                connectTimeout = 10_000
-                readTimeout    = 20_000
+                connectTimeout = 15_000
+                readTimeout    = 30_000
                 setRequestProperty("User-Agent", "CICTVLite/1.0")
             }
             val json = conn.inputStream.bufferedReader().readText()
             conn.disconnect()
 
-            // canales.json → { "canales": [...] }
-            // radios.json  → { "radios": [...] }
-            // fallback     → array directo [...]
-            val array = try {
-                val obj = org.json.JSONObject(json)
+            val array: JSONArray = try {
+                val obj = JSONObject(json)
                 when {
                     obj.has("canales") -> obj.getJSONArray("canales")
                     obj.has("radios")  -> obj.getJSONArray("radios")
@@ -43,13 +41,15 @@ object JsonLoader {
             }
 
             val result = mutableListOf<Canal>()
-            for (i in 0 until array.length()) {
+            var i = 0
+            while (i < array.length() && result.size < maxItems) {
                 Canal.fromJson(array.getJSONObject(i))?.let { result.add(it) }
+                i++
             }
-            Log.d(TAG, "Cargados ${result.size} items de $urlStr")
+            Log.d(TAG, "Cargados ${result.size} de $urlStr")
             result
         } catch (e: Exception) {
-            Log.e(TAG, "Error cargando $urlStr: ${e.message}")
+            Log.e(TAG, "Error: ${e.message}")
             emptyList()
         }
     }
