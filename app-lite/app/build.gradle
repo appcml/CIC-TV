@@ -1,14 +1,12 @@
-plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-}
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
 
 android {
-    namespace 'com.cictv.lite'
+    namespace 'com.cictv.webview'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.cictv.lite"
+        applicationId "com.cictv.webview"
         minSdk 21
         targetSdk 34
         versionCode 2
