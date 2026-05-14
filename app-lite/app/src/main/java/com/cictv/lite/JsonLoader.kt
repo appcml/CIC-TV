@@ -8,23 +8,23 @@ import java.net.URL
 
 object JsonLoader {
 
-    // GitHub Pages — mismo dominio que la app web, siempre accesible
+    // Archivos pequeños (~50KB) optimizados para TV Box
     private const val URL_CANALES =
-        "https://appcml.github.io/CIC-TV/canales.json"
+        "https://appcml.github.io/CIC-TV/canales-lite.json"
     private const val URL_RADIOS =
-        "https://appcml.github.io/CIC-TV/radios.json"
+        "https://appcml.github.io/CIC-TV/radios-lite.json"
     private const val TAG = "CICLite"
 
-    fun cargarCanalesRapido(max: Int = 300): List<Canal> = cargarDesde(URL_CANALES, max)
-    fun cargarRadios(): List<Canal> = cargarDesde(URL_RADIOS, 500)
+    fun cargarCanales(): List<Canal> = cargarDesde(URL_CANALES)
+    fun cargarRadios(): List<Canal>  = cargarDesde(URL_RADIOS)
 
-    private fun cargarDesde(urlStr: String, maxItems: Int = 500): List<Canal> {
+    private fun cargarDesde(urlStr: String): List<Canal> {
         return try {
             val url  = URL(urlStr)
             val conn = url.openConnection() as HttpURLConnection
             conn.apply {
-                connectTimeout = 15_000
-                readTimeout    = 30_000
+                connectTimeout = 10_000
+                readTimeout    = 15_000
                 setRequestProperty("User-Agent", "CICTVLite/1.0")
             }
             val json = conn.inputStream.bufferedReader().readText()
@@ -42,10 +42,8 @@ object JsonLoader {
             }
 
             val result = mutableListOf<Canal>()
-            var i = 0
-            while (i < array.length() && result.size < maxItems) {
+            for (i in 0 until array.length()) {
                 Canal.fromJson(array.getJSONObject(i))?.let { result.add(it) }
-                i++
             }
             Log.d(TAG, "Cargados ${result.size} de $urlStr")
             result
