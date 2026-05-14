@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 loading.text = "Descargando canales TV..."
             }
-            todosCanales = JsonLoader.cargarCanalesRapido(300)
+            todosCanales = JsonLoader.cargarCanales()
 
             withContext(Dispatchers.Main) {
                 loading.text = "Descargando radios..."
