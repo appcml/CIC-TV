@@ -10,11 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
-    private val URL = "https://appcml.github.io/CIC-TV/"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         webView = WebView(this)
         setContentView(webView)
 
@@ -35,7 +33,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.loadUrl(URL)
+        webView.loadUrl("https://appcml.github.io/CIC-TV/")
     }
 
     override fun onBackPressed() {
