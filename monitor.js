@@ -69,7 +69,7 @@ async function cargarTodosLosCanales() {
   }
 
   if (total > 0) {
-    if (typeof renderSideList === 'function') setTimeout(renderSideList, 500);
+    if (typeof renderSideList === 'function' && !window.isFavMode) setTimeout(renderSideList, 500);
     if (typeof updateAll      === 'function') setTimeout(updateAll,      600);
     if (typeof showToast      === 'function') showToast('📡 ' + total + ' canales cargados');
   }
@@ -137,7 +137,7 @@ function registrarFallo(ch) {
       window._monRenderPending = true;
       setTimeout(function() {
         window._monRenderPending = false;
-        if (typeof renderSideList === 'function') renderSideList();
+        if (typeof renderSideList === 'function' && !window.isFavMode) renderSideList();
         if (typeof updateAll      === 'function') updateAll();
       }, 500);
     }
@@ -178,7 +178,7 @@ async function buscarAlternativaFondo(ch) {
     if (match) {
       allTV.push({ id:(ch.id||'x')+'_alt', name:ch.name, cat:ch.cat, co:ch.co, type:ch.type||'tv', logo:ch.logo||match.logo||'', url:match.url });
       monLog('Reemplazo: ' + ch.name);
-      if (typeof renderSideList === 'function') setTimeout(renderSideList, 200);
+      if (typeof renderSideList === 'function' && !window.isFavMode) setTimeout(renderSideList, 200);
       if (typeof updateAll      === 'function') setTimeout(updateAll,      250);
       if (typeof showToast      === 'function') showToast('✅ Canal actualizado: ' + ch.name);
     }
