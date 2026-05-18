@@ -72,6 +72,8 @@ async function cargarTodosLosCanales() {
     if (typeof renderSideList === 'function' && !window.isFavMode) setTimeout(renderSideList, 500);
     if (typeof updateAll      === 'function') setTimeout(updateAll,      600);
     if (typeof showToast      === 'function') showToast('📡 ' + total + ' canales cargados');
+    // Si el usuario está viendo favoritos, refrescarlos con los canales recién cargados
+    if (window.isFavMode && typeof showFavs === 'function') setTimeout(showFavs, 700);
   }
 }
 
