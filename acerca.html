@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="Conoce CIC TV, la aplicación gratuita de canales de televisión y radio en vivo para Android. TV chilena e internacional sin registro.">
+<title>Acerca de CIC TV — Canales en Vivo</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:     #0a0a0f;
+    --bg2:    #12121a;
+    --bg3:    #1a1a25;
+    --border: rgba(255,255,255,0.08);
+    --accent: #4f8ef7;
+    --text:   #e8eaf0;
+    --muted:  #7a8099;
+    --r:      10px;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px; line-height: 1.7; min-height: 100vh;
+  }
+  header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 18px; display: flex; align-items: center;
+    height: 52px; gap: 12px; position: sticky; top: 0; z-index: 10;
+  }
+  .logo {
+    font-weight: 700; font-size: 16px; color: var(--text);
+    text-decoration: none; display: flex; align-items: center; gap: 8px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 14px;
+  }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav a {
+    color: var(--muted); text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 6px; transition: background .15s, color .15s;
+  }
+  nav a:hover { background: var(--bg3); color: var(--text); }
+  nav a.active { color: var(--accent); background: rgba(79,142,247,.1); }
+
+  .hero {
+    padding: 52px 20px 44px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-icon {
+    width: 72px; height: 72px; background: var(--accent);
+    border-radius: 18px; display: flex; align-items: center;
+    justify-content: center; font-size: 34px; margin: 0 auto 20px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 5vw, 36px); font-weight: 700;
+    margin-bottom: 10px; letter-spacing: -.5px;
+  }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 480px; margin: 0 auto; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 44px 20px 64px; }
+
+  .sec-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 14px; margin-top: 40px;
+  }
+  .sec-label:first-child { margin-top: 0; }
+
+  .prose {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 20px 22px;
+    font-size: 14px; color: var(--muted); line-height: 1.75;
+  }
+  .prose strong { color: var(--text); }
+  .prose p + p { margin-top: 12px; }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+  }
+  .feature {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .feature-icon {
+    font-size: 22px; flex-shrink: 0; margin-top: 2px;
+  }
+  .feature h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .feature p  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+  .cats {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .cat {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 13px; color: var(--muted);
+  }
+
+  .dl-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 24px;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .dl-card-text h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .dl-card-text p  { font-size: 14px; color: var(--muted); }
+  .dl-btns { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-weight: 600; font-size: 14px; padding: 10px 22px;
+    border-radius: 8px; text-decoration: none; transition: opacity .15s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-outline {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { background: var(--bg3); opacity: 1; }
+
+  footer {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    text-align: center; padding: 20px; font-size: 12px; color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: var(--text); }
+  .footer-links { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-icon">📺</span>
+    CIC TV
+  </a>
+  <nav>
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html">Ayuda</a>
+    <a href="canales.html">Canales</a>
+    <a href="acerca.html" class="active">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="app-icon">📺</div>
+  <h1>CIC TV — Canales en Vivo</h1>
+  <p>Televisión y radio en vivo gratis para Android. Sin registro, sin suscripción.</p>
+</div>
+
+<div class="container">
+
+  <div class="sec-label">Qué es CIC TV</div>
+  <div class="prose">
+    <p><strong>CIC TV</strong> es una aplicación gratuita para dispositivos Android que permite ver canales de televisión en vivo y escuchar radio online desde Chile y el mundo, sin necesidad de crear una cuenta ni pagar suscripción.</p>
+    <p>La app organiza cientos de señales en categorías como Noticias, Deportes, Entretenimiento, Películas, Series, Infantil, Música y Documentales. Solo necesitas conexión a internet para comenzar a ver.</p>
+    <p>CIC TV es un proyecto independiente desarrollado por <strong>CIC Media</strong>, pensado para que la televisión en vivo sea accesible para toda la comunidad hispanohablante.</p>
+  </div>
+
+  <div class="sec-label">Características principales</div>
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">📺</div>
+      <div>
+        <h3>TV en vivo</h3>
+        <p>Canales de televisión en tiempo real de Chile y el mundo, organizados por categorías.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📻</div>
+      <div>
+        <h3>Radio online</h3>
+        <p>Emisoras de radio en vivo para escuchar mientras navegas por otras apps.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⭐</div>
+      <div>
+        <h3>Favoritos</h3>
+        <p>Guarda tus canales preferidos para acceder a ellos rápidamente en cualquier momento.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <div>
+        <h3>Sin registro</h3>
+        <p>No requiere cuenta, correo ni datos personales. Abre la app y comienza a ver.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🌐</div>
+      <div>
+        <h3>Versión web</h3>
+        <p>También disponible como webapp desde cualquier navegador moderno en este mismo sitio.</p>
+      </div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <div>
+        <h3>Actualizaciones frecuentes</h3>
+        <p>Las señales se actualizan periódicamente para mantener la mayor disponibilidad posible.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec-label">Categorías disponibles</div>
+  <div class="cats">
+    <span class="cat">📰 Noticias</span>
+    <span class="cat">⚽ Deportes</span>
+    <span class="cat">🎬 Entretenimiento</span>
+    <span class="cat">🎥 Películas</span>
+    <span class="cat">🎞 Series</span>
+    <span class="cat">🧒 Infantil</span>
+    <span class="cat">🎵 Música</span>
+    <span class="cat">🌍 Documentales</span>
+    <span class="cat">🙏 Religiosos</span>
+    <span class="cat">💼 Negocios</span>
+    <span class="cat">📡 General</span>
+    <span class="cat">📻 Radio</span>
+  </div>
+
+  <div class="sec-label">Descarga la aplicación</div>
+  <div class="dl-card">
+    <div class="dl-card-text">
+      <h3>CIC TV para Android</h3>
+      <p>Disponible gratis en Aptoide. Compatible con Android 5.0 o superior.</p>
+    </div>
+    <div class="dl-btns">
+      <a href="https://appcml.github.io/CIC-TV/" class="btn">Usar en web</a>
+      <a href="mailto:omusicbycic@gmail.com" class="btn btn-outline">Contacto</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html">Ayuda</a>
+    <a href="canales.html">Canales</a>
+    <a href="acerca.html">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+    <a href="mailto:omusicbycic@gmail.com">Contacto</a>
+  </div>
+  © 2025 CIC TV — Canales en Vivo. Todos los derechos reservados.
+</footer>
+
+</body>
+</html>

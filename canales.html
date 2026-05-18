@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="Explora las categorías de canales disponibles en CIC TV: noticias, deportes, entretenimiento, películas, series, infantil, música, documentales y más.">
+<title>Canales — CIC TV</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:     #0a0a0f;
+    --bg2:    #12121a;
+    --bg3:    #1a1a25;
+    --border: rgba(255,255,255,0.08);
+    --accent: #4f8ef7;
+    --text:   #e8eaf0;
+    --muted:  #7a8099;
+    --r:      10px;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px; line-height: 1.7; min-height: 100vh;
+  }
+  header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 0 18px; display: flex; align-items: center;
+    height: 52px; gap: 12px; position: sticky; top: 0; z-index: 10;
+  }
+  .logo {
+    font-weight: 700; font-size: 16px; color: var(--text);
+    text-decoration: none; display: flex; align-items: center; gap: 8px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 14px;
+  }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav a {
+    color: var(--muted); text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 6px; transition: background .15s, color .15s;
+  }
+  nav a:hover { background: var(--bg3); color: var(--text); }
+  nav a.active { color: var(--accent); background: rgba(79,142,247,.1); }
+
+  .hero {
+    padding: 52px 20px 44px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(79,142,247,.12); color: #7eb3ff;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 12px;
+    border-radius: 20px; margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 5vw, 38px); font-weight: 700;
+    margin-bottom: 10px; letter-spacing: -.5px;
+  }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 460px; margin: 0 auto 24px; }
+  .hero-cta {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-weight: 600; font-size: 14px; padding: 11px 28px;
+    border-radius: 8px; text-decoration: none; transition: opacity .15s;
+  }
+  .hero-cta:hover { opacity: .85; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 44px 20px 64px; }
+
+  .sec-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 14px; margin-top: 40px;
+  }
+  .sec-label:first-child { margin-top: 0; }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+  }
+  .cat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 18px 18px 16px;
+    text-decoration: none; color: var(--text);
+    transition: background .15s, border-color .15s;
+    display: block;
+  }
+  .cat-card:hover { background: var(--bg3); border-color: rgba(79,142,247,.3); }
+  .cat-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 7px;
+  }
+  .cat-emoji { font-size: 22px; line-height: 1; }
+  .cat-name  { font-size: 14px; font-weight: 600; }
+  .cat-desc  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+  .notice {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--r) var(--r) 0;
+    padding: 14px 18px; font-size: 13px; color: var(--muted);
+    line-height: 1.65; margin-top: 8px;
+  }
+  .notice strong { color: var(--text); }
+
+  footer {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    text-align: center; padding: 20px; font-size: 12px; color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: var(--text); }
+  .footer-links { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-icon">📺</span>
+    CIC TV
+  </a>
+  <nav>
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html">Ayuda</a>
+    <a href="canales.html" class="active">Canales</a>
+    <a href="acerca.html">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="badge">Canales disponibles</div>
+  <h1>TV y Radio en vivo</h1>
+  <p>Explora todas las categorías de canales disponibles en CIC TV, gratis y sin registro.</p>
+  <a href="index.html" class="hero-cta">Ver canales ahora →</a>
+</div>
+
+<div class="container">
+
+  <div class="sec-label">Categorías de televisión</div>
+  <div class="cat-grid">
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">📰</span>
+        <span class="cat-name">Noticias</span>
+      </div>
+      <p class="cat-desc">Canales de noticias 24 horas de Chile y el mundo, informativos en vivo y cobertura de última hora.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">⚽</span>
+        <span class="cat-name">Deportes</span>
+      </div>
+      <p class="cat-desc">Transmisiones deportivas en vivo: fútbol, tenis, básquetbol y más eventos del deporte nacional e internacional.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🎬</span>
+        <span class="cat-name">Entretenimiento</span>
+      </div>
+      <p class="cat-desc">Programas de entretenimiento, variedades, talk shows y contenido para toda la familia.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🎥</span>
+        <span class="cat-name">Películas</span>
+      </div>
+      <p class="cat-desc">Canales especializados en cine: películas de acción, drama, comedia, terror y más géneros.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🎞</span>
+        <span class="cat-name">Series</span>
+      </div>
+      <p class="cat-desc">Canales dedicados a series de televisión: drama, comedia, thriller y producciones internacionales.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🧒</span>
+        <span class="cat-name">Infantil</span>
+      </div>
+      <p class="cat-desc">Contenido para niños y niñas: dibujos animados, programas educativos y entretenimiento familiar.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🎵</span>
+        <span class="cat-name">Música</span>
+      </div>
+      <p class="cat-desc">Canales de música en vivo: videoclips, conciertos, música latina, pop, rock y géneros regionales.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🌍</span>
+        <span class="cat-name">Documentales</span>
+      </div>
+      <p class="cat-desc">Canales de documentales: naturaleza, historia, ciencia, tecnología y reportajes de interés general.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">🙏</span>
+        <span class="cat-name">Religiosos</span>
+      </div>
+      <p class="cat-desc">Canales religiosos y espirituales de diversas tradiciones y comunidades de habla hispana.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">💼</span>
+        <span class="cat-name">Negocios</span>
+      </div>
+      <p class="cat-desc">Canales de economía, finanzas, emprendimiento y negocios nacionales e internacionales.</p>
+    </a>
+
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">📡</span>
+        <span class="cat-name">General</span>
+      </div>
+      <p class="cat-desc">Canales de programación general con variedad de contenido a lo largo del día.</p>
+    </a>
+
+  </div>
+
+  <div class="sec-label">Radio online</div>
+  <div class="cat-grid">
+    <a href="index.html" class="cat-card">
+      <div class="cat-header">
+        <span class="cat-emoji">📻</span>
+        <span class="cat-name">Radio en vivo</span>
+      </div>
+      <p class="cat-desc">Emisoras de radio online de Chile y el mundo. Música, noticias y entretenimiento de audio en tiempo real.</p>
+    </a>
+  </div>
+
+  <div class="sec-label">Disponibilidad de señales</div>
+  <div class="notice">
+    <strong>Señales de acceso público.</strong> CIC TV transmite señales de televisión disponibles públicamente en internet. La disponibilidad de cada canal puede variar según el proveedor original. Si un canal no está disponible temporalmente, puede deberse a mantenimiento o cambios en la señal fuente. Las señales se actualizan regularmente. Para reportar un canal caído, <a href="mailto:omusicbycic@gmail.com" style="color:var(--accent);">contáctanos aquí</a>.
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html">Ayuda</a>
+    <a href="canales.html">Canales</a>
+    <a href="acerca.html">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+    <a href="mailto:omusicbycic@gmail.com">Contacto</a>
+  </div>
+  © 2025 CIC TV — Canales en Vivo. Todos los derechos reservados.
+</footer>
+
+</body>
+</html>

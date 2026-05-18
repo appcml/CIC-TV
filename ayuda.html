@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="Centro de ayuda oficial de CIC TV. Aprende a usar la app, soluciona problemas de reproducción, gestiona favoritos y reporta canales caídos.">
+<title>Ayuda y Soporte — CIC TV</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:     #0a0a0f;
+    --bg2:    #12121a;
+    --bg3:    #1a1a25;
+    --border: rgba(255,255,255,0.08);
+    --accent: #4f8ef7;
+    --text:   #e8eaf0;
+    --muted:  #7a8099;
+    --r:      10px;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    height: 52px;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .logo {
+    font-weight: 700; font-size: 16px; letter-spacing: .3px;
+    color: var(--text); text-decoration: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 14px;
+  }
+  nav { margin-left: auto; display: flex; gap: 4px; }
+  nav a {
+    color: var(--muted); text-decoration: none; font-size: 13px;
+    padding: 5px 10px; border-radius: 6px;
+    transition: background .15s, color .15s;
+  }
+  nav a:hover { background: var(--bg3); color: var(--text); }
+  nav a.active { color: var(--accent); background: rgba(79,142,247,.1); }
+
+  .hero {
+    padding: 52px 20px 44px; text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .badge {
+    display: inline-block;
+    background: rgba(79,142,247,.12); color: #7eb3ff;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 4px 12px;
+    border-radius: 20px; margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 5vw, 38px); font-weight: 700;
+    margin-bottom: 10px; letter-spacing: -.5px;
+  }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 460px; margin: 0 auto; }
+
+  .container { max-width: 760px; margin: 0 auto; padding: 44px 20px 64px; }
+
+  .sec-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 14px; margin-top: 40px;
+  }
+  .sec-label:first-child { margin-top: 0; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .step {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 16px;
+  }
+  .step-num {
+    width: 24px; height: 24px; background: var(--accent);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .step h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .step p  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+  .faq { display: flex; flex-direction: column; gap: 6px; }
+  .faq-item {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden;
+  }
+  .faq-q {
+    width: 100%; background: none; border: none; color: var(--text);
+    text-align: left; padding: 13px 16px; font-size: 14px;
+    font-weight: 600; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; font-family: inherit; transition: background .15s;
+  }
+  .faq-q:hover { background: var(--bg3); }
+  .faq-icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(79,142,247,.15); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; line-height: 1; flex-shrink: 0;
+    transition: transform .2s;
+  }
+  .faq-item.open .faq-icon { transform: rotate(45deg); }
+  .faq-body { max-height: 0; overflow: hidden; transition: max-height .28s ease; }
+  .faq-item.open .faq-body { max-height: 500px; }
+  .faq-inner {
+    padding: 12px 16px 15px; font-size: 13px;
+    color: var(--muted); line-height: 1.7;
+    border-top: 1px solid var(--border);
+  }
+  .faq-inner strong { color: var(--text); }
+
+  .tips { display: flex; flex-direction: column; gap: 6px; }
+  .tip {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--r) var(--r) 0;
+    padding: 12px 16px; font-size: 13px; line-height: 1.6;
+  }
+  .tip strong { color: var(--text); display: block; margin-bottom: 2px; }
+  .tip span   { color: var(--muted); }
+
+  .contact-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--r); padding: 28px 24px; text-align: center;
+  }
+  .contact-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .contact-card p {
+    color: var(--muted); font-size: 14px; margin-bottom: 18px;
+    max-width: 340px; margin-left: auto; margin-right: auto;
+  }
+  .btn {
+    display: inline-block; background: var(--accent); color: #fff;
+    font-weight: 600; font-size: 14px; padding: 10px 24px;
+    border-radius: 8px; text-decoration: none; transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+
+  footer {
+    background: var(--bg2); border-top: 1px solid var(--border);
+    text-align: center; padding: 20px; font-size: 12px; color: var(--muted);
+  }
+  footer a { color: var(--muted); text-decoration: none; margin: 0 8px; }
+  footer a:hover { color: var(--text); }
+  .footer-links { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">
+    <span class="logo-icon">📺</span>
+    CIC TV
+  </a>
+  <nav>
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html" class="active">Ayuda</a>
+    <a href="canales.html">Canales</a>
+    <a href="acerca.html">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="badge">Centro de Ayuda</div>
+  <h1>¿En qué podemos ayudarte?</h1>
+  <p>Guía de uso, solución de problemas y preguntas frecuentes de CIC TV.</p>
+</div>
+
+<div class="container">
+
+  <div class="sec-label">Primeros pasos</div>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Instala la app</h3>
+      <p>Descarga CIC TV desde Aptoide o instala el APK desde este sitio web.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Abre la app</h3>
+      <p>Al iniciar verás TV, Radio y categorías organizadas en la pantalla principal.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Elige un canal</h3>
+      <p>Toca cualquier canal para reproducirlo de inmediato en el reproductor.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Guarda favoritos</h3>
+      <p>Toca ⭐ junto a cualquier canal para guardarlo en tu pestaña Favoritos.</p>
+    </div>
+  </div>
+
+  <div class="sec-label">Problemas de reproducción</div>
+  <div class="faq">
+
+    <div class="faq-item">
+      <button class="faq-q">El canal no carga o aparece en negro<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        La señal del canal puede estar temporalmente caída. Usa el botón <strong>↺ Reintentar</strong> en pantalla para reconectarte. Si no funciona, prueba <strong>▶ Siguiente</strong> para pasar al siguiente canal. Las señales dependen de proveedores externos y pueden interrumpirse sin aviso.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">El video se congela o hay mucho buffering<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Se recomienda una conexión mínima de 5 Mbps para TV en HD. Cierra otras apps que consuman datos en segundo plano y conéctate a Wi-Fi si es posible. También puedes probar recargar el canal con <strong>↺ Reintentar</strong>.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">No hay sonido en el canal<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Verifica que el volumen del dispositivo esté activo y no en modo silencio. Algunos canales internacionales transmiten audio en otro idioma. Intenta salir del canal y volver a seleccionarlo para reiniciar el stream de audio.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">Aparece el mensaje "Offline o bloqueado"<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Significa que el stream del canal está caído o su URL ha cambiado. CIC TV actualiza las señales periódicamente. Si el canal lleva más de 48 horas sin funcionar, repórtalo usando el botón de contacto más abajo para que lo revisemos.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">La aplicación se cierra inesperadamente<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Asegúrate de tener la versión más reciente instalada. Si el problema continúa, ve a <strong>Configuración → Aplicaciones → CIC TV → Borrar caché</strong> y vuelve a abrir la app. Esto limpia archivos temporales que pueden causar inestabilidad.
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="sec-label">Canales y favoritos</div>
+  <div class="faq">
+
+    <div class="faq-item">
+      <button class="faq-q">¿Cómo agrego o quito un canal de favoritos?<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Toca el ícono ⭐ junto al nombre del canal para agregarlo a favoritos. Tócalo nuevamente para quitarlo. Accede a todos tus guardados desde la pestaña <strong>⭐ Favoritos</strong> en la barra superior de la app.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">Perdí mis favoritos después de reinstalar la app<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        Los favoritos se guardan en el almacenamiento local del dispositivo. Al desinstalar la app o limpiar sus datos, se eliminan. Deberás volver a marcar tus canales. Estamos evaluando sincronización en la nube para futuras versiones.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">¿Puedo usar CIC TV en una Smart TV?<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        CIC TV está optimizada para Android (móviles y tablets). Para verla en TV puedes: instalar el APK en un dispositivo Android TV o TV Box, usar un Chromecast con Google TV, o abrir la versión web desde el navegador de tu Smart TV si soporta HTML5.
+      </div></div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q">¿La app consume muchos datos móviles?<span class="faq-icon">+</span></button>
+      <div class="faq-body"><div class="faq-inner">
+        El streaming de TV en vivo consume entre 1 GB y 3 GB por hora según la calidad del canal. Para ahorrar datos recomendamos usar Wi-Fi. Los canales de radio consumen significativamente menos datos que los canales de video.
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="sec-label">Consejos de uso</div>
+  <div class="tips">
+    <div class="tip">
+      <strong>Usa Wi-Fi para mejor experiencia</strong>
+      <span>El streaming consume entre 1–3 GB por hora. Conectarte a Wi-Fi garantiza reproducción fluida sin interrupciones.</span>
+    </div>
+    <div class="tip">
+      <strong>Navega por categorías</strong>
+      <span>Usa las pestañas Noticias, Deportes, Entretenimiento, etc. para encontrar canales rápidamente en lugar de desplazarte por toda la lista.</span>
+    </div>
+    <div class="tip">
+      <strong>Usa el botón Reintentar</strong>
+      <span>Si un canal no carga al primer intento, ↺ Reintentar reconecta al stream sin salir de la pantalla del reproductor.</span>
+    </div>
+    <div class="tip">
+      <strong>Pantalla completa automática</strong>
+      <span>Gira el dispositivo en horizontal mientras reproduces un canal para activar el modo pantalla completa automáticamente.</span>
+    </div>
+    <div class="tip">
+      <strong>Reporta canales caídos</strong>
+      <span>Si un canal lleva más de 48 horas sin funcionar, escríbenos. Tu reporte ayuda a mantener la lista actualizada para todos.</span>
+    </div>
+  </div>
+
+  <div class="sec-label">¿Necesitas más ayuda?</div>
+  <div class="contact-card">
+    <h3>Contáctanos directamente</h3>
+    <p>Si tu problema no está cubierto en esta guía, escríbenos. Respondemos en 24 a 48 horas hábiles.</p>
+    <a href="mailto:omusicbycic@gmail.com" class="btn">Enviar mensaje</a>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="index.html">Inicio</a>
+    <a href="ayuda.html">Ayuda</a>
+    <a href="canales.html">Canales</a>
+    <a href="acerca.html">Acerca de</a>
+    <a href="privacy.html">Privacidad</a>
+    <a href="mailto:omusicbycic@gmail.com">Contacto</a>
+  </div>
+  © 2025 CIC TV — Canales en Vivo. Todos los derechos reservados.
+</footer>
+
+<script>
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!isOpen) item.classList.add('open');
+    });
+  });
+</script>
+</body>
+</html>
