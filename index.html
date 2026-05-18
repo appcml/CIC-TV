@@ -1550,14 +1550,31 @@ function doSearch() {
 
 function showFavs() {
   isFavMode = true;
-  // Buscar favoritos en TODAS las fuentes — TV + Radio sin filtrar por curMode
+
+  // Buscar cada favorito con 3 estrategias:
+  // 1. Por id exacto en allTV+allRadio
+  // 2. Por id en favsMeta (metadatos guardados)
+  // 3. Si favsMeta tiene URL, buscar por URL en allTV+allRadio (por si cambió el id)
   var allSrc = allTV.concat(allRadio);
   var favItems = [];
+  var seen = {};
+
   favs.forEach(function(id) {
+    if (seen[id]) return;
+    // Estrategia 1: buscar por id
     var ch = allSrc.find(function(c){ return c.id === id; });
-    if (!ch && favsMeta[id]) ch = favsMeta[id]; // fallback a metadatos guardados
-    if (ch) favItems.push(ch);
+    // Estrategia 2: fallback a metadatos guardados
+    if (!ch && favsMeta[id]) {
+      var meta = favsMeta[id];
+      // Estrategia 3: buscar por URL en caso de que id haya cambiado
+      if (meta.url) ch = allSrc.find(function(c){ return c.url === meta.url; }) || meta;
+      else ch = meta;
+    }
+    if (ch) { favItems.push(ch); seen[id] = true; }
   });
+
+  // Guardar para que renderSideList pueda recuperarlos
+  window._favItemsCache = favItems;
 
   // Mostrar en el grid
   filtered = favItems;
@@ -1565,21 +1582,17 @@ function showFavs() {
   g('scnt').textContent   = favItems.length + ' guardados';
   renderGrid();
 
-  // Mostrar en lista lateral — ignorar filtros de categoría y país activos
-  // La lista lateral debe mostrar TODOS los favoritos, no solo los del modo actual
-  var sideCountryFilterBak = sideCountryFilter;
-  var sideCatFilterBak     = sideCatFilter;
-  sideCountryFilter = 'all';
-  sideCatFilter     = 'all';
+  // Mostrar en lista lateral
   renderSideFromList(favItems);
-  sideCountryFilter = sideCountryFilterBak;
-  sideCatFilter     = sideCatFilterBak;
 
-  // Actualizar contador sidebar
+  // Actualizar contador
   var e = g('cn-fav'); if(e) e.textContent = favItems.length;
-
-  // Si hay un canal activo y es favorito, asegurarse de que aparezca marcado
   if (curCh) updatePlayerFavBtn();
+
+  // Debug en consola
+  console.log('[FAV] favs IDs:', favs);
+  console.log('[FAV] encontrados:', favItems.length, 'de', favs.length);
+  console.log('[FAV] allTV size:', allTV.length, '| allRadio size:', allRadio.length);
 }
 
 function descargarM3U() {
@@ -1696,7 +1709,13 @@ function renderGrid() {
 // RENDER LISTA LATERAL
 // ═══════════════════════════════════════════════════════════════════════
 function renderSideList() {
-  if (isFavMode) return;  // favoritos tienen prioridad — no sobreescribir
+  if (isFavMode) {
+    // En modo favoritos: re-renderizar la lista de favoritos actualizada
+    if (window._favItemsCache && window._favItemsCache.length) {
+      renderSideFromList(window._favItemsCache);
+    }
+    return;
+  }
   var isR = curMode === 'radio';
   var src = (isR ? allRadio : allTV).slice();
   if (sideCatFilter !== 'all')     src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
