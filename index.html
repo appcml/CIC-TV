@@ -861,6 +861,7 @@ let curSearch        = '';
 let isPinned         = false;
 let filtered         = [];
 let favs             = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
+let isFavMode        = false;  // true cuando la lista lateral muestra favoritos — bloquea renderSideList
 // Metadatos de canales favoritos — permite mostrarlos aunque aún no hayan cargado en allTV/allRadio
 let favsMeta         = JSON.parse(localStorage.getItem('cicFavsMeta') || '{}');
 
@@ -1506,6 +1507,7 @@ function setMode(mode) {
 
   sideCatFilter     = 'all';
   sideCountryFilter = 'all';
+  isFavMode = false;
   updateAll();
   applyFilter();
   renderSideList();
@@ -1520,6 +1522,7 @@ function setCat(cat, btn) {
   if (btn) btn.classList.add('active');
   sideCatFilter     = cat;
   sideCountryFilter = 'all';
+  isFavMode = false;
   applyFilter();
   renderSideList();
 }
@@ -1533,6 +1536,7 @@ function setCountry(co, btn) {
 
 function doSearch() {
   curSearch = g('search').value.toLowerCase();
+  isFavMode = false;
   applyFilter();
   if (curSearch) {
     var src = curMode === 'tv' ? allTV : allRadio;
@@ -1544,6 +1548,7 @@ function doSearch() {
 }
 
 function showFavs() {
+  isFavMode = true;
   // Buscar favoritos en TODAS las fuentes — TV + Radio sin filtrar por curMode
   var allSrc = allTV.concat(allRadio);
   var favItems = [];
@@ -1690,6 +1695,7 @@ function renderGrid() {
 // RENDER LISTA LATERAL
 // ═══════════════════════════════════════════════════════════════════════
 function renderSideList() {
+  if (isFavMode) return;  // favoritos tienen prioridad — no sobreescribir
   var isR = curMode === 'radio';
   var src = (isR ? allRadio : allTV).slice();
   if (sideCatFilter !== 'all')     src = src.filter(function(ch){ return ch.cat === sideCatFilter; });
@@ -1828,6 +1834,7 @@ function playFromSide(id) {
 
 // Filtro país lista lateral
 function setSideCountry(co, btn) {
+  isFavMode = false;
   sideCountryFilter = co;
   var bar = g('sideCountriesBar');
   if (bar) bar.querySelectorAll('.sc-chip').forEach(function(b){ b.classList.remove('active'); });
@@ -1855,6 +1862,7 @@ function updateSideCountriesBar(src) {
     var btn = e.target.closest('[data-co]');
     if (!btn) return;
     var co = btn.dataset.co;
+    isFavMode = false;
     sideCountryFilter = co;
     bar.querySelectorAll('[data-co]').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
