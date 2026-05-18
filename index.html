@@ -1551,29 +1551,48 @@ function doSearch() {
 function showFavs() {
   isFavMode = true;
 
-  // Buscar cada favorito con 3 estrategias:
-  // 1. Por id exacto en allTV+allRadio
-  // 2. Por id en favsMeta (metadatos guardados)
-  // 3. Si favsMeta tiene URL, buscar por URL en allTV+allRadio (por si cambió el id)
   var allSrc = allTV.concat(allRadio);
+
+  // Pre-indexar por ID y por hash (sin prefijo) para búsqueda rápida
+  var byId   = {};
+  var byHash = {};
+  allSrc.forEach(function(c) {
+    if (c.id) {
+      byId[c.id] = c;
+      // Guardar también sin prefijo (primer caracter) para match cross-type
+      var hash = c.id.slice(1);
+      if (!byHash[hash]) byHash[hash] = c;
+    }
+  });
+
   var favItems = [];
   var seen = {};
 
   favs.forEach(function(id) {
     if (seen[id]) return;
-    // Estrategia 1: buscar por id
-    var ch = allSrc.find(function(c){ return c.id === id; });
-    // Estrategia 2: fallback a metadatos guardados
+    var ch = null;
+
+    // 1. Buscar por ID exacto
+    ch = byId[id];
+
+    // 2. Buscar por hash sin prefijo (cubre casos de prefijo diferente t/c/r)
+    if (!ch) ch = byHash[id.slice(1)];
+
+    // 3. Fallback a favsMeta guardados
     if (!ch && favsMeta[id]) {
       var meta = favsMeta[id];
-      // Estrategia 3: buscar por URL en caso de que id haya cambiado
-      if (meta.url) ch = allSrc.find(function(c){ return c.url === meta.url; }) || meta;
-      else ch = meta;
+      // 3b. Buscar por URL si tenemos meta
+      if (meta.url) {
+        ch = allSrc.find(function(c){ return c.url === meta.url; }) || meta;
+      } else {
+        ch = meta;
+      }
     }
+
     if (ch) { favItems.push(ch); seen[id] = true; }
   });
 
-  // Guardar para que renderSideList pueda recuperarlos
+  // Guardar cache para re-renders
   window._favItemsCache = favItems;
 
   // Mostrar en el grid
@@ -1589,10 +1608,8 @@ function showFavs() {
   var e = g('cn-fav'); if(e) e.textContent = favItems.length;
   if (curCh) updatePlayerFavBtn();
 
-  // Debug en consola
-  console.log('[FAV] favs IDs:', favs);
-  console.log('[FAV] encontrados:', favItems.length, 'de', favs.length);
-  console.log('[FAV] allTV size:', allTV.length, '| allRadio size:', allRadio.length);
+  console.log('[FAV] IDs guardados:', favs.length, '| Encontrados:', favItems.length);
+  console.log('[FAV] No encontrados:', favs.filter(function(id){ return !seen[id]; }));
 }
 
 function descargarM3U() {
