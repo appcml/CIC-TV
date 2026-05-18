@@ -66,27 +66,17 @@ FUENTES_EXTRA = [
     'https://www.apsattv.com/klowd.m3u',
     # TCL TV
     'https://www.apsattv.com/tcl.m3u',
-    # Radio pervii.com — por géneros musicales
-    'http://radio.pervii.com/top_radio_latin.m3u',
-    'http://radio.pervii.com/top_radio_pop.m3u',
-    'http://radio.pervii.com/top_radio_rock.m3u',
-    'http://radio.pervii.com/top_radio_jazz.m3u',
-    'http://radio.pervii.com/top_radio_top_40.m3u',
-    'http://radio.pervii.com/top_radio_salsa.m3u',
-    'http://radio.pervii.com/top_radio_reggae.m3u',
-    'http://radio.pervii.com/top_radio_electronic.m3u',
-    'http://radio.pervii.com/top_radio_hip_hop.m3u',
-    'http://radio.pervii.com/top_radio_classical.m3u',
-    'http://radio.pervii.com/top_radio_blues.m3u',
-    'http://radio.pervii.com/top_radio_country.m3u',
-    'http://radio.pervii.com/top_radio_80s.m3u',
-    'http://radio.pervii.com/top_radio_90s.m3u',
-    'http://radio.pervii.com/top_radio_soul.m3u',
-    'http://radio.pervii.com/top_radio_metal.m3u',
-    'http://radio.pervii.com/top_radio_indie.m3u',
-    'http://radio.pervii.com/top_radio_alternative.m3u',
-    'http://radio.pervii.com/top_radio_dance.m3u',
-    'http://radio.pervii.com/top_radio_lounge.m3u',
+    # ── Alplox json-teles — canales Chile verificados con m3u8 ──
+    'https://rawcdn.githack.com/Alplox/json-teles/refs/heads/main/canales.m3u',
+    # ── TDTChannels — España y LATAM (TV + Radio) ──
+    'https://www.tdtchannels.com/lists/tv.m3u8',
+    # ── Free-TV / IPTV — canales gratuitos verificados ──
+    'https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8',
+    # ── mametchikitty — animación y películas en español ──
+    'https://mametchikitty.github.io/Listas-IPTV/dibujos-animados.m3u',
+    'https://mametchikitty.github.io/Listas-IPTV/peliculas.m3u',
+    # Radio pervii.com — movidas a FUENTES_RADIO (generan radios.json, no canales.json)
+    # (eliminadas de aquí para evitar mezclar radios con canales TV)
 ]
 
 FUENTES = [
@@ -196,7 +186,152 @@ CAT_MAP = {
 MAX_CANALES_POR_FUENTE = 500
 TIMEOUT_VALIDACION = 10  # segundos — más tiempo para canales lentos
 WORKERS_VALIDACION = 50  # más workers = validación más rápida
-OUTPUT_FILE = os.path.join(os.path.dirname(__file__), 'canales.json')
+OUTPUT_FILE       = os.path.join(os.path.dirname(__file__), 'canales.json')
+OUTPUT_RADIO_FILE = os.path.join(os.path.dirname(__file__), 'radios.json')
+
+# ══════════════════════════════════════════════════════════════
+# FUENTES DE RADIO — se generan en radios.json (separado de TV)
+# ══════════════════════════════════════════════════════════════
+RADIO_CAT_MAP = {
+    'music': 'Música', 'música': 'Música', 'musica': 'Música',
+    'news': 'Noticias', 'noticias': 'Noticias',
+    'talk': 'General', 'general': 'General', 'undefined': 'General',
+    'sports': 'Deportes', 'sport': 'Deportes', 'deportes': 'Deportes',
+    'religious': 'Religiosos', 'religion': 'Religiosos', 'religiosos': 'Religiosos',
+    'entertainment': 'Entretenimiento', 'culture': 'Entretenimiento',
+    'business': 'Negocios', 'education': 'General',
+}
+
+FUENTES_RADIO = [
+    # ══ pervii.com — catálogo completo de géneros ══
+    # Pop / Top
+    {'url': 'http://radio.pervii.com/top_radio_top_40.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_pop.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_mixed.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_various.m3u',       'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_oldies.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_retro.m3u',         'cat': 'Música', 'co': None},
+    # Rock / Metal / Punk
+    {'url': 'http://radio.pervii.com/top_radio_rock.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_metal.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_hardrock.m3u',      'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_punk.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_gothic.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_hardcore.m3u',      'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_alternative.m3u',   'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_indie.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_progressive.m3u',   'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_industrial.m3u',    'cat': 'Música', 'co': None},
+    # Electrónica / Dance
+    {'url': 'http://radio.pervii.com/top_radio_electronic.m3u',    'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_dance.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_house.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_techno.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_trance.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_club.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_eurodance.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_disco.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_discofox.m3u',      'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_drum_and_bass.m3u', 'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_breakbeat.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_goa.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_ebm.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_jungle.m3u',        'cat': 'Música', 'co': None},
+    # Jazz / Blues / Soul / R&B
+    {'url': 'http://radio.pervii.com/top_radio_jazz.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_smooth_jazz.m3u',   'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_acid_jazz.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_blues.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_soul.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_rnb.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_funk.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_swing.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_big_band.m3u',      'cat': 'Música', 'co': None},
+    # Hip Hop / Rap / Urban
+    {'url': 'http://radio.pervii.com/top_radio_hip_hop.m3u',       'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_rap.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_urban.m3u',         'cat': 'Música', 'co': None},
+    # Latin / World
+    {'url': 'http://radio.pervii.com/top_radio_latin.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_salsa.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_reggae.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_ska.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_world.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_african.m3u',       'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_arabic.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_asian.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_india.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_jpop.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_anime.m3u',         'cat': 'Música', 'co': None},
+    # Por décadas
+    {'url': 'http://radio.pervii.com/top_radio_60s.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_70s.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_80s.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_90s.m3u',           'cat': 'Música', 'co': None},
+    # Clásica / Instrumental
+    {'url': 'http://radio.pervii.com/top_radio_classical.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_opera.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_symphonic.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_instrumental.m3u',  'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_ambient.m3u',       'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_chillout.m3u',      'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_lounge.m3u',        'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_downtempo.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_easy_listening.m3u','cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_film.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_soundtrack.m3u',    'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_musical.m3u',       'cat': 'Música', 'co': None},
+    # Country / Folk / Americana
+    {'url': 'http://radio.pervii.com/top_radio_country.m3u',       'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_folk.m3u',          'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_americana.m3u',     'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_bluegrass.m3u',     'cat': 'Música', 'co': None},
+    # Por idioma/región
+    {'url': 'http://radio.pervii.com/top_radio_deutsch.m3u',       'cat': 'Música', 'co': 'DE'},
+    {'url': 'http://radio.pervii.com/top_radio_france.m3u',        'cat': 'Música', 'co': 'FR'},
+    {'url': 'http://radio.pervii.com/top_radio_italian.m3u',       'cat': 'Música', 'co': 'IT'},
+    {'url': 'http://radio.pervii.com/top_radio_portugal.m3u',      'cat': 'Música', 'co': 'PT'},
+    {'url': 'http://radio.pervii.com/top_radio_spain.m3u',         'cat': 'Música', 'co': 'ES'},
+    {'url': 'http://radio.pervii.com/top_radio_greek.m3u',         'cat': 'Música', 'co': 'GR'},
+    {'url': 'http://radio.pervii.com/top_radio_polish.m3u',        'cat': 'Música', 'co': 'PL'},
+    {'url': 'http://radio.pervii.com/top_radio_romanian.m3u',      'cat': 'Música', 'co': 'RO'},
+    {'url': 'http://radio.pervii.com/top_radio_russian.m3u',       'cat': 'Música', 'co': 'RU'},
+    {'url': 'http://radio.pervii.com/top_radio_turk.m3u',          'cat': 'Música', 'co': 'TR'},
+    {'url': 'http://radio.pervii.com/top_radio_schlager.m3u',      'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_polka.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_usa.m3u',           'cat': 'Música', 'co': 'US'},
+    {'url': 'http://radio.pervii.com/top_radio_college.m3u',       'cat': 'Música', 'co': None},
+    # Otros géneros
+    {'url': 'http://radio.pervii.com/top_radio_metal.m3u',         'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_gay.m3u',           'cat': 'Música', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_comedy.m3u',        'cat': 'Entretenimiento', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_talk.m3u',          'cat': 'General',         'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_sport.m3u',         'cat': 'Deportes',        'co': None},
+    # Religiosas
+    {'url': 'http://radio.pervii.com/top_radio_christian.m3u',     'cat': 'Religiosos', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_gospel.m3u',        'cat': 'Religiosos', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_quran.m3u',         'cat': 'Religiosos', 'co': None},
+    {'url': 'http://radio.pervii.com/top_radio_spiritual.m3u',     'cat': 'Religiosos', 'co': None},
+    # ══ m3u.cl ══
+    {'url': 'https://m3u.cl/lista.m3u',       'cat': 'General', 'co': 'CL', 'radio_only': True},
+    {'url': 'https://m3u.cl/lista/LATAM.m3u', 'cat': 'General', 'co': None, 'radio_only': True},
+    # ══ iptv-org radios por país LATAM (solo URLs de audio) ══
+    {'url': 'https://iptv-org.github.io/iptv/countries/cl.m3u', 'cat': None, 'co': 'CL', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/ar.m3u', 'cat': None, 'co': 'AR', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/mx.m3u', 'cat': None, 'co': 'MX', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/co.m3u', 'cat': None, 'co': 'CO', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/pe.m3u', 'cat': None, 'co': 'PE', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/ve.m3u', 'cat': None, 'co': 'VE', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/ec.m3u', 'cat': None, 'co': 'EC', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/bo.m3u', 'cat': None, 'co': 'BO', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/do.m3u', 'cat': None, 'co': 'DO', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/uy.m3u', 'cat': None, 'co': 'UY', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/py.m3u', 'cat': None, 'co': 'PY', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/gt.m3u', 'cat': None, 'co': 'GT', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/es.m3u', 'cat': None, 'co': 'ES', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/us.m3u', 'cat': None, 'co': 'US', 'radio_only': True},
+    {'url': 'https://iptv-org.github.io/iptv/countries/br.m3u', 'cat': None, 'co': 'BR', 'radio_only': True},
+]
 
 
 # ══════════════════════════════════
@@ -452,5 +587,129 @@ def main():
     print(f'   Tamaño: {size_kb} KB')
 
 
+
+# ══════════════════════════════════════════════════════════════
+# MAIN RADIO — genera radios.json desde FUENTES_RADIO
+# ══════════════════════════════════════════════════════════════
+def es_url_radio(url):
+    """Devuelve True si la URL parece ser audio (radio), no video."""
+    u = url.lower()
+    # Extensiones de audio directas
+    if any(u.endswith(ext) for ext in ['.mp3', '.aac', '.ogg', '.flac', '.m4a', '.opus', '.pls', '.xspf']):
+        return True
+    # Streams de audio conocidos
+    if any(p in u for p in ['stream', 'radio', 'audio', 'listen', 'live.mp3', '/stream/', '/radio/', '/listen/']):
+        return True
+    # m3u8 de video → NO es radio
+    if u.endswith('.m3u8') or '.m3u8' in u:
+        return False
+    return False
+
+def cargar_radios_existentes():
+    try:
+        with open(OUTPUT_RADIO_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return {r['url']: r for r in data.get('radios', [])}
+    except Exception:
+        return {}
+
+def normalizar_cat_radio(cat_raw, cat_fuente):
+    if cat_fuente:
+        return cat_fuente
+    if not cat_raw:
+        return 'General'
+    key = cat_raw.lower().split(';')[0].strip()
+    return RADIO_CAT_MAP.get(key, 'General')
+
+def parsear_m3u_radio(txt, co_default=None, cat_default=None, radio_only=False):
+    """Parsea M3U extrayendo solo entradas de radio (audio). Si radio_only=True filtra por URL."""
+    canales = []
+    cur = {}
+    for linea in txt.split('\n'):
+        linea = linea.strip()
+        if linea.startswith('#EXTINF'):
+            name_m  = re.search(r',(.+)$', linea)
+            logo_m  = re.search(r'tvg-logo="([^"]*)"', linea)
+            co_m    = re.search(r'tvg-country="([^"]*)"', linea)
+            cat_m   = re.search(r'group-title="([^"]*)"', linea)
+            cur = {
+                'name': name_m.group(1).strip() if name_m else '',
+                'logo': logo_m.group(1) if logo_m else '',
+                'co':   (co_m.group(1).upper() if co_m else co_default) or '',
+                'cat_raw': cat_m.group(1) if cat_m else '',
+            }
+        elif linea and not linea.startswith('#') and cur.get('name'):
+            url = linea.strip()
+            cur['url'] = url
+            # Si radio_only, solo incluir URLs de audio (no m3u8 de video)
+            if radio_only and not es_url_radio(url):
+                cur = {}
+                continue
+            cur['cat'] = normalizar_cat_radio(cur.get('cat_raw', ''), cat_default)
+            cur.pop('cat_raw', None)
+            if url:
+                canales.append({**cur})
+            cur = {}
+    return canales
+
+def main_radio():
+    print(f'\n{"="*60}')
+    print(f'CIC TV — Actualizador de RADIOS')
+    print(f'{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+    print(f'{"="*60}\n')
+
+    existentes = cargar_radios_existentes()
+    print(f'Radios existentes: {len(existentes)}')
+
+    todos = {}  # url → radio
+    # Preservar radios existentes que tengan logo o campos extra
+    for url, r in existentes.items():
+        todos[url] = r
+
+    for fuente in FUENTES_RADIO:
+        url_fuente   = fuente['url']
+        cat_default  = fuente.get('cat')
+        co_default   = fuente.get('co')
+        radio_only   = fuente.get('radio_only', False)
+        print(f'📻 {url_fuente.split("/")[-1][:40]} ...', end=' ', flush=True)
+        txt = fetch_m3u(url_fuente)
+        if not txt:
+            print('sin respuesta')
+            continue
+        nuevas = parsear_m3u_radio(txt, co_default, cat_default, radio_only)
+        print(f'{len(nuevas)} entradas')
+        agregadas = 0
+        for r in nuevas:
+            url = r.get('url', '')
+            if not url or url in todos:
+                continue
+            todos[url] = r
+            agregadas += 1
+        print(f'   → {agregadas} nuevas')
+
+    # Asignar IDs estables
+    lista = list(todos.values())
+    for i, r in enumerate(lista):
+        if not r.get('id'):
+            r['id'] = 'r' + str(abs(hash(r['url'])) % (10**8)).zfill(8)
+        r['type'] = 'radio'
+
+    total = len(lista)
+    print(f'\n📊 Total radios: {total}')
+
+    data = {
+        'generado': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'total':    total,
+        'radios':   lista,
+    }
+
+    with open(OUTPUT_RADIO_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
+
+    size_kb = os.path.getsize(OUTPUT_RADIO_FILE) // 1024
+    print(f'\n✅ radios.json guardado: {total} radios · {size_kb} KB')
+
+
 if __name__ == '__main__':
     main()
+    main_radio()
