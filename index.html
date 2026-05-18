@@ -862,6 +862,7 @@ let isPinned         = false;
 let filtered         = [];
 let favs             = JSON.parse(localStorage.getItem('cicFavs3') || '[]');
 let isFavMode        = false;  // true cuando la lista lateral muestra favoritos — bloquea renderSideList
+Object.defineProperty(window, 'isFavMode', { get: function(){ return isFavMode; }, set: function(v){ isFavMode = v; } });
 // Metadatos de canales favoritos — permite mostrarlos aunque aún no hayan cargado en allTV/allRadio
 let favsMeta         = JSON.parse(localStorage.getItem('cicFavsMeta') || '{}');
 
