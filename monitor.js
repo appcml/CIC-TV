@@ -24,14 +24,96 @@ window.addEventListener('load', function() {
 
   setTimeout(function() {
     aplicarOcultos();
-    cargarTodosLosCanales();
-    cargarRadiosJSON();
+
+    if (window._LITE_MODE) {
+      // ── MODO LITE (Box TV / dispositivo lento) ──
+      // 1. Cargar canales-lite.json primero → reproducción inmediata (~200 canales)
+      // 2. Después de 8s cargar canales.json completo en segundo plano
+      cargarLite().then(function() {
+        setTimeout(function() {
+          cargarTodosLosCanales();
+          cargarRadiosJSON();
+        }, 8000);
+      });
+    } else {
+      // ── MODO NORMAL ──
+      cargarTodosLosCanales();
+      cargarRadiosJSON();
+    }
+
     setInterval(function() {
       cargarTodosLosCanales();
       cargarRadiosJSON();
     }, MON.checkMs);
-  }, 3000);
+  }, window._LITE_MODE ? 1000 : 3000);  // arranque más rápido en lite
 });
+
+// ════════════════════════════════════
+// CARGAR LITE (Box TV / dispositivo lento)
+// Carga canales-lite.json + radios-lite.json → reproducción inmediata
+// ════════════════════════════════════
+async function cargarLite() {
+  var urls = new Set(allTV.map(function(c){ return c.url; }));
+  var total = 0;
+
+  try {
+    var res = await fetch(GITHUB_RAW + 'canales-lite.json', {
+      cache: 'default',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (res.ok) {
+      var data = await res.json();
+      var lista = data.canales || [];
+      lista.forEach(function(ch) {
+        if (!ch.url || !ch.name) return;
+        if (canalesOcultos[ch.id || ch.url]) return;
+        if (urls.has(ch.url)) return;
+        ch.type = ch.type || 'tv';
+        allTV.push(ch);
+        urls.add(ch.url);
+        total++;
+      });
+      monLog('canales-lite.json: ' + total + ' canales cargados');
+    }
+  } catch(e) {
+    monLog('Error canales-lite.json: ' + e.message);
+  }
+
+  // Cargar radios-lite.json también
+  try {
+    var resR = await fetch(GITHUB_RAW + 'radios-lite.json', {
+      cache: 'default',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (resR.ok) {
+      var dataR = await resR.json();
+      var listaR = dataR.radios || [];
+      var urlsR = new Set(allRadio.map(function(r){ return r.url; }));
+      var totalR = 0;
+      listaR.forEach(function(rd) {
+        if (!rd.url || !rd.name) return;
+        if (urlsR.has(rd.url)) return;
+        rd.type = 'radio';
+        allRadio.push(rd);
+        urlsR.add(rd.url);
+        totalR++;
+      });
+      if (totalR > 0) monLog('radios-lite.json: ' + totalR + ' radios cargadas');
+    }
+  } catch(e) {
+    monLog('Error radios-lite.json: ' + e.message);
+  }
+
+  if (total > 0) {
+    if (typeof updateAll      === 'function') updateAll();
+    if (typeof renderSideList === 'function') setTimeout(renderSideList, 300);
+    if (typeof showToast      === 'function') showToast('▶ ' + total + ' canales listos');
+    if ((window.isFavMode || window._favPendingRefresh) && typeof showFavs === 'function') {
+      window._favPendingRefresh = false;
+      setTimeout(showFavs, 500);
+    }
+  }
+}
 
 // ════════════════════════════════════
 // CARGAR TODOS LOS CANALES
