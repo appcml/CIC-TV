@@ -73,7 +73,10 @@ async function cargarTodosLosCanales() {
     if (typeof updateAll      === 'function') setTimeout(updateAll,      600);
     if (typeof showToast      === 'function') showToast('📡 ' + total + ' canales cargados');
     // Si el usuario está viendo favoritos, refrescarlos con los canales recién cargados
-    if (window.isFavMode && typeof showFavs === 'function') setTimeout(showFavs, 700);
+    if ((window.isFavMode || window._favPendingRefresh) && typeof showFavs === 'function') {
+      window._favPendingRefresh = false;
+      setTimeout(showFavs, 700);
+    }
   }
 }
 
@@ -102,6 +105,10 @@ async function cargarRadiosJSON() {
     if (agregadas > 0) {
       monLog(agregadas + ' radios nuevas desde GitHub');
       if (typeof updateAll === 'function') setTimeout(updateAll, 300);
+      if ((window.isFavMode || window._favPendingRefresh) && typeof showFavs === 'function') {
+        window._favPendingRefresh = false;
+        setTimeout(showFavs, 500);
+      }
     }
   } catch(e) { monLog('radios.json: ' + e.message); }
 }
