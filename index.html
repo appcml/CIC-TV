@@ -69,6 +69,20 @@ window._fetchTimeout = function(url, ms, opts) {
   // Android Box: UA contiene "Android" + "Box" o similar, pero NO es teléfono/tablet normal
   var isAndroidBox = /Android/i.test(ua) && /Box|STB|OTT|TV/i.test(ua) && !/Mobile|Tablet/i.test(ua);
 
+  // ── DETECCIÓN DE PANTALLA GRANDE SIN TOUCH (PC / Box TV con browser) ──
+  // Si la pantalla física es grande (≥1200px) pero NO es touch → forzar layout escritorio
+  var screenW   = window.screen && window.screen.width  ? window.screen.width  : 0;
+  var screenH   = window.screen && window.screen.height ? window.screen.height : 0;
+  var isTouch   = ('ontouchstart' in window) || (nav.maxTouchPoints > 1);
+  var isBigScreen = screenW >= 1200 || screenH >= 720;
+  // Box TV con browser: pantalla grande, sin touch (o touch del mando), Android sin "Mobile"
+  var isDesktopBrowser = isBigScreen && (!isTouch || (isTVBox || isAndroidBox));
+  // También: Android sin "Mobile" en UA = tablet/box, no teléfono
+  var isAndroidNoMobile = /Android/i.test(ua) && !/Mobile/i.test(ua);
+  if (isAndroidNoMobile || isDesktopBrowser) {
+    document.documentElement.classList.add('force-desktop');
+  }
+
   // ULTRA_LITE: RAM ≤ 0.5GB, o TV Box con ≤ 1GB, o ≤ 2 cores Y ≤ 1GB RAM
   var isUltraLite = ram <= 0.5
     || (isTVBox && ram <= 1)
@@ -85,6 +99,7 @@ window._fetchTimeout = function(url, ms, opts) {
 
   window._ULTRA_LITE = isUltraLite;
   window._LITE_MODE  = isLite;
+  window._IS_TV_BROWSER = isTVBox || isAndroidBox || isAndroidNoMobile;
 
   if (isUltraLite) {
     document.documentElement.classList.add('lite', 'ultra-lite');
@@ -508,6 +523,19 @@ body.is-fullscreen .fs-exit{display:block !important}
 }
 
 /* TABLET */
+/* ── FORZAR LAYOUT ESCRITORIO en Box TV / Android sin Mobile / pantalla grande ── */
+/* Sobreescribe todos los media queries responsive */
+html.force-desktop aside { display: flex !important; }
+html.force-desktop :root { --sidebar: 220px !important; }
+html.force-desktop .ch-side { display: flex !important; width: 220px !important; }
+html.force-desktop .player-zone { height: 420px !important; flex-direction: row !important; }
+html.force-desktop .player-col { flex: 1 !important; width: auto !important; }
+html.force-desktop .video-ratio { position: relative !important; padding-bottom: 56.25% !important; height: 0 !important; }
+html.force-desktop .body { flex-direction: row !important; }
+html.force-desktop .bottom-zone { flex-direction: row !important; }
+html.force-desktop .mode-tabs { display: none !important; }
+html.force-desktop .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; }
+
 @media(max-width:1100px) and (min-width:601px){
   :root{--sidebar:0px}
   aside{display:none}
