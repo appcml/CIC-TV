@@ -243,7 +243,8 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .player-zone{
   display:flex;
   flex-shrink:0;
-  height:clamp(220px, 42vh, 380px);
+  height:clamp(180px, 38vh, 340px);
+  max-height:calc(100vh - 52px - 30px - 180px); /* siempre deja 180px para el grid */
   border-bottom:2px solid var(--border);
   background:#000;
   align-items:stretch;
