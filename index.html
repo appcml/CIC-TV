@@ -255,7 +255,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   flex:1;min-width:0;
   max-height:280px;
   display:flex;flex-direction:column;
-  background:#000;position:relative;
+  background:#000;position:relative;overflow:hidden;
 }
 .video-ratio{
   flex:1;position:relative;overflow:hidden;background:#000;
@@ -301,7 +301,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .pbar{
   flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);
   padding:6px 12px;display:flex;align-items:center;gap:8px;
-  min-height:36px;
+  min-height:36px;position:relative;z-index:10;
 }
 .live-b{background:var(--accent);color:#fff;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px;border-radius:3px;flex-shrink:0}
 .radio-b{background:var(--accent2);color:#000;font-size:8px;font-weight:700;letter-spacing:1px;padding:2px 5px;border-radius:3px;flex-shrink:0}
@@ -532,7 +532,7 @@ html.force-desktop :root { --sidebar: 220px !important; }
 html.force-desktop .ch-side { display: flex !important; width: 180px !important; }
 html.force-desktop .player-zone { height: clamp(180px, 35vh, 300px) !important; flex-direction: row !important; }
 html.force-desktop .player-col { flex: 1 !important; width: auto !important; }
-html.force-desktop .video-ratio { position: relative !important; padding-bottom: calc(45% + 5px) !important; height: 0 !important; overflow: hidden !important; }
+html.force-desktop .video-ratio { position: relative !important; padding-bottom: calc(45% + 40px) !important; height: 0 !important; overflow: hidden !important; }
 html.force-desktop .video-ratio video { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; object-fit: contain; }
 html.force-desktop .body { flex-direction: row !important; }
 html.force-desktop .bottom-zone { flex-direction: row !important; }
