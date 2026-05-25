@@ -334,6 +334,63 @@ FUENTES_RADIO = [
 ]
 
 
+# ══════════════════════════════════════════════════════════════
+# LECTOR DE fuentes.txt — fuentes manuales del usuario
+# ══════════════════════════════════════════════════════════════
+# Formato fuentes.txt:
+#   # Comentario
+#   https://ejemplo.com/lista.m3u           ← TV (auto-detectado)
+#   https://ejemplo.com/radio.m3u  radio    ← forzar tipo radio
+#   https://ejemplo.com/lista.m3u  tv  CL   ← forzar TV + país
+#   https://ejemplo.com/lista.m3u  tv  MX  Películas  ← con categoría
+
+FUENTES_TXT_FILE = os.path.join(os.path.dirname(__file__), 'fuentes.txt')
+
+def leer_fuentes_txt():
+    """Lee fuentes.txt y retorna (fuentes_tv, fuentes_radio)."""
+    fuentes_tv    = []  # lista de URLs string (van a FUENTES_EXTRA)
+    fuentes_radio = []  # lista de dicts (van a FUENTES_RADIO)
+
+    if not os.path.exists(FUENTES_TXT_FILE):
+        return fuentes_tv, fuentes_radio
+
+    with open(FUENTES_TXT_FILE, 'r', encoding='utf-8') as f:
+        lineas = f.readlines()
+
+    for linea in lineas:
+        linea = linea.strip()
+        # Ignorar comentarios y líneas vacías
+        if not linea or linea.startswith('#'):
+            continue
+        partes = linea.split()
+        url  = partes[0]
+        tipo = partes[1].lower() if len(partes) > 1 else 'auto'
+        co   = partes[2].upper() if len(partes) > 2 else None
+        cat  = ' '.join(partes[3:]) if len(partes) > 3 else None
+
+        # Auto-detectar tipo por extensión/nombre si no se especificó
+        if tipo == 'auto':
+            u = url.lower()
+            if any(x in u for x in ['radio', 'audio', '.mp3', '.aac', '.pls']):
+                tipo = 'radio'
+            else:
+                tipo = 'tv'
+
+        if tipo == 'radio':
+            fuentes_radio.append({
+                'url': url,
+                'cat': cat,
+                'co':  co,
+                'radio_only': False,  # ya viene de fuente de radio
+            })
+            print(f'   📻 [fuentes.txt] Radio: {url.split("/")[-1][:50]}')
+        else:
+            fuentes_tv.append(url)
+            print(f'   📺 [fuentes.txt] TV: {url.split("/")[-1][:50]}')
+
+    return fuentes_tv, fuentes_radio
+
+
 # ══════════════════════════════════
 # FETCH M3U
 # ══════════════════════════════════
@@ -477,13 +534,24 @@ def main():
     existentes = cargar_existentes()
     print(f'Canales existentes: {len(existentes)}')
 
+    # ── Leer fuentes.txt manuales ──
+    print(chr(10) + '📄 Leyendo fuentes.txt...')
+    fuentes_txt_tv, fuentes_txt_radio = leer_fuentes_txt()
+    if fuentes_txt_tv:
+        print(f'   → {len(fuentes_txt_tv)} fuentes TV manuales')
+    if fuentes_txt_radio:
+        print(f'   → {len(fuentes_txt_radio)} fuentes Radio manuales')
+
+    # Combinar fuentes TV: las del txt van primero (prioridad manual)
+    fuentes_extra_total = fuentes_txt_tv + FUENTES_EXTRA
+
     todos = {}  # url → canal
     # Preservar canales existentes
     for url, c in existentes.items():
         todos[url] = c
 
-    # ── Descargar y parsear fuentes extra (Pluto TV, Samsung, Roku, etc.) ──
-    for url_extra in FUENTES_EXTRA:
+    # ── Descargar y parsear fuentes extra (manuales + automáticas) ──
+    for url_extra in fuentes_extra_total:
         print(f'\n📥 Extra: {url_extra.split("/")[-1][:30]} ...', end=' ', flush=True)
         txt = fetch_m3u(url_extra)
         if not txt:
@@ -666,7 +734,11 @@ def main_radio():
     for url, r in existentes.items():
         todos[url] = r
 
-    for fuente in FUENTES_RADIO:
+    # ── Agregar fuentes radio manuales de fuentes.txt ──
+    _, fuentes_txt_radio = leer_fuentes_txt()
+    fuentes_radio_total = fuentes_txt_radio + FUENTES_RADIO
+
+    for fuente in fuentes_radio_total:
         url_fuente   = fuente['url']
         cat_default  = fuente.get('cat')
         co_default   = fuente.get('co')
