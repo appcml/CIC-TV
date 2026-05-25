@@ -183,6 +183,19 @@ header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1p
 #search{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:24px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none}
 #search:focus{border-color:rgba(230,63,110,0.5)}
 #search::placeholder{color:var(--text2)}
+/* Dropdown países bajo buscador */
+.search-dropdown{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:12px;z-index:999;padding:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  max-height:160px;overflow-y:auto;
+}
+.search-dd-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:0 2px 6px;}
+.search-dd-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.search-dd-chip{padding:3px 9px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.search-dd-chip:hover{background:var(--bg4);color:var(--text);}
+.search-dd-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .hbts{margin-left:auto;display:flex;gap:5px;flex-shrink:0}
 .hbt{padding:5px 11px;border-radius:16px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .hbt:hover{background:var(--bg4);color:var(--text)}
@@ -193,7 +206,7 @@ header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1p
 .body{flex:1;display:flex;overflow:hidden}
 
 /* SIDEBAR */
-aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin}
 .sl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:10px 10px 4px;flex-shrink:0}
 .cb{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;text-align:left;width:100%;white-space:nowrap;flex-shrink:0}
 .cb:hover{background:var(--bg3);color:var(--text)}
@@ -648,7 +661,12 @@ setTimeout(_hideSplash, 5000);
   <div class="logo">CIC<span> TV</span></div>
   <div class="sw">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="search" placeholder="Buscar canal o radio..." oninput="doSearch()">
+    <input type="text" id="search" placeholder="Buscar canal, radio o país..." oninput="doSearch()" onfocus="showSearchDropdown()" onblur="hideSearchDropdown()">
+    <!-- Dropdown de países bajo el buscador -->
+    <div id="searchDropdown" class="search-dropdown" style="display:none;">
+      <div class="search-dd-label">Filtrar por país</div>
+      <div class="search-dd-chips" id="searchDDChips"></div>
+    </div>
   </div>
   <div class="hbts">
     <!-- ⭐ botón header: muestra TODOS los favoritos en el grid/lista -->
@@ -1503,13 +1521,79 @@ function setCountry(co, btn) {
   applyFilter();
 }
 
+// ── Dropdown de países en buscador principal ──
+var _ddVisible = false;
+var _ddCountry = 'all'; // país seleccionado desde el dropdown
+
+function buildSearchDropdown() {
+  var chips = g('searchDDChips');
+  if (!chips) return;
+  var src = curMode === 'tv' ? allTV : allRadio;
+  var countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
+  var html = '<button class="search-dd-chip' + (_ddCountry==='all'?' active':'') + '" onmousedown="selectDDCountry('all',this)">🌐 Todos</button>';
+  countries.forEach(function(co) {
+    var active = _ddCountry === co ? ' active' : '';
+    html += '<button class="search-dd-chip'+active+'" onmousedown="selectDDCountry(''+co+'',this)">'+(CFLAGS[co]||'🏳️')+' '+(CNAMES[co]||co)+'</button>';
+  });
+  chips.innerHTML = html;
+}
+
+function selectDDCountry(co, btn) {
+  _ddCountry = co;
+  document.querySelectorAll('.search-dd-chip').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  // También sincronizar con el filtro de país global
+  curCountry = co;
+  document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
+  applyFilter();
+  renderSideList();
+}
+
+function showSearchDropdown() {
+  buildSearchDropdown();
+  var dd = g('searchDropdown');
+  if (dd) dd.style.display = 'block';
+  _ddVisible = true;
+}
+
+function hideSearchDropdown() {
+  // Pequeño delay para permitir click en chip antes de ocultar
+  setTimeout(function() {
+    var dd = g('searchDropdown');
+    if (dd) dd.style.display = 'none';
+    _ddVisible = false;
+  }, 200);
+}
+
 function doSearch() {
   curSearch = g('search').value.toLowerCase();
   isFavMode = false;
+  // Si escribió algo que coincide con un país, seleccionarlo automáticamente
+  if (curSearch.length >= 2) {
+    var src = curMode === 'tv' ? allTV : allRadio;
+    var matchedCo = null;
+    // Buscar por código de país exacto (ej: "cl", "ar", "mx")
+    var upper = curSearch.toUpperCase();
+    if (CFLAGS[upper]) {
+      matchedCo = upper;
+    } else {
+      // Buscar por nombre de país (ej: "chile", "argentin")
+      Object.keys(CNAMES).forEach(function(co) {
+        if ((CNAMES[co]||'').toLowerCase().startsWith(curSearch)) {
+          if (!matchedCo) matchedCo = co;
+        }
+      });
+    }
+    if (matchedCo && curSearch.length >= 2) {
+      _ddCountry = matchedCo;
+      curCountry = matchedCo;
+      buildSearchDropdown();
+    }
+  }
   applyFilter();
   if (curSearch) {
-    var src = curMode === 'tv' ? allTV : allRadio;
-    var results = src.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
+    var src2 = curMode === 'tv' ? allTV : allRadio;
+    var results = src2.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
     renderSideFromList(results);
   } else {
     renderSideList();
