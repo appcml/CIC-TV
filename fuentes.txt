@@ -41,5 +41,6 @@
 # https://iptv-org.github.io/iptv/countries/mx.m3u
 # https://iptv-org.github.io/iptv/languages/spa.m3u
 # hTTPS://iptv-org.GitHub.io/iptv/index.m3u
-#
+# https://m3u.cl/lista/MX.m3u
+# https://m3u.cl/lista/musica.m3u
 
