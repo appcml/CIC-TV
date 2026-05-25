@@ -43,4 +43,5 @@
 # hTTPS://iptv-org.GitHub.io/iptv/index.m3u
 # https://m3u.cl/lista/MX.m3u
 # https://m3u.cl/lista/musica.m3u
+# https://m3u.cl/lista/PE.m3u
 
