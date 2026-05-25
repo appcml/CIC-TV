@@ -1509,16 +1509,21 @@ function doSearch() {
   }
 
   if (matchedCo) {
-    // Filtrar lista lateral por país
-    curSearch  = '';
-    curCountry = matchedCo;
+    // Es un país — filtrar panel lateral Y grid por ese país
+    curSearch         = '';
+    curCountry        = matchedCo;
+    sideCountryFilter = matchedCo;
+    sideCatFilter     = 'all';
     document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
     applyFilter();
+    // renderSideList filtrará por sideCountryFilter automáticamente
     renderSideList();
+    showToast((CFLAGS[matchedCo]||'') + ' ' + (CNAMES[matchedCo]||matchedCo));
   } else {
-    // Filtrar por nombre de canal
-    curSearch  = val;
-    curCountry = 'all';
+    // Es nombre de canal — filtrar en ambos paneles
+    curSearch         = val;
+    curCountry        = 'all';
+    sideCountryFilter = 'all';
     applyFilter();
     var results = src.filter(function(ch){
       return ch.name.toLowerCase().includes(val);
