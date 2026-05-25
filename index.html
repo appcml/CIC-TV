@@ -55,69 +55,38 @@ window._fetchTimeout = function(url, ms, opts) {
 <link rel="manifest" href="manifest.json">
 <meta name="google-adsense-account" content="ca-pub-6387207876125603">
 <script>
-// ── DETECCIÓN DE MODO: NORMAL / LITE / ULTRA_LITE ───────────────────────
-// Corre sincrónicamente — bloquea recursos innecesarios desde el primer ms
+// ── MODO: SIEMPRE NORMAL (lite/ultra-lite desactivado) ───────────────────
 (function(){
   var nav = navigator;
-  var cores = nav.hardwareConcurrency || 4;
-  var ram   = nav.deviceMemory || 4;  // GB (undefined en iOS/Firefox → asumir normal)
-  var ua    = nav.userAgent;
+  var ua  = nav.userAgent;
 
-  // UserAgent de TV Box / dispositivo embebido
-  var isTVBox = /AFTM|AFTT|AFTS|AFTN|FireTV|Chromecast|CrKey|AndroidTV|HbbTV|Tizen|WebOS|SmartTV|BRAVIA|Philips.*TV|Vestel|Netrange|SMART-TV/i.test(ua);
-
-  // Android Box: UA contiene "Android" + "Box" o similar, pero NO es teléfono/tablet normal
-  var isAndroidBox = /Android/i.test(ua) && /Box|STB|OTT|TV/i.test(ua) && !/Mobile|Tablet/i.test(ua);
-
-  // ── DETECCIÓN DE PANTALLA GRANDE SIN TOUCH (PC / Box TV con browser) ──
-  // Si la pantalla física es grande (≥1200px) pero NO es touch → forzar layout escritorio
-  var screenW   = window.screen && window.screen.width  ? window.screen.width  : 0;
-  var screenH   = window.screen && window.screen.height ? window.screen.height : 0;
-  var isTouch   = ('ontouchstart' in window) || (nav.maxTouchPoints > 1);
+  // Detección de pantalla grande sin touch → forzar layout escritorio
+  var screenW = window.screen && window.screen.width  ? window.screen.width  : 0;
+  var screenH = window.screen && window.screen.height ? window.screen.height : 0;
+  var isTouch = ('ontouchstart' in window) || (nav.maxTouchPoints > 1);
   var isBigScreen = screenW >= 1200 || screenH >= 720;
-  // Box TV con browser: pantalla grande, sin touch (o touch del mando), Android sin "Mobile"
-  var isDesktopBrowser = isBigScreen && (!isTouch || (isTVBox || isAndroidBox));
-  // También: Android sin "Mobile" en UA = tablet/box, no teléfono
+  var isTVBox = /AFTM|AFTT|AFTS|AFTN|FireTV|Chromecast|CrKey|AndroidTV|HbbTV|Tizen|WebOS|SmartTV|BRAVIA|Philips.*TV|Vestel|Netrange|SMART-TV/i.test(ua);
+  var isAndroidBox = /Android/i.test(ua) && /Box|STB|OTT|TV/i.test(ua) && !/Mobile|Tablet/i.test(ua);
   var isAndroidNoMobile = /Android/i.test(ua) && !/Mobile/i.test(ua);
+  var isDesktopBrowser = isBigScreen && (!isTouch || (isTVBox || isAndroidBox));
   if (isAndroidNoMobile || isDesktopBrowser) {
     document.documentElement.classList.add('force-desktop');
   }
 
-  // ULTRA_LITE: RAM ≤ 0.5GB, o TV Box con ≤ 1GB, o ≤ 2 cores Y ≤ 1GB RAM
-  var isUltraLite = ram <= 0.5
-    || (isTVBox && ram <= 1)
-    || (isAndroidBox && ram <= 1)
-    || (cores <= 2 && ram <= 1);
-
-  // LITE: TV Box cualquiera, o RAM ≤ 1GB, o (2 cores Y RAM ≤ 2GB — ej. celular gama baja)
-  // NOTA: PC con 2 cores pero 4GB+ RAM → NO entra en lite (fix del bug anterior)
-  var isLite = isUltraLite
-    || isTVBox
-    || isAndroidBox
-    || ram <= 1
-    || (cores <= 2 && ram <= 2);
-
-  window._ULTRA_LITE = isUltraLite;
-  window._LITE_MODE  = isLite;
+  // Siempre modo NORMAL — sin restricciones de canales ni features
+  window._ULTRA_LITE = false;
+  window._LITE_MODE  = false;
   window._IS_TV_BROWSER = isTVBox || isAndroidBox || isAndroidNoMobile;
-
-  if (isUltraLite) {
-    document.documentElement.classList.add('lite', 'ultra-lite');
-  } else if (isLite) {
-    document.documentElement.classList.add('lite');
-  }
 })();
-// AdSense: solo carga en dispositivos normales, diferido tras primer render
-if (!window._LITE_MODE) {
-  document.addEventListener('DOMContentLoaded', function() {
+// AdSense: diferido tras primer render
+document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
       var s = document.createElement('script');
       s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6387207876125603';
       s.async = true; s.crossOrigin = 'anonymous';
       document.head.appendChild(s);
-    }, 2000); // esperar 2s tras DOMContentLoaded para no competir con el player
+    }, 2000);
   });
-}
 </script>
 <meta name="apple-touch-fullscreen" content="yes">
 <script>
@@ -143,13 +112,11 @@ window.addEventListener('error', function(e) {
   setAppHeight();
 </script>
 <script>
-// Fuentes Google: solo en dispositivos normales, diferido para no bloquear render
-if (!window._LITE_MODE) {
-  var _fl = document.createElement('link');
-  _fl.rel = 'stylesheet';
-  _fl.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap';
-  document.head.appendChild(_fl);
-}
+// Fuentes Google: diferido para no bloquear render
+var _fl = document.createElement('link');
+_fl.rel = 'stylesheet';
+_fl.href = 'https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap';
+document.head.appendChild(_fl);
 </script>
 <style>
 :root{
@@ -1063,21 +1030,7 @@ const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'De
 // INIT
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Benchmark real de rendimiento — puede subir a ultra-lite si el frame es muy lento ──
-(function() {
-  var t0 = performance.now();
-  requestAnimationFrame(function() {
-    var ms = performance.now() - t0;
-    if (ms > 100 && !window._ULTRA_LITE) {
-      window._ULTRA_LITE = true;
-      window._LITE_MODE  = true;
-      document.documentElement.classList.add('lite', 'ultra-lite');
-    } else if (ms > 50 && !window._LITE_MODE) {
-      window._LITE_MODE = true;
-      document.documentElement.classList.add('lite');
-    }
-  });
-})();
+// Benchmark desactivado — siempre modo Normal
 
 // Envolver el init en try/catch — si hay error JS no queda pantalla blanca
 try {
@@ -1095,12 +1048,12 @@ try {
   if (chload) { chload.style.display = 'block'; chload.textContent = '⏳ Cargando...'; }
 }
 
-// Delays escalonados según modo:
-var _initDelay = window._ULTRA_LITE ? 5000 : (window._LITE_MODE ? 3000 : 800);
+// Delays modo normal
+var _initDelay = 800;
 setTimeout(function(){ try { loadCountries(); } catch(e){ console.error(e); } }, _initDelay);
 
 // Cargar radios externas siempre
-setTimeout(function(){ try { loadRadiosExternas(); } catch(e){ console.error(e); } }, window._ULTRA_LITE ? 8000 : (window._LITE_MODE ? 6000 : 3000));
+setTimeout(function(){ try { loadRadiosExternas(); } catch(e){ console.error(e); } }, 3000);
 
 // ═══════════════════════════════════════════════════════════════════════
 // AUTOPLAY AL INICIAR — Mejora 2 + 3
@@ -1245,12 +1198,7 @@ function markSideActive(ch) {
 // UTILIDADES
 // ═══════════════════════════════════════════════════════════════════════
 function isSlowDevice() {
-  if (typeof window._LITE_MODE !== 'undefined') return window._LITE_MODE;
-  var nav = navigator;
-  var cores = nav.hardwareConcurrency || 4;
-  var ram   = nav.deviceMemory || 4;
-  var isTVBox = /AFTM|AFTT|AFTS|FireTV|Chromecast|AndroidTV|SmartTV|Tizen|WebOS/i.test(nav.userAgent);
-  return isTVBox || ram <= 1 || (cores <= 2 && ram <= 2);
+  return false; // Modo Normal siempre activo
 }
 
 function showToast(msg) {
@@ -1282,34 +1230,11 @@ async function loadCountries() {
   // En dispositivos lentos: carga secuencial de a 1 país, máx 8 países para no colapsar RAM
   // En dispositivos normales: carga paralela completa
   var paisEntries = Object.entries(COUNTRY_URLS);
-  var esLento = isSlowDevice() || (navigator.deviceMemory && navigator.deviceMemory <= 1) || paisEntries.length > 50;
-  var MAX_TV = 2000; // límite de canales en RAM para dispositivos lentos
+  var esLento = false; // Modo Normal — carga paralela siempre
+  var MAX_TV = 99999;
 
-  if (esLento) {
-    // Carga secuencial: de a 1, máx 6 países prioritarios, con pausa entre cada uno
-    var prioritarios = ['CL','AR','MX','CO','ES','US','PE','VE','BR','EC'];
-    var paisesACargar = paisEntries.filter(function(e){ return prioritarios.indexOf(e[0]) >= 0; });
-    for (var pi = 0; pi < paisesACargar.length; pi++) {
-      var code = paisesACargar[pi][0];
-      var slug = paisesACargar[pi][1];
-      if (allTV.length >= MAX_TV) break; // no cargar más si ya hay suficientes
-      var txt = await fetchM3U('https://iptv-org.github.io/iptv/countries/' + slug + '.m3u');
-      if (txt) {
-        var parsed = parseM3U(txt, code, 'tv');
-        var urlsExistentes = {};
-        allTV.forEach(function(x){ urlsExistentes[x.url] = true; });
-        var newCh = parsed.filter(function(ch){ return !urlsExistentes[ch.url]; });
-        if (newCh.length) {
-          allTV = allTV.concat(newCh.slice(0, MAX_TV - allTV.length));
-          updateAll();
-          if (curMode === 'tv') { applyFilter(); renderSideList(); }
-        }
-      }
-      // Pausa entre países para no saturar CPU/RAM
-      await new Promise(function(r){ setTimeout(r, 800); });
-    }
-  } else {
-    // Dispositivo normal: carga paralela completa
+  // Siempre carga paralela completa
+  {
     await Promise.allSettled(paisEntries.map(async ([code, slug]) => {
       const txt = await fetchM3U('https://iptv-org.github.io/iptv/countries/' + slug + '.m3u');
       if (!txt) return;
@@ -1329,7 +1254,7 @@ async function loadCountries() {
     const parsed = parseM3U(txtSpa, 'INT', 'tv');
     const urlsExSpa = {}; allTV.forEach(function(x){ urlsExSpa[x.url]=true; });
     const newCh  = parsed.filter(ch => !urlsExSpa[ch.url]);
-    if (newCh.length && (!isSlowDevice() || allTV.length < 2000)) {
+    if (newCh.length) {
       allTV = [...allTV, ...newCh];
       updateAll();
       if (curMode === 'tv') { applyFilter(); renderSideList(); }
@@ -1340,9 +1265,8 @@ async function loadCountries() {
   g('chload').classList.remove('show');
   showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
 
-  // ── Fuentes adicionales de TV (modo normal y lite con RAM suficiente) ──
-  // Solo si el dispositivo no es ultra-lite y quedan recursos
-  if (!window._ULTRA_LITE) {
+  // ── Fuentes adicionales de TV ──
+  {
     var fuentesTV = [
       { url: 'https://www.apsattv.com/tubi.m3u',    co: 'US', label: 'Tubi TV' },
       { url: 'https://www.apsattv.com/rakuten.m3u', co: 'US', label: 'Rakuten' },
@@ -1357,8 +1281,8 @@ async function loadCountries() {
       { url: 'https://i.mjh.nz/Stirr/all.m3u8',     co: 'US', label: 'Stirr' },
     ];
     // En modo lite: solo las 3 primeras fuentes (las más variadas)
-    var fuentesACargar = window._LITE_MODE ? fuentesTV.slice(0, 3) : fuentesTV;
-    var MAX_EXTRA = window._LITE_MODE ? 500 : 99999;
+    var fuentesACargar = fuentesTV;
+    var MAX_EXTRA = 99999;
     var totalExtra = 0;
 
     for (var fi = 0; fi < fuentesACargar.length; fi++) {
@@ -1379,8 +1303,7 @@ async function loadCountries() {
           }
         }
       } catch(e) {}
-      // Pausa entre fuentes en modo lite
-      if (window._LITE_MODE) await new Promise(function(r){ setTimeout(r, 1000); });
+      // Sin pausa entre fuentes — modo Normal
     }
     if (totalExtra > 0) showToast('✓ ' + allTV.length + ' canales · ' + allRadio.length + ' radios');
     // Actualizar favsMeta con canales recién cargados que sean favoritos
@@ -1680,9 +1603,8 @@ function renderGrid() {
     grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
     return;
   }
-  var liteMode = isSlowDevice();
-  // Modo lite: máx 30 canales. Modo normal: 300 como antes.
-  var MAX = liteMode ? 30 : 300;
+  var liteMode = false; // Modo Normal siempre
+  var MAX = 300;
   var list = filtered.slice(0, MAX);
 
   function buildCardHTML(ch) {
@@ -2465,14 +2387,8 @@ async function loadRadiosExternas() {
     ['world',        'Música',         'INT'],
   ];
 
-  // En ultra-lite: solo los 8 géneros más populares
-  // En lite: solo los primeros 20
-  // En normal: todos
-  var generosACargar = window._ULTRA_LITE
-    ? PERVII_GENRES.slice(0, 8)
-    : window._LITE_MODE
-      ? PERVII_GENRES.slice(0, 20)
-      : PERVII_GENRES;
+  // Modo Normal: todos los géneros siempre
+  var generosACargar = PERVII_GENRES;
 
   async function fetchM3URadio(url) {
     try {
@@ -2531,8 +2447,8 @@ async function loadRadiosExternas() {
     }
   } catch(e) {}
 
-  // 2. Cargar lista LATAM (m3u.cl)
-  if (!window._ULTRA_LITE) {
+  // 2. Cargar lista LATAM (m3u.cl) — siempre activo
+  {
     var txtLatam = await fetchM3URadio('https://m3u.cl/lista/LATAM.m3u');
     if (txtLatam) {
       var radiosLatam = parseM3URadio(txtLatam, 'LA', 'Música');
@@ -2549,7 +2465,7 @@ async function loadRadiosExternas() {
   }
 
   // 3. Cargar géneros de pervii.com — secuencial con pausa para no saturar
-  var pausaMs = window._ULTRA_LITE ? 1500 : window._LITE_MODE ? 800 : 200;
+  var pausaMs = 200; // Modo Normal — sin throttling
   for (var gi = 0; gi < generosACargar.length; gi++) {
     var genero = generosACargar[gi][0];
     var cat    = generosACargar[gi][1];
@@ -2599,22 +2515,18 @@ if ('serviceWorker' in navigator) {
   };
 </script>
 
-<!-- SISTEMA DE RECOMENDACIONES: solo en dispositivos normales -->
+<!-- SISTEMA DE RECOMENDACIONES -->
 <script>
-if (!window._LITE_MODE) {
   var _sr = document.createElement('script');
   _sr.src = 'recomendados.js'; _sr.defer = true;
   document.body.appendChild(_sr);
-}
 </script>
 
-<!-- MONITOR DE SALUD: solo en dispositivos normales -->
+<!-- MONITOR DE SALUD -->
 <script>
-if (!window._LITE_MODE) {
   var _sm = document.createElement('script');
   _sm.src = 'monitor.js'; _sm.defer = true;
   document.body.appendChild(_sm);
-}
 </script>
 
 <!-- SISTEMA DE AUTENTICACIÓN: siempre, pero diferido -->
