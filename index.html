@@ -195,8 +195,8 @@ header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1p
 
 /* SIDEBAR */
 aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
-.sl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:10px 10px 4px;flex-shrink:0}
-.cb{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;text-align:left;width:100%;white-space:nowrap;flex-shrink:0}
+.sl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:6px 10px 3px;flex-shrink:0}
+.cb{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:7px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;text-align:left;width:100%;white-space:nowrap;flex-shrink:0}
 .cb:hover{background:var(--bg3);color:var(--text)}
 .cb.active{background:rgba(230,63,110,0.15);color:var(--accent)}
 .cb.ron{background:rgba(255,153,0,0.15);color:var(--accent2)}
@@ -212,7 +212,7 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
   display:flex;
   flex-shrink:0;
   /* Máximo 60% de la pantalla, mínimo 180px, nunca más de 320px */
-  height:clamp(180px, 35vh, 300px);
+  height:clamp(160px, 28vh, 260px);
   border-bottom:2px solid var(--border);
   background:#000;
   align-items:stretch;
@@ -498,7 +498,7 @@ body.is-fullscreen .fs-exit{display:block !important}
 html.force-desktop aside { display: flex !important; }
 html.force-desktop :root { --sidebar: 220px !important; }
 html.force-desktop .ch-side { display: flex !important; width: 180px !important; }
-html.force-desktop .player-zone { height: clamp(180px, 46vh, 320px) !important; flex-direction: row !important; }
+html.force-desktop .player-zone { height: clamp(160px, 28vh, 260px) !important; flex-direction: row !important; }
 html.force-desktop .player-col { flex: 1 !important; width: auto !important; }
 html.force-desktop .video-ratio { position: relative !important; padding-bottom: 46% !important; height: 0 !important; overflow: visible !important; }
 html.force-desktop .video-ratio video { position: absolute !important; top: 0; left: 0; width: 100% !important; height: calc(90% + 44px) !important; object-fit: contain; }
