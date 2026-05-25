@@ -183,19 +183,7 @@ header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1p
 #search{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:24px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none}
 #search:focus{border-color:rgba(230,63,110,0.5)}
 #search::placeholder{color:var(--text2)}
-/* Dropdown países bajo buscador */
-.search-dropdown{
-  position:absolute;top:calc(100% + 6px);left:0;right:0;
-  background:var(--bg2);border:1px solid var(--border);
-  border-radius:12px;z-index:999;padding:8px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.5);
-  max-height:160px;overflow-y:auto;
-}
-.search-dd-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:0 2px 6px;}
-.search-dd-chips{display:flex;flex-wrap:wrap;gap:4px;}
-.search-dd-chip{padding:3px 9px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.search-dd-chip:hover{background:var(--bg4);color:var(--text);}
-.search-dd-chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
 .hbts{margin-left:auto;display:flex;gap:5px;flex-shrink:0}
 .hbt{padding:5px 11px;border-radius:16px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
 .hbt:hover{background:var(--bg4);color:var(--text)}
@@ -206,7 +194,7 @@ header{flex-shrink:0;height:52px;background:rgba(10,10,15,0.98);border-bottom:1p
 .body{flex:1;display:flex;overflow:hidden}
 
 /* SIDEBAR */
-aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin}
+aside{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
 .sl{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);padding:10px 10px 4px;flex-shrink:0}
 .cb{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .15s;text-align:left;width:100%;white-space:nowrap;flex-shrink:0}
 .cb:hover{background:var(--bg3);color:var(--text)}
@@ -440,17 +428,6 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
 
 /* BARRA PAÍSES LISTA LATERAL */
-/* Buscador dentro del panel lateral */
-.side-search-wrap{padding:6px 8px;flex-shrink:0;}
-.side-search-input{
-  width:100%;box-sizing:border-box;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:8px;padding:6px 10px;
-  color:var(--text);font-size:12px;outline:none;
-}
-.side-search-input:focus{border-color:var(--accent);}
-.side-search-input::placeholder{color:var(--text2);opacity:.7;}
-
 .side-countries{
   flex-shrink:0;
   padding:5px 6px;
@@ -661,12 +638,7 @@ setTimeout(_hideSplash, 5000);
   <div class="logo">CIC<span> TV</span></div>
   <div class="sw">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="search" placeholder="Buscar canal, radio o país..." oninput="doSearch()" onfocus="showSearchDropdown()" onblur="hideSearchDropdown()">
-    <!-- Dropdown de países bajo el buscador -->
-    <div id="searchDropdown" class="search-dropdown" style="display:none;">
-      <div class="search-dd-label">Filtrar por país</div>
-      <div class="search-dd-chips" id="searchDDChips"></div>
-    </div>
+    <input type="text" id="search" placeholder="Buscar canal, radio o país..." oninput="doSearch()">
   </div>
   <div class="hbts">
     <!-- ⭐ botón header: muestra TODOS los favoritos en el grid/lista -->
@@ -838,11 +810,6 @@ setTimeout(_hideSplash, 5000);
         <span>Lista</span>
         <small id="sideCount">0</small>
       </div>
-      <!-- Buscador dentro del panel lateral -->
-      <div class="side-search-wrap">
-        <input type="text" id="sideSearch" class="side-search-input" placeholder="🔍 Buscar o país..." oninput="doSideSearch(this.value)">
-      </div>
-      <!-- Chips de países bajo el buscador -->
       <div class="side-countries">
         <div class="side-countries-bar" id="sideCountriesBar">
           <button class="sc-chip active" data-co="all">🌐 Todos</button>
@@ -1060,7 +1027,7 @@ async function cargarPaisesDisponibles() {
 }
 const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
-const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Anime',anime:'Anime',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Cocina',cooking:'Cocina',culinary:'Cocina',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes',technology:'Tecnología',tech:'Tecnología',science_technology:'Tecnología'};
+const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Anime',anime:'Anime',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Cocina',cooking:'Cocina',culinary:'Cocina',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes',technology:'Tecnología',tech:'Tecnología'};
 
 // ═══════════════════════════════════════════════════════════════════════
 // INIT
@@ -1396,12 +1363,12 @@ function inferirCategoria(nombre, group) {
   if (/sport|deport|futbol|football|soccer|espn|nba|golf|motor|tenis|racing|basket|liga|cup|mundial/.test(n)) return 'Deportes';
   if (/movie|cine|film|cinema|hollywood|hbo|showtime|starz|pelicul/.test(n)) return 'Películas';
   if (/series|axn|syfy|amc|drama|novela|tlnovela/.test(n)) return 'Series';
-  if (/anime|manga|otaku|crunchyroll|sentai|funimation/.test(n)) return 'Anime';
+  if (/anime|manga|otaku|crunchyroll|sentai/.test(n)) return 'Anime';
   if (/kids|infantil|disney|nick|cartoon|baby|junior|clan|mini/.test(n)) return 'Infantil';
   if (/music|mtv|vh1|radio|hits|melodia|ritmo|beats/.test(n)) return 'Música';
   if (/cocina|cooking|cook|chef|recipe|gastronomia|food|culinary/.test(n)) return 'Cocina';
   if (/documentary|documental|national|discovery|history|animal|nature|science|geo/.test(n)) return 'Documentales';
-  if (/tech|tecnolog|digital|computer|gadget|software|hardware|cyber/.test(n)) return 'Tecnología';
+  if (/tech|tecnolog|digital|computer|gadget|software|hardware/.test(n)) return 'Tecnología';
   if (/religious|religion|cristian|church|god|faith|iglesia|catolico/.test(n)) return 'Religiosos';
   if (/business|bloomberg|cnbc|finance|econom/.test(n)) return 'Negocios';
   if (/comedy|humor|entretenimiento|entertainment|culture|lifestyle|fashion|arte/.test(n)) return 'Entretenimiento';
@@ -1485,18 +1452,9 @@ function setMode(mode) {
 
   sideCatFilter     = 'all';
   sideCountryFilter = 'all';
-  _sideSearchTerm   = '';
-  var ss = g('sideSearch'); if (ss) ss.value = '';
   isFavMode = false;
   updateAll();
   applyFilter();
-  renderSideList();
-}
-
-// ── Búsqueda dentro del panel lateral derecho ──
-var _sideSearchTerm = '';
-function doSideSearch(val) {
-  _sideSearchTerm = val.trim().toLowerCase();
   renderSideList();
 }
 
@@ -1521,91 +1479,51 @@ function setCountry(co, btn) {
   applyFilter();
 }
 
-// ── Dropdown de países en buscador principal ──
-var _ddVisible = false;
-var _ddCountry = 'all'; // país seleccionado desde el dropdown
-
-function buildSearchDropdown() {
-  var chips = g('searchDDChips');
-  if (!chips) return;
-  var src = curMode === 'tv' ? allTV : allRadio;
-  var countries = [...new Set(src.map(function(c){ return c.co; }).filter(Boolean))].sort();
-  chips.innerHTML = '';
-  function makeChip(co, label) {
-    var b = document.createElement('button');
-    b.className = 'search-dd-chip' + ((_ddCountry === co) ? ' active' : '');
-    b.textContent = label;
-    b.addEventListener('mousedown', function(e) {
-      e.preventDefault();
-      selectDDCountry(co, b);
-    });
-    chips.appendChild(b);
-  }
-  makeChip('all', '🌐 Todos');
-  countries.forEach(function(co) {
-    makeChip(co, (CFLAGS[co]||'🏳️') + ' ' + (CNAMES[co]||co));
-  });
-}
-
-function selectDDCountry(co, btn) {
-  _ddCountry = co;
-  document.querySelectorAll('.search-dd-chip').forEach(function(b){ b.classList.remove('active'); });
-  if (btn) btn.classList.add('active');
-  // También sincronizar con el filtro de país global
-  curCountry = co;
-  document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
-  applyFilter();
-  renderSideList();
-}
-
-function showSearchDropdown() {
-  buildSearchDropdown();
-  var dd = g('searchDropdown');
-  if (dd) dd.style.display = 'block';
-  _ddVisible = true;
-}
-
-function hideSearchDropdown() {
-  // Pequeño delay para permitir click en chip antes de ocultar
-  setTimeout(function() {
-    var dd = g('searchDropdown');
-    if (dd) dd.style.display = 'none';
-    _ddVisible = false;
-  }, 200);
-}
-
 function doSearch() {
-  curSearch = g('search').value.toLowerCase();
+  var val = g('search').value.toLowerCase().trim();
   isFavMode = false;
-  // Si escribió algo que coincide con un país, seleccionarlo automáticamente
-  if (curSearch.length >= 2) {
-    var src = curMode === 'tv' ? allTV : allRadio;
-    var matchedCo = null;
-    // Buscar por código de país exacto (ej: "cl", "ar", "mx")
-    var upper = curSearch.toUpperCase();
-    if (CFLAGS[upper]) {
-      matchedCo = upper;
-    } else {
-      // Buscar por nombre de país (ej: "chile", "argentin")
-      Object.keys(CNAMES).forEach(function(co) {
-        if ((CNAMES[co]||'').toLowerCase().startsWith(curSearch)) {
-          if (!matchedCo) matchedCo = co;
-        }
-      });
-    }
-    if (matchedCo && curSearch.length >= 2) {
-      _ddCountry = matchedCo;
-      curCountry = matchedCo;
-      buildSearchDropdown();
-    }
-  }
-  applyFilter();
-  if (curSearch) {
-    var src2 = curMode === 'tv' ? allTV : allRadio;
-    var results = src2.filter(function(ch){ return ch.name.toLowerCase().includes(curSearch); });
-    renderSideFromList(results);
-  } else {
+
+  if (!val) {
+    // Campo vacío — resetear todo
+    curSearch  = '';
+    curCountry = 'all';
+    document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
+    applyFilter();
     renderSideList();
+    return;
+  }
+
+  var src = curMode === 'tv' ? allTV : allRadio;
+
+  // Detectar si coincide con un país
+  var matchedCo = null;
+  var upper = val.toUpperCase();
+  if (CFLAGS[upper]) {
+    matchedCo = upper; // código exacto: "cl", "ar"
+  } else {
+    Object.keys(CNAMES).forEach(function(co) {
+      if (!matchedCo && (CNAMES[co]||'').toLowerCase().includes(val)) {
+        matchedCo = co;
+      }
+    });
+  }
+
+  if (matchedCo) {
+    // Filtrar lista lateral por país
+    curSearch  = '';
+    curCountry = matchedCo;
+    document.querySelectorAll('.chip').forEach(function(b){ b.classList.remove('active'); });
+    applyFilter();
+    renderSideList();
+  } else {
+    // Filtrar por nombre de canal
+    curSearch  = val;
+    curCountry = 'all';
+    applyFilter();
+    var results = src.filter(function(ch){
+      return ch.name.toLowerCase().includes(val);
+    });
+    renderSideFromList(results);
   }
 }
 
@@ -1810,15 +1728,6 @@ function renderSideList() {
     : base;
   updateSideCountriesBar(forPaises);
   if (sideCountryFilter !== 'all') src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
-  // Filtro de búsqueda interno del panel lateral
-  if (_sideSearchTerm) {
-    src = src.filter(function(ch){
-      return ch.name.toLowerCase().includes(_sideSearchTerm) ||
-             (ch.co||'').toLowerCase().includes(_sideSearchTerm) ||
-             (CNAMES[ch.co]||'').toLowerCase().includes(_sideSearchTerm) ||
-             (ch.cat||'').toLowerCase().includes(_sideSearchTerm);
-    });
-  }
   renderSideFromList(src);
 }
 
