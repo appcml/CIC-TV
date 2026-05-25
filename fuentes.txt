@@ -1,0 +1,40 @@
+# ══════════════════════════════════════════════════════════════
+# fuentes.txt — CIC TV
+# Agrega aquí tus listas M3U manualmente.
+# El bot las leerá en cada ejecución e integrará los canales nuevos.
+# ══════════════════════════════════════════════════════════════
+#
+# FORMATO:
+#   URL                          ← tipo auto-detectado (recomendado)
+#   URL  tv                      ← forzar TV
+#   URL  radio                   ← forzar Radio
+#   URL  tv   CL                 ← TV + país Chile
+#   URL  tv   MX  Películas      ← TV + país + categoría
+#   URL  radio CL Música         ← Radio + país + categoría
+#
+# CATEGORÍAS VÁLIDAS:
+#   Noticias, Deportes, Entretenimiento, Películas, Series,
+#   Infantil, Música, Documentales, Religiosos, Negocios, General
+#
+# LÍNEAS QUE EMPIEZAN CON # SON COMENTARIOS (se ignoran)
+# ══════════════════════════════════════════════════════════════
+
+# ── EJEMPLOS — descomenta o agrega tus propias URLs ──
+
+# TV — Chile
+# https://m3u.cl/lista.m3u  tv  CL
+
+# TV — LATAM general
+# https://raw.githubusercontent.com/example/iptv/main/latam.m3u  tv
+
+# TV — Películas en español
+# https://mametchikitty.github.io/Listas-IPTV/peliculas.m3u  tv  ES  Películas
+
+# Radio — Latin
+# http://radio.pervii.com/top_radio_latin.m3u  radio
+
+# Radio — LATAM
+# https://m3u.cl/lista/LATAM.m3u  radio
+
+# ── AGREGA TUS FUENTES AQUÍ ABAJO ──
+
