@@ -427,6 +427,17 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .hbt.ron #cnt-radio-hdr{background:rgba(0,0,0,0.2)}
 
 /* BARRA PAÍSES LISTA LATERAL */
+/* Buscador dentro del panel lateral */
+.side-search-wrap{padding:6px 8px;flex-shrink:0;}
+.side-search-input{
+  width:100%;box-sizing:border-box;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:6px 10px;
+  color:var(--text);font-size:12px;outline:none;
+}
+.side-search-input:focus{border-color:var(--accent);}
+.side-search-input::placeholder{color:var(--text2);opacity:.7;}
+
 .side-countries{
   flex-shrink:0;
   padding:5px 6px;
@@ -664,10 +675,12 @@ setTimeout(_hideSplash, 5000);
   <button class="cb" onclick="setCat('Entretenimiento',this)"><span class="ic">🎬</span>Entretenimiento<span class="ct" id="cn-Entretenimiento">0</span></button>
   <button class="cb" onclick="setCat('Películas',this)"><span class="ic">🎥</span>Películas<span class="ct" id="cn-Películas">0</span></button>
   <button class="cb" onclick="setCat('Series',this)"><span class="ic">🎞</span>Series<span class="ct" id="cn-Series">0</span></button>
-  <button class="cb" onclick="setCat('Series',this)"><span class="ic">🎞</span>Series<span class="ct" id="cn-Series">0</span></button>
+  <button class="cb" onclick="setCat('Anime',this)"><span class="ic">⛩</span>Anime<span class="ct" id="cn-Anime">0</span></button>
   <button class="cb" onclick="setCat('Infantil',this)"><span class="ic">🧒</span>Infantil<span class="ct" id="cn-Infantil">0</span></button>
   <button class="cb" onclick="setCat('Música',this)"><span class="ic">🎵</span>Música<span class="ct" id="cn-Música">0</span></button>
+  <button class="cb" onclick="setCat('Cocina',this)"><span class="ic">🍳</span>Cocina<span class="ct" id="cn-Cocina">0</span></button>
   <button class="cb" onclick="setCat('Documentales',this)"><span class="ic">🌍</span>Documentales<span class="ct" id="cn-Documentales">0</span></button>
+  <button class="cb" onclick="setCat('Tecnología',this)"><span class="ic">💻</span>Tecnología<span class="ct" id="cn-Tecnología">0</span></button>
   <button class="cb" onclick="setCat('Religiosos',this)"><span class="ic">🙏</span>Religiosos<span class="ct" id="cn-Religiosos">0</span></button>
   <button class="cb" onclick="setCat('Negocios',this)"><span class="ic">💼</span>Negocios<span class="ct" id="cn-Negocios">0</span></button>
   <button class="cb" onclick="setCat('General',this)"><span class="ic">📡</span>General<span class="ct" id="cn-General">0</span></button>
@@ -807,6 +820,11 @@ setTimeout(_hideSplash, 5000);
         <span>Lista</span>
         <small id="sideCount">0</small>
       </div>
+      <!-- Buscador dentro del panel lateral -->
+      <div class="side-search-wrap">
+        <input type="text" id="sideSearch" class="side-search-input" placeholder="🔍 Buscar o país..." oninput="doSideSearch(this.value)">
+      </div>
+      <!-- Chips de países bajo el buscador -->
       <div class="side-countries">
         <div class="side-countries-bar" id="sideCountriesBar">
           <button class="sc-chip active" data-co="all">🌐 Todos</button>
@@ -1024,7 +1042,7 @@ async function cargarPaisesDisponibles() {
 }
 const CNAMES = {'AR':'Argentina','BO':'Bolivia','BR':'Brasil','CL':'Chile','CO':'Colombia','CR':'Costa Rica','DO':'Rep. Dom.','EC':'Ecuador','GT':'Guatemala','HN':'Honduras','MX':'México','PA':'Panamá','PE':'Perú','UY':'Uruguay','VE':'Venezuela','ES':'España','US':'EEUU','CA':'Canadá','FR':'Francia','DE':'Alemania','IT':'Italia','PT':'Portugal','GB':'R. Unido','NL':'P. Bajos','EU':'Europa','RU':'Rusia','TR':'Turquía','QA':'Qatar','AT':'Austria'};
 const CFLAGS = {'AR':'🇦🇷','BO':'🇧🇴','BR':'🇧🇷','CL':'🇨🇱','CO':'🇨🇴','CR':'🇨🇷','DO':'🇩🇴','EC':'🇪🇨','GT':'🇬🇹','HN':'🇭🇳','MX':'🇲🇽','PA':'🇵🇦','PE':'🇵🇪','UY':'🇺🇾','VE':'🇻🇪','ES':'🇪🇸','US':'🇺🇸','CA':'🇨🇦','FR':'🇫🇷','DE':'🇩🇪','IT':'🇮🇹','PT':'🇵🇹','GB':'🇬🇧','NL':'🇳🇱','EU':'🇪🇺','RU':'🇷🇺','TR':'🇹🇷','QA':'🇶🇦','AT':'🇦🇹'};
-const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Infantil',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Entretenimiento',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',cooking:'Entretenimiento',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes'};
+const CAT_MAP = {news:'Noticias',sports:'Deportes',football:'Deportes',sport:'Deportes',entertainment:'Entretenimiento',movies:'Películas',movie:'Películas',cinema:'Películas',kids:'Infantil',music:'Música',documentary:'Documentales',religious:'Religiosos',religion:'Religiosos',general:'General',undefined:'General',auto:'General',comedy:'Entretenimiento',animation:'Anime',anime:'Anime',family:'Infantil',series:'Series',classic:'Entretenimiento',culture:'Entretenimiento',lifestyle:'Entretenimiento',travel:'Documentales',food:'Cocina',cooking:'Cocina',culinary:'Cocina',science:'Documentales',nature:'Documentales',history:'Documentales',shopping:'Entretenimiento',weather:'Noticias',fitness:'Deportes',racing:'Deportes',tennis:'Deportes',basketball:'Deportes',technology:'Tecnología',tech:'Tecnología',science_technology:'Tecnología'};
 
 // ═══════════════════════════════════════════════════════════════════════
 // INIT
@@ -1360,9 +1378,12 @@ function inferirCategoria(nombre, group) {
   if (/sport|deport|futbol|football|soccer|espn|nba|golf|motor|tenis|racing|basket|liga|cup|mundial/.test(n)) return 'Deportes';
   if (/movie|cine|film|cinema|hollywood|hbo|showtime|starz|pelicul/.test(n)) return 'Películas';
   if (/series|axn|syfy|amc|drama|novela|tlnovela/.test(n)) return 'Series';
+  if (/anime|manga|otaku|crunchyroll|sentai|funimation/.test(n)) return 'Anime';
   if (/kids|infantil|disney|nick|cartoon|baby|junior|clan|mini/.test(n)) return 'Infantil';
   if (/music|mtv|vh1|radio|hits|melodia|ritmo|beats/.test(n)) return 'Música';
+  if (/cocina|cooking|cook|chef|recipe|gastronomia|food|culinary/.test(n)) return 'Cocina';
   if (/documentary|documental|national|discovery|history|animal|nature|science|geo/.test(n)) return 'Documentales';
+  if (/tech|tecnolog|digital|computer|gadget|software|hardware|cyber/.test(n)) return 'Tecnología';
   if (/religious|religion|cristian|church|god|faith|iglesia|catolico/.test(n)) return 'Religiosos';
   if (/business|bloomberg|cnbc|finance|econom/.test(n)) return 'Negocios';
   if (/comedy|humor|entretenimiento|entertainment|culture|lifestyle|fashion|arte/.test(n)) return 'Entretenimiento';
@@ -1381,7 +1402,7 @@ function imgFallback(el, fc, fb) {
 
 function updateAll() {
   const src  = curMode === 'tv' ? allTV : allRadio;
-  const cats = ['Noticias','Deportes','Entretenimiento','Películas','Series','Infantil','Música','Documentales','Religiosos','Negocios','General'];
+  const cats = ['Noticias','Deportes','Entretenimiento','Películas','Series','Anime','Infantil','Música','Cocina','Documentales','Tecnología','Religiosos','Negocios','General'];
   const set  = function(id, v){ var e = g(id); if(e) e.textContent = v; };
 
   set('cn-tv',         allTV.length);
@@ -1446,9 +1467,18 @@ function setMode(mode) {
 
   sideCatFilter     = 'all';
   sideCountryFilter = 'all';
+  _sideSearchTerm   = '';
+  var ss = g('sideSearch'); if (ss) ss.value = '';
   isFavMode = false;
   updateAll();
   applyFilter();
+  renderSideList();
+}
+
+// ── Búsqueda dentro del panel lateral derecho ──
+var _sideSearchTerm = '';
+function doSideSearch(val) {
+  _sideSearchTerm = val.trim().toLowerCase();
   renderSideList();
 }
 
@@ -1583,7 +1613,9 @@ function applyFilter() {
   if (curCountry !== 'all') list = list.filter(function(c){ return c.co === curCountry; });
   if (curSearch)            list = list.filter(function(c){
     return c.name.toLowerCase().includes(curSearch) ||
-           (CNAMES[c.co]||'').toLowerCase().includes(curSearch);
+           (CNAMES[c.co]||'').toLowerCase().includes(curSearch) ||
+           (c.co||'').toLowerCase().includes(curSearch) ||
+           (c.cat||'').toLowerCase().includes(curSearch);
   });
   filtered = list;
   g('stitle').textContent = curCat === 'all'
@@ -1685,6 +1717,15 @@ function renderSideList() {
     : base;
   updateSideCountriesBar(forPaises);
   if (sideCountryFilter !== 'all') src = src.filter(function(ch){ return ch.co === sideCountryFilter; });
+  // Filtro de búsqueda interno del panel lateral
+  if (_sideSearchTerm) {
+    src = src.filter(function(ch){
+      return ch.name.toLowerCase().includes(_sideSearchTerm) ||
+             (ch.co||'').toLowerCase().includes(_sideSearchTerm) ||
+             (CNAMES[ch.co]||'').toLowerCase().includes(_sideSearchTerm) ||
+             (ch.cat||'').toLowerCase().includes(_sideSearchTerm);
+    });
+  }
   renderSideFromList(src);
 }
 
