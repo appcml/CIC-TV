@@ -1,0 +1,94 @@
+#EXTM3U
+#PLAYLIST:Checked by CODECS.COM M3U Checker
+
+
+#EXTINF:-1 tvg-id="16" tvg-logo="https://cdn.m3u.cl/logo/16_Conecta_TV.png",Conecta TV ✪ | MX
+https://stream8.mexiserver.com:19360/conectatvx/conectatvx.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="771" tvg-logo="https://cdn.m3u.cl/logo/771_Mundo_de_la_Musica_TV.png",Mundo de la Musica TV ✪ | CL
+https://tv.arkeo.cl:1936/mundodelamusica/mundodelamusica/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="521" tvg-logo="https://cdn.m3u.cl/logo/521_Recuerdos_Retro_Radio_TV.png",Recuerdos Retro Radio TV ✪ | CL
+https://panel.tvstream.cl:1936/8034/8034/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1288" tvg-logo="https://cdn.m3u.cl/logo/1288_Suyai_TV.png",Suyai TV | CL
+https://cl-2.backend.energeek.cl/SuyaiTV-Neo/tracks-v1a1/mono.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="657" tvg-logo="https://cdn.m3u.cl/logo/657_15TV_Sabinas.png",15TV Sabinas | MX
+https://hls.gvstream.live/telesistemas/15tv.stream/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="642" tvg-logo="https://cdn.m3u.cl/logo/642_8_NTV.png",8 NTV | MX
+https://60417ddeaf0d9.streamlock.net:443/ntv/videontv/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="658" tvg-logo="https://cdn.m3u.cl/logo/658_ADN_40.png",ADN 40 | MX
+https://mdstrm.com/live-stream-playlist/60b578b060947317de7b57ac.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="660" tvg-logo="https://cdn.m3u.cl/logo/660_Canal_10_Chiapas.png",Canal 10 Chiapas | MX
+https://5ca9af4645e15.streamlock.net:443/chiapas/videochiapas/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="640" tvg-logo="https://cdn.m3u.cl/logo/640_Canal_12_1_Colima.png",Canal 12.1 Colima | MX
+https://5ca9af4645e15.streamlock.net:443/canal11/videocanal11/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="634" tvg-logo="https://cdn.m3u.cl/logo/634_Central_FM.png",Central FM | MX
+https://5fe2654d6127d.streamlock.net:443/centralfm/smil:centralfm.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1119" tvg-logo="https://cdn.m3u.cl/logo/1119_Enfoque_de_la_Sierra.png",Enfoque de la Sierra | MX
+https://90f2-201-114-105-69.ngrok.io/tmp_hls/stream/index.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1409" tvg-logo="https://cdn.m3u.cl/logo/1409_GikTVMX.png",GikTVMX | MX
+https://pistream.ddns.net/hls/stream.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="635" tvg-logo="https://cdn.m3u.cl/logo/635_Impactovision.webp",Impactovision | MX
+https://5ca9af4645e15.streamlock.net:443/impactovision/videoimpactovision/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="652" tvg-logo="https://cdn.m3u.cl/logo/652_Mexiquense_TV.png",Mexiquense TV | MX
+https://5ca3e84a76d30.streamlock.net:443/mexiquense/videomexiquense/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="673" tvg-logo="https://cdn.m3u.cl/logo/673_RCG_1_Saltillo.png",RCG 1 Saltillo | MX
+https://video1.getstreamhosting.com:1936/8172/8172/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="674" tvg-logo="https://cdn.m3u.cl/logo/674_RCG_2_Saltillo.png",RCG 2 Saltillo | MX
+https://5caf24a595d94.streamlock.net:1937/stream23/stream23/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="675" tvg-logo="https://cdn.m3u.cl/logo/675_RCG_3_Saltillo.png",RCG 3 Saltillo | MX
+https://5caf24a595d94.streamlock.net:1937/stream56/stream56/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="646" tvg-logo="https://cdn.m3u.cl/logo/646_SIZART_Canal_24_Zacatecas.png",SIZART Canal 24 Zacatecas | MX
+https://5ca9af4645e15.streamlock.net:443/zacatecas/videozacatecas/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1606" tvg-logo="https://cdn.m3u.cl/logo/1606_Tempus_Stream.png",Tempus Stream | MX
+https://video1.getstreamhosting.com:1936/8116/8116/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="656" tvg-logo="https://cdn.m3u.cl/logo/656_TV4_Noticias.png",TV4 Noticias | MX
+https://5ca3e84a76d30.streamlock.net/tv4/smil:tv4.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="651" tvg-logo="https://cdn.m3u.cl/logo/651_TVP_Culiacan.png",TVP Culiacan | MX
+https://5ca3e84a76d30.streamlock.net:443/gpacifico1/smil:gpculiacan.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="648" tvg-logo="https://cdn.m3u.cl/logo/648_TVP_Los_Mochis.png",TVP Los Mochis | MX
+https://5ca3e84a76d30.streamlock.net:443/gpacifico2/smil:mochis.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="649" tvg-logo="https://cdn.m3u.cl/logo/649_TVP_Mazatlan.png",TVP Mazatlan | MX
+https://5ca3e84a76d30.streamlock.net:443/gpacifico4/smil:mazatlan.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="650" tvg-logo="https://cdn.m3u.cl/logo/650_TVP_Obregon.png",TVP Obregon | MX
+https://5ca3e84a76d30.streamlock.net:443/gpacifico3/smil:obregon.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="641" tvg-logo="https://cdn.m3u.cl/logo/641_UMTV.png",UMTV | MX
+https://60417ddeaf0d9.streamlock.net:443/montemorelos/videomontemorelos/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1042" tvg-logo="https://cdn.m3u.cl/logo/1042_AMX_Noticias.png",AMX Noticias | MX
+https://5e50264bd6766.streamlock.net/mexiquense2/videomexiquense2/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1174" tvg-logo="https://cdn.m3u.cl/logo/1174_Canal_66_El_Canal_de_las_Noticias.png",Canal 66 El Canal de las Noticias | MX
+https://60417ddeaf0d9.streamlock.net:443/canal66/smil:canal66.smil/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="865" tvg-logo="https://cdn.m3u.cl/logo/865_Alcance_TV.png",Alcance TV | MX
+https://5bf8041cb3fed.streamlock.net:443/AlcanceTV/AlcanceTV/playlist.m3u8?PlaylistM3UCL
+
+#EXTINF:-1 tvg-id="1692" tvg-logo="https://cdn.m3u.cl/logo/1692_PRIDEtv_Latam.png",PRIDEtv Latam | CL
+https://backend.energeek.cl/webtv/pridetvweb/index.m3u8?token=D3m0M3UCLWeb&PlaylistM3UCL
+
+#EXTINF:-1,Index
+https://backend.energeek.cl/webtv/pridetvweb/index.m3u8?token=D3m0M3UCLWeb&PlaylistM3UCL
+
