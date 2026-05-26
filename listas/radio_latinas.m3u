@@ -1,6 +1,6 @@
 #EXTM3U
 #PLAYLIST:Online radio: LATIN Music (www.radio.pervii.com)
-#EXTINF:-1 tvg-logo="http://radio.pervii.com/im/5/1550032895.jpg" group-title="LATIN Radio - radio.pervii.com", LA SUEGRA FM
+#EXTINF:-1 tvg-logo="https://radio.pervii.com/im/5/1550032895.jpg" group-title="LATIN Radio - radio.pervii.com", LA SUEGRA FM
 http://streaming.hdserver.biz:9300/stream/1/
 #EXTINF:-1 tvg-logo="http://radio.pervii.com/im/4/1550756704.jpg" group-title="LATIN Radio - radio.pervii.com", LATINO FM EN DIRECTO (www.latinofm.es) MALAGA ANDALUCIA ESPANA SPAIN ESPANOL
 http://185.23.192.118:8000/stream/1/
