@@ -1,13 +1,119 @@
 # Radio — Latin
-# http://radio.pervii.com/top_radio_latin.m3u  radio  chekeado 
+# http://radio.pervii.com/top_radio_latin.m3u  radio  👌👌chekeado👌👌
+http://radio.pervii.com/top_radio_top_40.m3u
+http://radio.pervii.com/top_radio_pop.m3u
+http://radio.pervii.com/top_radio_rock.m3u
+http://radio.pervii.com/top_radio_60s.m3u
+http://radio.pervii.com/top_radio_70s.m3u
+http://radio.pervii.com/top_radio_80s.m3u
+http://radio.pervii.com/top_radio_90s.m3u
+http://radio.pervii.com/top_radio_acid_jazz.m3u
+http://radio.pervii.com/top_radio_african.m3u
+http://radio.pervii.com/top_radio_alternative.m3u
+http://radio.pervii.com/top_radio_ambient.m3u
+http://radio.pervii.com/top_radio_americana.m3u
+http://radio.pervii.com/top_radio_anime.m3u
+http://radio.pervii.com/top_radio_arabic.m3u
+http://radio.pervii.com/top_radio_asian.m3u
+http://radio.pervii.com/top_radio_big_band.m3u
+http://radio.pervii.com/top_radio_bluegrass.m3u
+http://radio.pervii.com/top_radio_blues.m3u
+http://radio.pervii.com/top_radio_breakbeat.m3u
+http://radio.pervii.com/top_radio_chillout.m3u
+http://radio.pervii.com/top_radio_christian.m3u
+http://radio.pervii.com/top_radio_classical.m3u
+http://radio.pervii.com/top_radio_club.m3u
+http://radio.pervii.com/top_radio_college.m3u
+http://radio.pervii.com/top_radio_comedy.m3u
+http://radio.pervii.com/top_radio_country.m3u
+http://radio.pervii.com/top_radio_dance.m3u
+http://radio.pervii.com/top_radio_deutsch.m3u
+http://radio.pervii.com/top_radio_disco.m3u
+http://radio.pervii.com/top_radio_discofox.m3u
+http://radio.pervii.com/top_radio_downtempo.m3u
+http://radio.pervii.com/top_radio_drum_and_bass.m3u
+http://radio.pervii.com/top_radio_easy_listening.m3u
+http://radio.pervii.com/top_radio_ebm.m3u
+http://radio.pervii.com/top_radio_electronic.m3u
+http://radio.pervii.com/top_radio_eurodance.m3u
+http://radio.pervii.com/top_radio_film.m3u
+http://radio.pervii.com/top_radio_folk.m3u
+http://radio.pervii.com/top_radio_france.m3u
+http://radio.pervii.com/top_radio_funk.m3u
+http://radio.pervii.com/top_radio_gospel.m3u
+http://radio.pervii.com/top_radio_gothic.m3u
+http://radio.pervii.com/top_radio_greek.m3u
+http://radio.pervii.com/top_radio_hardcore.m3u
+http://radio.pervii.com/top_radio_hardrock.m3u
+http://radio.pervii.com/top_radio_hip_hop.m3u
+http://radio.pervii.com/top_radio_house.m3u
+http://radio.pervii.com/top_radio_india.m3u
+http://radio.pervii.com/top_radio_indie.m3u
+http://radio.pervii.com/top_radio_instrumental.m3u
+http://radio.pervii.com/top_radio_italian.m3u
+http://radio.pervii.com/top_radio_jazz.m3u
+http://radio.pervii.com/top_radio_jpop.m3u
+http://radio.pervii.com/top_radio_jungle.m3u
+http://radio.pervii.com/top_radio_latin.m3u
+http://radio.pervii.com/top_radio_lounge.m3u
+http://radio.pervii.com/top_radio_metal.m3u
+http://radio.pervii.com/top_radio_mixed.m3u
+http://radio.pervii.com/top_radio_oldies.m3u
+http://radio.pervii.com/top_radio_opera.m3u
+http://radio.pervii.com/top_radio_progressive.m3u
+http://radio.pervii.com/top_radio_punk.m3u
+http://radio.pervii.com/top_radio_rap.m3u
+http://radio.pervii.com/top_radio_reggae.m3u
+http://radio.pervii.com/top_radio_retro.m3u
+http://radio.pervii.com/top_radio_rnb.m3u
+http://radio.pervii.com/top_radio_salsa.m3u
+http://radio.pervii.com/top_radio_ska.m3u
+http://radio.pervii.com/top_radio_smooth_jazz.m3u
+http://radio.pervii.com/top_radio_soul.m3u
+http://radio.pervii.com/top_radio_soundtrack.m3u
+http://radio.pervii.com/top_radio_swing.m3u
+http://radio.pervii.com/top_radio_techno.m3u
+http://radio.pervii.com/top_radio_trance.m3u
+http://radio.pervii.com/top_radio_urban.m3u
+http://radio.pervii.com/top_radio_various.m3u
+http://radio.pervii.com/top_radio_wave.m3u
+http://radio.pervii.com/top_radio_world.m3u
+
 
 
 # ── AGREGA TUS FUENTES AQUÍ ABAJO ──
-# https://raw.githubusercontent.com/CharlieII/IPTV_mexico/refs/heads/main/lista.m3u  chekeado 
+# https://raw.githubusercontent.com/CharlieII/IPTV_mexico/refs/heads/main/lista.m3u  👌👌chekeado👌👌
 # https://iptv-org.github.io/iptv/countries/mx.m3u 
-# https://iptv-org.github.io/iptv/languages/spa.m3u Chekeado
-# hTTPS://iptv-org.GitHub.io/iptv/index.m3u Chekeado  
-# https://m3u.cl/lista/MX.m3u Chekeado 
-# https://m3u.cl/lista/musica.m3u Chekeado
-# https://m3u.cl/lista/PE.m3u Chekeado
+# https://iptv-org.github.io/iptv/languages/spa.m3u 👌👌chekeado👌👌
+# hTTPS://iptv-org.GitHub.io/iptv/index.m3u 👌👌chekeado👌👌  
+# https://m3u.cl/lista/MX.m3u 👌👌chekeado👌👌
+# https://m3u.cl/lista/musica.m3u C👌👌chekeado👌👌
+# https://m3u.cl/lista/PE.m3u 👌👌chekeado👌👌
+https://i.mjh.nz/Plex/all.m3u8
+https://i.mjh.nz/PBS/all.m3u8
+https://i.mjh.nz/PlutoTV/all.m3u8
+https://i.mjh.nz/SamsungTVPlus/all.m3u8
+https://i.mjh.nz/Stirr/all.m3u8
+https://www.apsattv.com/ssungusa.m3u
+https://www.apsattv.com/redbox.m3u
+https://www.apsattv.com/tubi.m3u
+https://www.apsattv.com/rakuten.m3u
+https://www.apsattv.com/klowd.m3u
+https://www.apsattv.com/lg.m3u
+https://www.apsattv.com/vizio.m3u
+https://www.apsattv.com/tcl.m3u
+https://m3u.cl/lista/LATAM.m3u
+https://www.apsattv.com/vizio.m3u
+https://www.apsattv.com/distro.m3u
+https://www.apsattv.com/xumo.m3u
+https://www.apsattv.com/localnow.m3u
+https://www.apsattv.com/klowd.m3u
+https://www.apsattv.com/tcl.m3u
+https://www.apsattv.com/redbox.m3u https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/plex_all.m3u
+https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/samsungusa.m3u
+https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/refs/heads/main/playlists/rok.m3u https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8
+https://raw.githubusercontent.com/Alplox/json-teles/main/tv.m3u8
+https://raw.githubusercontent.com/mametchikitty/Listas-IPTV/main/canales.m3u
+https://raw.githubusercontent.com/mametchikitty/Listas-IPTV/main/dibujos-animados.m3u
+https://raw.githubusercontent.com/mametchikitty/Listas-IPTV/main/peliculas.m3u, solo la dejo aca no me respondas naada
 
