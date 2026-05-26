@@ -173,14 +173,18 @@ FUENTES = [
 CAT_MAP = {
     'news': 'Noticias', 'sports': 'Deportes', 'football': 'Deportes',
     'entertainment': 'Entretenimiento', 'movies': 'Películas',
-    'kids': 'Infantil', 'animation': 'Infantil', 'anime': 'Infantil',
+    'kids': 'Infantil', 'family': 'Infantil',
+    'animation': 'Anime', 'anime': 'Anime',
     'music': 'Música', 'documentary': 'Documentales',
-    'religious': 'Religiosos', 'business': 'Negocios',
-    'series': 'Series', 'general': 'General', 'undefined': 'General',
-    'auto': 'General', 'comedy': 'Entretenimiento', 'family': 'Infantil',
+    'religious': 'Religiosos', 'religion': 'Religiosos', 'business': 'Negocios',
+    'series': 'Series', 'novela': 'Novelas', 'telenovela': 'Novelas', 'soap': 'Novelas',
+    'general': 'General', 'undefined': 'General',
+    'auto': 'General', 'comedy': 'Entretenimiento',
     'classic': 'Entretenimiento', 'culture': 'Entretenimiento',
     'lifestyle': 'Entretenimiento', 'travel': 'Documentales',
-    'food': 'Entretenimiento', 'religion': 'Religiosos',
+    'food': 'Cocina', 'cooking': 'Cocina', 'culinary': 'Cocina',
+    'technology': 'Tecnología', 'tech': 'Tecnología',
+    'science': 'Documentales', 'nature': 'Documentales', 'history': 'Documentales',
 }
 
 MAX_CANALES_POR_FUENTE = 500
@@ -720,54 +724,6 @@ def parsear_m3u_radio(txt, co_default=None, cat_default=None, radio_only=False):
             cur = {}
     return canales
 
-def validar_radio(radio):
-    """Valida si una URL de radio responde correctamente."""
-    url = radio.get('url', '')
-    if not url:
-        return False
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
-    try:
-        req = urllib.request.Request(url, headers={
-            'User-Agent': 'Mozilla/5.0 (compatible; StreamChecker)',
-            'Icy-MetaData': '1',
-        }, method='GET')
-        with urllib.request.urlopen(req, context=ctx, timeout=8) as r:
-            status = r.status
-            if status not in (200, 206):
-                return False
-            data = r.read(512)
-            if len(data) < 5:
-                return False
-            # Verificar que no es página de error HTML
-            texto = data.decode('utf-8', errors='ignore').lower()
-            if '<html' in texto or '<!doctype' in texto:
-                return False
-            return True
-    except Exception:
-        return False
-
-
-def validar_lote_radios(lista, workers=40):
-    """Valida radios en paralelo, retorna solo las vivas."""
-    vivas = []
-    caidas = 0
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futuros = {ex.submit(validar_radio, r): r for r in lista}
-        for futuro, radio in futuros.items():
-            try:
-                ok = futuro.result(timeout=10)
-                if ok:
-                    radio['vivo'] = True
-                    vivas.append(radio)
-                else:
-                    caidas += 1
-            except Exception:
-                caidas += 1
-    return vivas, caidas
-
-
 def main_radio():
     print(f'\n{"="*60}')
     print(f'CIC TV — Actualizador de RADIOS')
@@ -775,20 +731,22 @@ def main_radio():
     print(f'{"="*60}\n')
 
     existentes = cargar_radios_existentes()
-    print(f'Radios existentes en JSON: {len(existentes)}')
+    print(f'Radios existentes: {len(existentes)}')
+
+    todos = {}  # url → radio
+    # Preservar radios existentes que tengan logo o campos extra
+    for url, r in existentes.items():
+        todos[url] = r
 
     # ── Agregar fuentes radio manuales de fuentes.txt ──
     _, fuentes_txt_radio = leer_fuentes_txt()
     fuentes_radio_total = fuentes_txt_radio + FUENTES_RADIO
 
-    # Recolectar todas las radios de todas las fuentes
-    candidatas = {}  # url → radio (sin duplicados)
-
     for fuente in fuentes_radio_total:
-        url_fuente  = fuente['url']
-        cat_default = fuente.get('cat')
-        co_default  = fuente.get('co')
-        radio_only  = fuente.get('radio_only', False)
+        url_fuente   = fuente['url']
+        cat_default  = fuente.get('cat')
+        co_default   = fuente.get('co')
+        radio_only   = fuente.get('radio_only', False)
         print(f'📻 {url_fuente.split("/")[-1][:40]} ...', end=' ', flush=True)
         txt = fetch_m3u(url_fuente)
         if not txt:
@@ -799,42 +757,35 @@ def main_radio():
         agregadas = 0
         for r in nuevas:
             url = r.get('url', '')
-            if not url or url in candidatas:
+            if not url or url in todos:
                 continue
-            candidatas[url] = r
+            todos[url] = r
             agregadas += 1
-        print(f'   → {agregadas} nuevas candidatas')
+        print(f'   → {agregadas} nuevas')
 
-    print(f'\n📊 Total candidatas: {len(candidatas)}')
-
-    # ── Validar todas las radios candidatas ──
-    print(f'\n🔍 Validando streams de radio (40 en paralelo)...')
-    lista_candidatas = list(candidatas.values())
-    t0 = time.time()
-    vivas, caidas = validar_lote_radios(lista_candidatas, workers=40)
-    t1 = time.time()
-    print(f'   ✅ {len(vivas)} funcionando | ❌ {caidas} caídas | ⏱ {t1-t0:.1f}s')
-
-    # ── Asignar IDs estables ──
-    for r in vivas:
+    # Asignar IDs estables
+    lista = list(todos.values())
+    for i, r in enumerate(lista):
         if not r.get('id'):
             r['id'] = 'r' + str(abs(hash(r['url'])) % (10**8)).zfill(8)
         r['type'] = 'radio'
 
-    total = len(vivas)
-    print(f'\n📊 Total radios validadas: {total}')
+    total = len(lista)
+    print(f'\n📊 Total radios: {total}')
 
     data = {
         'generado': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'total':    total,
-        'radios':   vivas,
+        'radios':   lista,
     }
 
     with open(OUTPUT_RADIO_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
     size_kb = os.path.getsize(OUTPUT_RADIO_FILE) // 1024
-    print(f'\n✅ radios.json guardado: {total} radios validadas · {size_kb} KB')
+    print(f'\n✅ radios.json guardado: {total} radios · {size_kb} KB')
+
+
 if __name__ == '__main__':
     main()
     main_radio()
