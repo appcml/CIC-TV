@@ -2,11 +2,12 @@ name: Actualizar Canales CIC TV
 
 on:
   schedule:
-    - cron: '0 0,6,12,18 * * *'   # cada 6 horas automático
-  workflow_dispatch:                # ejecución manual desde GitHub
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
   push:
     paths:
-      - 'fuentes.txt'               # también corre cuando editas fuentes.txt
+      - 'listas/**'        # corre al subir cualquier archivo a listas/
+      - 'fuentes.txt'      # por compatibilidad
 
 jobs:
   actualizar:
@@ -28,40 +29,27 @@ jobs:
       - name: Instalar dependencias
         run: pip install requests
 
-      - name: Mostrar fuentes.txt activas
+      - name: Mostrar archivos en listas/
         run: |
           echo "═══════════════════════════════"
-          echo "Fuentes manuales en fuentes.txt:"
+          echo "Archivos en listas/:"
           echo "═══════════════════════════════"
-          grep -v "^#" fuentes.txt | grep -v "^$" || echo "(ninguna aún)"
+          ls listas/ 2>/dev/null || echo "(carpeta vacía o no existe)"
 
       - name: Ejecutar actualizador
         run: python actualizar.py
-        timeout-minutes: 25
+        timeout-minutes: 30
 
       - name: Verificar canales.json
         run: |
-          python3 << 'EOF'
+          python3 << 'PYEOF'
           import json
           with open('canales.json') as f:
               d = json.load(f)
           print(f"Total:   {d['stats']['total']}")
           print(f"Vivos:   {d['stats']['vivos']}")
-          print(f"Caidos:  {d['stats']['caidos']}")
           print(f"Generado: {d['generado']}")
-          deportes = [c for c in d['canales'] if c.get('cat') == 'Deportes']
-          print(f"Deportes: {len(deportes)}")
-          EOF
-
-      - name: Verificar radios.json
-        run: |
-          python3 << 'EOF'
-          import json
-          with open('radios.json') as f:
-              d = json.load(f)
-          print(f"Total radios: {d['total']}")
-          print(f"Generado: {d['generado']}")
-          EOF
+          PYEOF
 
       - name: Commit y push
         run: |
