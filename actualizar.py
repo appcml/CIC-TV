@@ -348,22 +348,140 @@ FUENTES_RADIO = [
 #   https://ejemplo.com/lista.m3u  tv  CL   ← forzar TV + país
 #   https://ejemplo.com/lista.m3u  tv  MX  Películas  ← con categoría
 
+LISTAS_DIR = os.path.join(os.path.dirname(__file__), 'listas')
+
+def detectar_tipo_archivo(nombre, contenido=''):
+    """Detecta si un archivo M3U es de TV o radio por nombre y contenido."""
+    n = nombre.lower()
+    # Por nombre de archivo
+    if any(x in n for x in ['radio', 'audio', 'musica', 'music']):
+        return 'radio'
+    # Por contenido (primeras líneas)
+    if contenido:
+        c = contenido[:2000].lower()
+        if c.count('.mp3') + c.count('.aac') + c.count('.pls') > 3:
+            return 'radio'
+    return 'tv'
+
+def detectar_pais_archivo(nombre):
+    """Infiere el país desde el nombre del archivo. Ej: mexico.m3u → MX"""
+    PAIS_MAP = {
+        'mexico': 'MX', 'mx': 'MX',
+        'chile': 'CL', 'cl': 'CL',
+        'argentina': 'AR', 'ar': 'AR',
+        'colombia': 'CO', 'co': 'CO',
+        'peru': 'PE', 'pe': 'PE',
+        'venezuela': 'VE', 've': 'VE',
+        'ecuador': 'EC', 'ec': 'EC',
+        'bolivia': 'BO', 'bo': 'BO',
+        'paraguay': 'PY', 'py': 'PY',
+        'uruguay': 'UY', 'uy': 'UY',
+        'brasil': 'BR', 'brazil': 'BR', 'br': 'BR',
+        'españa': 'ES', 'spain': 'ES', 'es': 'ES',
+        'eeuu': 'US', 'usa': 'US', 'us': 'US',
+        'republica_dominicana': 'DO', 'dominicana': 'DO',
+        'costa_rica': 'CR', 'costarica': 'CR',
+        'guatemala': 'GT', 'honduras': 'HN',
+        'panama': 'PA', 'elsalvador': 'SV',
+        'international': None, 'latam': None, 'latino': None,
+        'novelas': None, 'deportes': None, 'noticias': None,
+    }
+    n = os.path.splitext(nombre)[0].lower().replace('-', '_').replace(' ', '_')
+    # Buscar coincidencia exacta o parcial
+    for key, co in PAIS_MAP.items():
+        if key in n:
+            return co
+    return None
+
+def detectar_cat_archivo(nombre):
+    """Infiere categoría desde el nombre del archivo."""
+    CAT_ARCHIVO = {
+        'novela': 'Novelas', 'telenovela': 'Novelas',
+        'deporte': 'Deportes', 'sport': 'Deportes', 'futbol': 'Deportes',
+        'noticia': 'Noticias', 'news': 'Noticias',
+        'pelicula': 'Películas', 'movie': 'Películas', 'film': 'Películas',
+        'infantil': 'Infantil', 'kids': 'Infantil',
+        'musica': 'Música', 'music': 'Música',
+        'anime': 'Anime',
+        'cocina': 'Cocina', 'cooking': 'Cocina', 'food': 'Cocina',
+        'documental': 'Documentales', 'documentary': 'Documentales',
+        'religion': 'Religiosos', 'cristian': 'Religiosos',
+    }
+    n = nombre.lower()
+    for key, cat in CAT_ARCHIVO.items():
+        if key in n:
+            return cat
+    return None
+
+def leer_carpeta_listas():
+    """
+    Lee todos los archivos .m3u / .m3u8 de la carpeta listas/
+    y retorna (fuentes_tv, fuentes_radio) como rutas de archivo local.
+    """
+    fuentes_tv    = []  # rutas locales de archivos TV
+    fuentes_radio = []  # dicts con ruta + metadata
+
+    if not os.path.exists(LISTAS_DIR):
+        print(f'   ⚠ Carpeta listas/ no existe — omitiendo')
+        return fuentes_tv, fuentes_radio
+
+    archivos = sorted([
+        f for f in os.listdir(LISTAS_DIR)
+        if f.lower().endswith(('.m3u', '.m3u8', '.txt'))
+        and not f.startswith('.')
+    ])
+
+    if not archivos:
+        print(f'   ℹ Carpeta listas/ vacía')
+        return fuentes_tv, fuentes_radio
+
+    print(f'   📂 {len(archivos)} archivos encontrados en listas/')
+
+    for nombre in archivos:
+        ruta = os.path.join(LISTAS_DIR, nombre)
+        try:
+            with open(ruta, 'r', encoding='utf-8', errors='ignore') as f:
+                contenido_preview = f.read(3000)
+        except Exception as e:
+            print(f'   ⚠ No se pudo leer {nombre}: {e}')
+            continue
+
+        tipo = detectar_tipo_archivo(nombre, contenido_preview)
+        co   = detectar_pais_archivo(nombre)
+        cat  = detectar_cat_archivo(nombre)
+
+        if tipo == 'radio':
+            fuentes_radio.append({
+                'ruta_local': ruta,
+                'nombre':     nombre,
+                'cat':        cat,
+                'co':         co,
+            })
+            print(f'   📻 [listas/] Radio: {nombre} (país:{co or "auto"}, cat:{cat or "auto"})')
+        else:
+            fuentes_tv.append({
+                'ruta_local': ruta,
+                'nombre':     nombre,
+                'co':         co,
+                'cat':        cat,
+            })
+            print(f'   📺 [listas/] TV: {nombre} (país:{co or "auto"}, cat:{cat or "auto"})')
+
+    return fuentes_tv, fuentes_radio
+
+# Mantener fuentes.txt como fallback por compatibilidad
 FUENTES_TXT_FILE = os.path.join(os.path.dirname(__file__), 'fuentes.txt')
 
 def leer_fuentes_txt():
-    """Lee fuentes.txt y retorna (fuentes_tv, fuentes_radio)."""
-    fuentes_tv    = []  # lista de URLs string (van a FUENTES_EXTRA)
-    fuentes_radio = []  # lista de dicts (van a FUENTES_RADIO)
-
+    """Lee fuentes.txt (URLs remotas). Mantenido por compatibilidad."""
+    fuentes_tv    = []
+    fuentes_radio = []
     if not os.path.exists(FUENTES_TXT_FILE):
         return fuentes_tv, fuentes_radio
-
     with open(FUENTES_TXT_FILE, 'r', encoding='utf-8') as f:
         lineas = f.readlines()
-
     for linea in lineas:
         linea = linea.strip()
-        # Ignorar comentarios y líneas vacías
         if not linea or linea.startswith('#'):
             continue
         partes = linea.split()
@@ -371,27 +489,13 @@ def leer_fuentes_txt():
         tipo = partes[1].lower() if len(partes) > 1 else 'auto'
         co   = partes[2].upper() if len(partes) > 2 else None
         cat  = ' '.join(partes[3:]) if len(partes) > 3 else None
-
-        # Auto-detectar tipo por extensión/nombre si no se especificó
         if tipo == 'auto':
             u = url.lower()
-            if any(x in u for x in ['radio', 'audio', '.mp3', '.aac', '.pls']):
-                tipo = 'radio'
-            else:
-                tipo = 'tv'
-
+            tipo = 'radio' if any(x in u for x in ['radio','audio','.mp3','.aac','.pls']) else 'tv'
         if tipo == 'radio':
-            fuentes_radio.append({
-                'url': url,
-                'cat': cat,
-                'co':  co,
-                'radio_only': False,  # ya viene de fuente de radio
-            })
-            print(f'   📻 [fuentes.txt] Radio: {url.split("/")[-1][:50]}')
+            fuentes_radio.append({'url': url, 'cat': cat, 'co': co, 'radio_only': False})
         else:
-            fuentes_tv.append(url)
-            print(f'   📺 [fuentes.txt] TV: {url.split("/")[-1][:50]}')
-
+            fuentes_tv.append({'ruta_local': None, 'nombre': url.split('/')[-1], 'co': co, 'cat': cat, 'url_remota': url})
     return fuentes_tv, fuentes_radio
 
 
@@ -538,23 +642,44 @@ def main():
     existentes = cargar_existentes()
     print(f'Canales existentes: {len(existentes)}')
 
-    # ── Leer fuentes.txt manuales ──
-    print(chr(10) + '📄 Leyendo fuentes.txt...')
-    fuentes_txt_tv, fuentes_txt_radio = leer_fuentes_txt()
-    if fuentes_txt_tv:
-        print(f'   → {len(fuentes_txt_tv)} fuentes TV manuales')
-    if fuentes_txt_radio:
-        print(f'   → {len(fuentes_txt_radio)} fuentes Radio manuales')
+    # ── Leer carpeta listas/ (archivos M3U locales) ──
+    print(chr(10) + '📂 Leyendo carpeta listas/...')
+    listas_tv, listas_radio = leer_carpeta_listas()
 
-    # Combinar fuentes TV: las del txt van primero (prioridad manual)
-    fuentes_extra_total = fuentes_txt_tv + FUENTES_EXTRA
+    # ── Leer fuentes.txt (URLs remotas, por compatibilidad) ──
+    fuentes_txt_tv, fuentes_txt_radio = leer_fuentes_txt()
+    fuentes_txt_tv_urls = [f['url_remota'] for f in fuentes_txt_tv if f.get('url_remota')]
 
     todos = {}  # url → canal
     # Preservar canales existentes
     for url, c in existentes.items():
         todos[url] = c
 
-    # ── Descargar y parsear fuentes extra (manuales + automáticas) ──
+    # ── Procesar archivos locales de listas/ ──
+    for fuente in listas_tv:
+        nombre     = fuente['nombre']
+        co_forzado = fuente.get('co')
+        cat_forzada = fuente.get('cat')
+        print(f'\n📂 {nombre} ...', end=' ', flush=True)
+        try:
+            with open(fuente['ruta_local'], 'r', encoding='utf-8', errors='ignore') as f:
+                txt = f.read()
+        except Exception as e:
+            print(f'error: {e}')
+            continue
+        nuevos_local = parsear_m3u(txt, co_forzado, cat_forzada)
+        print(f'{len(nuevos_local)} canales')
+        agregados_local = 0
+        for c in nuevos_local:
+            if cat_forzada and c.get('cat') in ('General', 'Entretenimiento', None):
+                c['cat'] = cat_forzada
+            if c.get('url') and c['url'] not in todos:
+                todos[c['url']] = c
+                agregados_local += 1
+        print(f'   → {agregados_local} nuevos')
+
+    # ── Descargar y parsear URLs de fuentes.txt + FUENTES_EXTRA automáticas ──
+    fuentes_extra_total = fuentes_txt_tv_urls + FUENTES_EXTRA
     for url_extra in fuentes_extra_total:
         print(f'\n📥 Extra: {url_extra.split("/")[-1][:30]} ...', end=' ', flush=True)
         txt = fetch_m3u(url_extra)
@@ -564,7 +689,7 @@ def main():
         nuevos_extra = parsear_m3u(txt, None, None)
         print(f'{len(nuevos_extra)} canales')
         agregados_extra = 0
-        for c in nuevos_extra[:300]:  # max 300 por fuente extra
+        for c in nuevos_extra[:300]:
             if c.get('url') and c['url'] not in todos:
                 todos[c['url']] = c
                 agregados_extra += 1
@@ -738,20 +863,34 @@ def main_radio():
     for url, r in existentes.items():
         todos[url] = r
 
-    # ── Agregar fuentes radio manuales de fuentes.txt ──
+    # ── Leer radios de carpeta listas/ ──
+    _, listas_radio = leer_carpeta_listas()
     _, fuentes_txt_radio = leer_fuentes_txt()
-    fuentes_radio_total = fuentes_txt_radio + FUENTES_RADIO
+    fuentes_radio_total = listas_radio + fuentes_txt_radio + FUENTES_RADIO
 
     for fuente in fuentes_radio_total:
-        url_fuente   = fuente['url']
-        cat_default  = fuente.get('cat')
-        co_default   = fuente.get('co')
-        radio_only   = fuente.get('radio_only', False)
-        print(f'📻 {url_fuente.split("/")[-1][:40]} ...', end=' ', flush=True)
-        txt = fetch_m3u(url_fuente)
-        if not txt:
-            print('sin respuesta')
-            continue
+        cat_default = fuente.get('cat')
+        co_default  = fuente.get('co')
+        radio_only  = fuente.get('radio_only', False)
+
+        if fuente.get('ruta_local'):
+            # Archivo local de listas/
+            nombre = fuente['nombre']
+            print(f'📂 {nombre} ...', end=' ', flush=True)
+            try:
+                with open(fuente['ruta_local'], 'r', encoding='utf-8', errors='ignore') as f:
+                    txt = f.read()
+            except Exception as e:
+                print(f'error: {e}')
+                continue
+        else:
+            url_fuente = fuente['url']
+            print(f'📻 {url_fuente.split("/")[-1][:40]} ...', end=' ', flush=True)
+            txt = fetch_m3u(url_fuente)
+            if not txt:
+                print('sin respuesta')
+                continue
+
         nuevas = parsear_m3u_radio(txt, co_default, cat_default, radio_only)
         print(f'{len(nuevas)} entradas')
         agregadas = 0
