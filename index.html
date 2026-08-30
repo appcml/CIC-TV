@@ -1652,8 +1652,11 @@ function renderGrid() {
     grid.innerHTML = '<div class="empty">📭 Sin resultados</div>';
     return;
   }
-  var liteMode = false; // Modo Normal siempre
-  var MAX = 300;
+  // Detección automática de dispositivo lento
+  var _mem = navigator.deviceMemory || 4;
+  var _cpu = navigator.hardwareConcurrency || 4;
+  var liteMode = (_mem <= 2 || _cpu <= 2);
+  var MAX = liteMode ? 80 : 300;
   var list = filtered.slice(0, MAX);
 
   function buildCardHTML(ch) {
